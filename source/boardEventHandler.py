@@ -36,12 +36,22 @@ class BoardEventHandler:
 			print("stopStreaming")
 			ev.clear()
 
-    def newBoardSettingsAvailable(self):
-        ev = self.boardApiCallEvents.newBoardSettingsAvailable
-        while True:
-            ev.wait()
-            print("newBoardSettingsAvailable")
-            ev.clear()
+	def newBoardSettingsAvailable(self):
+		ev = self.boardApiCallEvents.newBoardSettingsAvailable
+		while True:
+			ev.wait()
+			print("newBoardSettingsAvailable-------")
+			if self.boardSettings["lowerBand"] != self.board.getLowerBoundFrequency():
+				self.board.setLowerBoundFrequency(self.boardSettings["lowerBand"])
+			if self.boardSettings["upperBand"] != self.board.getHigherBoundFrequency():
+				self.board.setHigherBoundFrequency(self.boardSettings["upperBand"])
+			if self.boardSettings["windowSize"] != self.board.getWindowSize():
+				self.board.setWindowSize(self.boardSettings["windowSize"])
+			if self.boardSettings["filtering_data"] != self.board.isFilteringData():
+				self.board.setFilteringData(self.boardSettings["filtering_data"])
+			if self.boardSettings["scaling_output"] != self.board.isScalingOutput():
+				self.board.setScaledOutput(self.boardSettings["scaling_output"])
+			ev.clear()
 
     def start(self):
         print("Starting eventHandler")
