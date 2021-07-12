@@ -1,11 +1,11 @@
+import sys
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import *
-from dotted.collection import DottedDict
-
 from checkComboBox import *
 
-bandPassFreqList = ["1-50", "3-30", "4-40", "5-50"]
-windowSizeList = ["1", "2", "3", "4", "5"]
+sys.path.append('..')
+from utils.constants import Constants as cnst
+
 colors = 'rgbycmwr'
 
 
@@ -101,7 +101,7 @@ class GUI(QMainWindow):
 		freqComboTitle.setFont(self.font)
 		self.freqComboChoices.setFont(self.font)
 		self.freqComboChoices.setToolTip('Select the Frequencies where data will be filtered.')
-		self.freqComboChoices.addItems(bandPassFreqList)
+		self.freqComboChoices.addItems(cnst.bandPassFreqList)
 		freqCombo.addWidget(freqComboTitle)
 		freqCombo.addWidget(self.freqComboChoices)
 		freqCombo.addStretch()
@@ -118,7 +118,7 @@ class GUI(QMainWindow):
 		timeWindowComboTitle.setFont(self.font)
 		self.timeWindowComboChoices.setFont(self.font)
 		self.timeWindowComboChoices.setEditable(True)
-		self.timeWindowComboChoices.addItems(windowSizeList)
+		self.timeWindowComboChoices.addItems(cnst.windowSizeList)
 		timeWindowCombo.addWidget(timeWindowComboTitle)
 		timeWindowCombo.addWidget(self.timeWindowComboChoices)
 		timeWindowCombo.addStretch()
