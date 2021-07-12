@@ -45,7 +45,11 @@ class GUI(QMainWindow):
 		self.initBoardSettingsBar()
 		self.initMenuBar()
 
-		self.sendBoardSetting()
+		# send board settings with current init choices
+		self.freqComboClick(self.freqComboChoices.currentText())
+		self.windowComboClick(self.timeWindowComboChoices.currentText())
+		self.filteringDataFunction(self.filterDataCheckbox.checkState())
+		self.scalingDataFunction(self.scalingDataCheckbox.checkState())
 		# set central widget
 		self.setCentralWidget(mainWidget)
 
@@ -224,7 +228,6 @@ class GUI(QMainWindow):
 			self.boardApiCallEvents.newBoardSettingsAvailable.set()
 		except Exception:
 			print("scalingDataFunction ERROR!")
-
 
 
 def startGUI(dataDict, board, boardApiCallEvents, boardCytonSettings):
