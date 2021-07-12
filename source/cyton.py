@@ -310,6 +310,60 @@ class OpenBCICyton(object):
 
 	# SETTINGS AND HELPERS
 
+	def _read_sample(self, max_bytes_to_skip=3000):
+		"""
+		  PARSER:
+		  Parses incoming data packet into OpenBCISample.
+		  Incoming Packet Structure:
+		  Start Byte(1)|Sample ID(1)|Channel Data(24)|Aux Data(6)|End Byte(1)
+		  0xA0|0-255|8, 3-byte signed ints|3 2-byte signed ints|0xC0
+
+		"""
+
+		def read(n):
+			"""
+				Read bytes from the open serial
+				:param n: {int} - The number of bytes to be read
+			"""
+			bb = self.ser.read(n)
+			if not bb:
+				self.warn('Device appears to be stalled. Quitting...')
+				sys.exit()
+			else:
+				return bb
+
+		for rep in range(max_bytes_to_skip):
+
+			packet = []
+			b = read(1)
+			# reading until start byte found
+			while struct.unpack('B', b)[0] != cnts.RAW_BYTE_START:
+				rep += 1
+				# print("Error: " + cnts.ERROR_INVALID_BYTE_START)
+				b = read(1)
+
+			if rep != 0:
+				self.warn(
+					'S>kipped %d bytes before start found' % (rep))
+				rep = 0
+
+			packet.append(struct.unpack('B', b)[0])
+			rest_packetInBytes = read(cnts.RAW_PACKET_SIZE - 1)
+			btSize = (cnts.RAW_PACKET_SIZE - 1).__str__() + 'B'
+			packet += (struct.unpack(btSize, rest_packetInBytes))
+			packet_id = packet[cnts.RAW_PACKET_POSITION_SAMPLE_NUMBER]
+			packet_channel_data = self.get_channel_data_array(packet)
+			packet_aux_data = self.get_aux_data_array(packet)
+			packet_stop_byte = packet[cnts.RAW_PACKET_POSITION_STOP_BYTE]
+
+			if is_stop_byte(packet_stop_byte):
+				sample = OpenBCISample(packet_id, packet_channel_data, packet_aux_data)
+				self.packets_dropped = 0
+				return sample
+			else:
+				self.packets_dropped = self.packets_dropped + 1
+				print("Error: " + cnts.ERROR_INVALID_BYTE_STOP)
+
 	def _read_serial_binary(self, max_bytes_to_skip=3000):
 		def read(n):
 			"""
