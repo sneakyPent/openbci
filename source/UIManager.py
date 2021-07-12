@@ -1,9 +1,13 @@
 #!/usr/bin/python
 import argparse
+
 from pyGUI import *
-from dataManager import *
-from multiprocessing import Process, Queue, Lock
+from dataManager import DataManager
+from multiprocessing.managers import SyncManager
+from multiprocessing import Process, Queue, Lock, Event
 from dotted.collection import DottedDict
+from boardEventHandler import BoardEventHandler
+from cyton import OpenBCICyton
 
 parser = argparse.ArgumentParser(prog='UIManager',
                                  description='Python scripts that determines which UI will be used for the cyton board ')
