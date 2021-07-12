@@ -13,11 +13,11 @@ class DataManager(object):
 								the queues contained in processesQueuesList
 		"""
 
-    def __init__(self, data, processesArgsList, _share, _newDataAvailable):
-        self.data = data
-        self.processesArgsList = processesArgsList
-        self._share = _share
-        self._newDataAvailable = _newDataAvailable
+	def __init__(self, data, processesArgsList, dataManagerEvents):
+		self.data = data
+		self.processesArgsList = processesArgsList
+		self._share = dataManagerEvents.share
+		self._newDataAvailable = dataManagerEvents.newDataAvailable
 
 	def disableNewDataAvailable(self):
 		while True:
