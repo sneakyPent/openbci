@@ -10,16 +10,14 @@ colors = 'rgbycmwr'
 
 
 class GUI(QMainWindow):
-    def __init__(self, dataDict, board, boardApiCallEvents, _share, _newDataAvailable, _isConnected):
-        super().__init__()
+	def __init__(self, dataDict, board, boardApiCallEvents, boardCytonSettings):
+		super().__init__()
 
-        self.dataDict = dataDict
-        self.board = board
-        self.boardApiCallEvents = boardApiCallEvents
-        self._share = _share
-        self._newDataAvailable = _newDataAvailable
-        self._isConnected = _isConnected
-        self.graphData = []
+		self.dataDict = dataDict
+		self.board = board
+		self.boardApiCallEvents = boardApiCallEvents
+		self.boardCytonSettings = boardCytonSettings
+		self.graphData = []
 
 		# QMainWindow settings
 		self.setWindowTitle("My GUI for Cyton Board")
@@ -214,9 +212,9 @@ class GUI(QMainWindow):
 
 
 
-def startGUI(dataDict, board, boardApiCallEvents, boardCytonSettings, _share):
+def startGUI(dataDict, board, boardApiCallEvents, boardCytonSettings):
 	app = QApplication(sys.argv)
-	gui = GUI(dataDict, board, boardApiCallEvents, boardCytonSettings, _share)
+	gui = GUI(dataDict, board, boardApiCallEvents, boardCytonSettings)
 	gui.show()
 	sys.exit(app.exec_())
 
