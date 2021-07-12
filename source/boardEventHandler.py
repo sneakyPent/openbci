@@ -53,22 +53,29 @@ class BoardEventHandler:
 				self.board.setScaledOutput(self.boardSettings["scaling_output"])
 			ev.clear()
 
-    def start(self):
-        print("Starting eventHandler")
-        connectProcess = Process(target=self.connect)
-        disconnectProcess = Process(target=self.disconnect)
-        startStreamingProcess = Process(target=self.startStreaming)
-        stopStreamingProcess = Process(target=self.stopStreaming)
-        newBoardSettingsAvailableProcess = Process(target=self.newBoardSettingsAvailable)
+	def start(self):
+		procList = []
+		try:
+			print("Starting eventHandler")
+			connectProcess = Process(target=self.connect)
+			disconnectProcess = Process(target=self.disconnect)
+			startStreamingProcess = Process(target=self.startStreaming)
+			stopStreamingProcess = Process(target=self.stopStreaming)
+			newBoardSettingsAvailableProcess = Process(target=self.newBoardSettingsAvailable)
 
-        connectProcess.start()
-        disconnectProcess.start()
-        startStreamingProcess.start()
-        stopStreamingProcess.start()
-        newBoardSettingsAvailableProcess.start()
+			procList.append(connectProcess)
+			procList.append(disconnectProcess)
+			procList.append(startStreamingProcess)
+			procList.append(stopStreamingProcess)
+			procList.append(newBoardSettingsAvailableProcess)
 
-        connectProcess.join()
-        disconnectProcess.join()
-        startStreamingProcess.join()
-        stopStreamingProcess.join()
-        newBoardSettingsAvailableProcess.join()
+			for proc in procList:
+				proc.start()
+
+			# join processes
+			for proc in procList:
+				proc.join()
+		except KeyboardInterrupt:
+			# terminate processes
+			for proc in procList:
+				proc.terminate()
