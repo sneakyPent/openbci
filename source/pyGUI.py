@@ -162,7 +162,22 @@ class GUI(QMainWindow):
 
 		self.boardSettingLayout.addStretch()
 
-        #  calling functions
+	def startStreaming(self):
+		self.boardApiCallEvents.startStreaming.set()
+
+	def stopStreaming(self):
+		self.boardApiCallEvents.stopStreaming.set()
+
+	def connectBoard(self):
+		self.boardApiCallEvents.connect.set()
+
+	def disconnectBoard(self):
+		self.boardApiCallEvents.disconnect.set()
+
+	def quitGUI(self):
+		QApplication.instance().quit()
+
+	#  calling functions
 
 	def channelsComboChange(self, choices):
 		print("test")
