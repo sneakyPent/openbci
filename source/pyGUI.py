@@ -175,38 +175,42 @@ class GUI(QMainWindow):
         print(self.board.getBoardType())
         # changing the text of label after button get clicked
 
-    def freqComboClick(self, freq):
-        try:
-            lowerBound = int(freq.split("-")[0])
-            upperBound = int(freq.split("-")[1])
-            self.board.lowerBand = lowerBound
-            self.board.upperBand = upperBound
-        except Exception:
-            print("freqComboClick ERROR!")
+	def freqComboClick(self, freq):
+		try:
+			lowerBound = int(freq.split("-")[0])
+			upperBound = int(freq.split("-")[1])
+			self.boardCytonSettings["lowerBand"] = lowerBound
+			self.boardCytonSettings["upperBand"] = upperBound
+			self.boardApiCallEvents.newBoardSettingsAvailable.set()
+		except Exception:
+			print("freqComboClick ERROR!")
 
-    def windowComboClick(self, size):
-        try:
-            self.board.windowSize = int(size)
-        except Exception:
-            print("windowComboClick ERROR!")
+	def windowComboClick(self, size):
+		try:
+			self.boardCytonSettings["windowSize"] = int(size)
+			self.boardApiCallEvents.newBoardSettingsAvailable.set()
+		except Exception:
+			print("windowComboClick ERROR!")
 
-    def filteringDataFunction(self, state):
-        try:
-            if state == Qt.Checked:
-                self.board.filtering_data = True
-            else:
-                self.board.filtering_data = False
-        except Exception:
-            print("filteringDataFunction ERROR!")
+	def filteringDataFunction(self, state):
+		try:
+			if state == Qt.Checked:
+				self.boardCytonSettings["filtering_data"] = True
+			else:
+				self.boardCytonSettings["filtering_data"] = False
+			self.boardApiCallEvents.newBoardSettingsAvailable.set()
+		except Exception:
+			print("filteringDataFunction ERROR!")
 
-    def scalingDataFunction(self, state):
-        try:
-            if state == Qt.Checked:
-                self.board.scaling_output = True
-            else:
-                self.board.scaling_output = False
-        except Exception:
-            print("scalingDataFunction ERROR!")
+	def scalingDataFunction(self, state):
+		try:
+			if state == Qt.Checked:
+				self.boardCytonSettings["scaling_output"] = True
+			else:
+				self.boardCytonSettings["scaling_output"] = False
+			self.boardApiCallEvents.newBoardSettingsAvailable.set()
+		except Exception:
+			print("scalingDataFunction ERROR!")
 
 
 
