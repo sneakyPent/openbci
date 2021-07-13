@@ -1,9 +1,7 @@
 from multiprocessing import Process
 from multiprocessing.managers import BaseManager
+from utils.coloringPrint import *
 
-
-# TODO : check all exceptions
-#           E.G. no board found, start before connect..
 
 class BoardEventHandler:
 
@@ -18,15 +16,23 @@ class BoardEventHandler:
 		ev = self.boardApiCallEvents.connect
 		while True:
 			ev.wait()
-			self.board.connect()
+			printInfo("Connecting..")
+			try:
+				self.board.connect()
+			except OSError:
+				printError("Could not connect to board. Make sure it is properly connected and enabled")
 			ev.clear()
 
 	def disconnect(self):
 		ev = self.boardApiCallEvents.disconnect
 		while True:
 			ev.wait()
-			print("disconnect")
-			self.board.disconnect()
+			printInfo("Disconnecting..")
+			try:
+				if self.board.ser_inWaiting():
+					self.board.disconnect()
+			except:
+				printError("No connection to disconnect from ")
 			ev.clear()
 
 	def startStreaming(self):
@@ -53,16 +59,22 @@ class BoardEventHandler:
 		ev = self.boardApiCallEvents.startStreaming
 		while True:
 			ev.wait()
-			print("startStreaming")
+			printInfo("Starting streaming..")
 			ev.clear()
-			self.board.start_streaming(sampleHandler.addInQueue)
+			try:
+				self.board.start_streaming(sampleHandler.addInQueue)
+			except:
+				printError("There was a problem on starting streaming")
 
 	def stopStreaming(self):
 		ev = self.boardApiCallEvents.stopStreaming
 		while True:
 			ev.wait()
-			print("stopStreaming")
-			self.board.stopStreaming()
+			printInfo("Stopping streaming..")
+			try:
+				self.board.stopStreaming()
+			except:
+				printError("There is no stream to stop")
 			# self.dataManagerEvents.share.clear()
 			ev.clear()
 
@@ -70,7 +82,7 @@ class BoardEventHandler:
 		ev = self.boardApiCallEvents.newBoardSettingsAvailable
 		while True:
 			ev.wait()
-			print("newBoardSettingsAvailable-------")
+			printInfo("New board setting Available..")
 			if self.boardSettings["lowerBand"] != self.board.getLowerBoundFrequency():
 				self.board.setLowerBoundFrequency(self.boardSettings["lowerBand"])
 			if self.boardSettings["upperBand"] != self.board.getHigherBoundFrequency():
@@ -86,7 +98,7 @@ class BoardEventHandler:
 	def start(self):
 		procList = []
 		try:
-			print("Starting eventHandler")
+			printInfo("Starting eventHandler")
 			connectProcess = Process(target=self.connect)
 			disconnectProcess = Process(target=self.disconnect)
 			startStreamingProcess = Process(target=self.startStreaming)
