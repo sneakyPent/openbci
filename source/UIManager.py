@@ -44,38 +44,50 @@ if __name__ == '__main__':
         # init DataManager
         dataManager = DataManager(data, processesArgsList, _share, _newDataAvailable)
 
-        mode = args.mode[0]
-        if mode == 'pygui':
-            # create other processes
-            dataManagerProcess = Process(target=dataManager.shareData)
-            guiProcess = Process(target=startGUI, args=(guiProcArgs, _share, _newDataAvailable))
-            printData = Process(target=printData, args=(printDataProcArgs, _newDataAvailable))
+		mode = args.mode[0]
+		if mode == 'pygui':
 
-            # start processes
-            guiProcess.start()
-            dataManagerProcess.start()
-            printData.start()
+			# create Process for the dataManager
+			dataManagerProcess = Process(target=dataManager.shareData)
+			processesList.append(dataManagerProcess)
 
-            # add processes in the running process list
-            runningProcesses.append(guiProcess)
-            runningProcesses.append(dataManagerProcess)
-            runningProcesses.append(printData)
+			# create Process for printing Data
+			printData = Process(target=printData,
+			                    args=(board, printDataProcArgs, dataManagerEvents.newDataAvailable))
+			processesList.append(printData)
 
-            # join processes
-            guiProcess.join()
-            dataManagerProcess.join()
-            printData.join()
-        elif mode == 'online':
-            print("online")
-            dataManagerProcess = Process(target=dataManager.shareData)
-            dataManagerProcess.start()
-            runningProcesses.append(dataManagerProcess)
-            dataManagerProcess.join()
-    except KeyboardInterrupt:
-        print("Caught KeyboardInterrupt, terminating workers")
-        # clearing events
-        _newDataAvailable.clear()
-        _share.clear()
-        # terminate processes
-        for proc in runningProcesses:
-            proc.terminate()
+			# create Process for the boardEventHandler
+			boardEventHandlerProcess = Process(target=boardEventHandler.start)
+			processesList.append(boardEventHandlerProcess)
+
+			# create Process for the gui
+			guiProcess = Process(target=startGUI,
+			                     args=(guiProcArgs, board, boardApiCallEvents, boardCytonSettings))
+			processesList.append(guiProcess)
+
+			# start processes in the processList
+			for proc in processesList:
+				proc.start()
+
+			# join processes in the processList
+			for proc in processesList:
+				proc.join()
+
+		elif mode == 'online':
+			print("online")
+			dataManagerProcess = Process(target=dataManager.shareData)
+
+			processesList.append(dataManagerProcess)
+			# start processes
+			for proc in processesList:
+				proc.start()
+
+			# join processes
+			for proc in processesList:
+				proc.join()
+	except KeyboardInterrupt:
+		print("Caught KeyboardInterrupt, terminating workers")
+		# clearing events
+		# terminate processes
+		for proc in processesList:
+			proc.terminate()
