@@ -283,19 +283,16 @@ class OpenBCICyton(object):
 					avg_aux_data = list(
 						(np.array(sample.aux_data) + np.array(self.last_odd_sample.aux_data)) / 2)
 					whole_sample = OpenBCISample(sample.id,
-												 sample.channel_data +
-												 self.last_odd_sample.channel_data,
-												 avg_aux_data)
-					# dataBuffer.put(whole_sample)
+					                             sample.channel_data +
+					                             self.last_odd_sample.channel_data,
+					                             avg_aux_data)
 					for call in callback:
 						call(whole_sample)
 			else:
-				# print(sample.channel_data)
 				for call in callback:
 					call(sample)
-			# dataBuffer.put(sample)
 
-			if lapse > 0 and (timeit.default_timer() - start_time) > lapse:
+			if 0 < lapse < (timeit.default_timer() - start_time):
 				self.stopStreaming()
 			if self.log:
 				self.log_packet_count = self.log_packet_count + 1
