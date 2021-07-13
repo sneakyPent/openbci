@@ -18,10 +18,6 @@ args = parser.parse_args()
 # queues Size
 maxQueueSize = 2500
 
-# Events
-_share = Event()
-_newDataAvailable = Event()
-
 # process list in queue
 runningProcesses = []
 def printData(dataDict, _newDataAvailable):
