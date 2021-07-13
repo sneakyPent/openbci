@@ -19,17 +19,7 @@ args = parser.parse_args()
 maxQueueSize = 2500
 
 # process list in queue
-runningProcesses = []
-def printData(dataDict, _newDataAvailable):
-    while True:
-        _newDataAvailable.wait()
-        while not dataDict.queue.empty():
-            dataDict.lock.acquire()
-            try:
-                dt = dataDict.queue.get()
-                print("printData func:" + dt.__str__())
-            finally:
-                dataDict.lock.release()
+processesList = []
 
 
 # create a SyncManager and register openbci cyton board object so as to create a proxy and share it to every subprocess
