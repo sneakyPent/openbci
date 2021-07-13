@@ -55,7 +55,7 @@ class BoardEventHandler:
 			ev.wait()
 			print("startStreaming")
 			ev.clear()
-			self.board.start_streaming(sampleHandler.addInQueue())
+			self.board.start_streaming(sampleHandler.addInQueue)
 
 	def stopStreaming(self):
 		ev = self.boardApiCallEvents.stopStreaming
