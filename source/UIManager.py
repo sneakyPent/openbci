@@ -32,6 +32,14 @@ def printData(dataDict, _newDataAvailable):
                 dataDict.lock.release()
 
 
+# create a SyncManager and register openbci cyton board object so as to create a proxy and share it to every subprocess
+class MyManager(SyncManager):
+	pass
+
+
+# register the OpenBCICyton class; make its functions accessible via proxy
+MyManager.register('OpenBCICyton', OpenBCICyton)
+
 if __name__ == '__main__':
 	try:
 		# create board through manager so as to have a proxy for the object to _share through processes
