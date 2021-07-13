@@ -1,4 +1,6 @@
 from multiprocessing import Process
+from multiprocessing.managers import BaseManager
+
 
 # TODO : check all exceptions
 #           E.G. no board found, start before connect..
@@ -27,16 +29,33 @@ class BoardEventHandler:
 			self.board.disconnect()
 			ev.clear()
 
-	def startStreaming(self, callback):
+	def startStreaming(self):
+		class MyManager(BaseManager):
+			pass
+
+		class SampleHandler:
+			tst = self.dataBuffer
+			e = self.dataManagerEvents
+
+			def addInQueue(self, sample):
+				self.tst.put(sample.channel_data)
+				self.e.share.set()
+
+			def printSample(self, sample):
+				print(sample.channel_data)
+
+		MyManager.register('SampleHandler', SampleHandler)
+
+		manager = MyManager()
+		manager.start()
+		sampleHandler = manager.SampleHandler()
+
 		ev = self.boardApiCallEvents.startStreaming
 		while True:
 			ev.wait()
 			print("startStreaming")
-			stProcess = Process(target=self.board.start_streaming, args=(self.dataBuffer,))
-			stProcess.start()
-			# self.board.start_streaming(self.dataBuffer)
-			# self.dataManagerEvents.share.set()
 			ev.clear()
+			self.board.start_streaming(sampleHandler.addInQueue())
 
 	def stopStreaming(self):
 		ev = self.boardApiCallEvents.stopStreaming
@@ -70,7 +89,7 @@ class BoardEventHandler:
 			print("Starting eventHandler")
 			connectProcess = Process(target=self.connect)
 			disconnectProcess = Process(target=self.disconnect)
-			startStreamingProcess = Process(target=self.startStreaming, args=(self.dataBuffer,))
+			startStreamingProcess = Process(target=self.startStreaming)
 			stopStreamingProcess = Process(target=self.stopStreaming)
 			newBoardSettingsAvailableProcess = Process(target=self.newBoardSettingsAvailable)
 
