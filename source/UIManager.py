@@ -33,16 +33,46 @@ def printData(dataDict, _newDataAvailable):
 
 
 if __name__ == '__main__':
-    try:
-        # main queue that will read data from board
-        data = Queue(maxsize=maxQueueSize)
-        # create Other Processes queues an their locks in dictionary format and append them in the list
-        guiProcArgs = DottedDict({"queue": Queue(maxsize=maxQueueSize), "lock": Lock()})
-        printDataProcArgs = DottedDict({"queue": Queue(maxsize=maxQueueSize), "lock": Lock()})
-        # add queue and lock in the lists
-        processesArgsList = [guiProcArgs, printDataProcArgs]
-        # init DataManager
-        dataManager = DataManager(data, processesArgsList, _share, _newDataAvailable)
+	try:
+		# create board through manager so as to have a proxy for the object to _share through processes
+		manager = MyManager()
+		manager.start()
+		board = manager.OpenBCICyton()
+		dataBuffer = manager.Queue(maxsize=maxQueueSize)
+		boardCytonSettings = manager.dict()
+
+		# events will be used to control board through any gui
+		boardApiCallEvents = DottedDict({
+			"connect": Event(),
+			"disconnect": Event(),
+			"startStreaming": Event(),
+			"stopStreaming": Event(),
+			"newBoardSettingsAvailable": Event()
+		})
+		# Events will be used for the dataManager
+		dataManagerEvents = DottedDict({
+			"share": Event(),
+			"newDataAvailable": Event(),
+		})
+
+		# main queue that will read data from board
+		guiProcArgs = DottedDict({"queue": Queue(maxsize=maxQueueSize), "lock": Lock()})
+		printDataProcArgs = DottedDict({"queue": Queue(maxsize=maxQueueSize), "lock": Lock()})
+		# add queue and lock in the lists
+		processesArgsList = [guiProcArgs, printDataProcArgs]
+
+		# add the board settings in the boardCytonSettings will be given to the boardEventHandler and guiProcess
+		# Through this dictionary the board settings,given from ui, will be applied to board data
+		boardCytonSettings["lowerBand"] = None
+		boardCytonSettings["upperBand"] = None
+		boardCytonSettings["windowSize"] = None
+		boardCytonSettings["filtering_data"] = None
+		boardCytonSettings["scaling_output"] = None
+
+		# init DataManager and event BoardEventHandler
+		dataManager = DataManager(dataBuffer, processesArgsList, dataManagerEvents)
+		boardEventHandler = BoardEventHandler(board, boardApiCallEvents, boardCytonSettings, dataManagerEvents,
+		                                      dataBuffer)
 
 		mode = args.mode[0]
 		if mode == 'pygui':
