@@ -148,3 +148,14 @@ class Constants:
 	""" Cyton board settings """
 	bandPassFreqList = ["1-50", "3-30", "4-40", "5-50"]
 	windowSizeList = ["1", "2", "3", "4", "5"]
+
+	""" printng massages colors"""
+	FAIL = '\033[91m'
+	OKGREEN = '\033[92m'
+	WARNING = '\033[93m'
+	HEADER = '\033[95m'
+	CYAN = '\033[96m'
+	OKCYAN = '\033[96m'
+	ENDC = '\033[0m'
+	BOLD = '\033[1m'
+	UNDERLINE = '\033[4m'
