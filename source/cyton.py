@@ -268,7 +268,7 @@ class OpenBCICyton(object):
 		while self.streaming:
 
 			# read current sample
-			sample = self._read_serial_binary()
+			sample = self._read_sample()
 			# if a daisy module is attached, wait to concatenate two samples
 			# (main board + daisy) before passing it to callback
 			if self.board_type == cnts.BOARD_DAISY:
