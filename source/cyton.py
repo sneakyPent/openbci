@@ -34,9 +34,9 @@ sys.path.append('..')
 from utils.constants import Constants as cnts
 
 scale_fac_uVolts_per_count = cnts.ADS1299_VREF / \
-							 float((pow(2, 23) - 1)) / cnts.ADS1299_GAIN_24 * 1000000.
+                             float((pow(2, 23) - 1)) / cnts.ADS1299_GAIN_24 * 1000000.
 scale_fac_accel_G_per_count = 0.002 / \
-							  (pow(2, 4))  # assume set to +/4G, so 2 mG
+                              (pow(2, 4))  # assume set to +/4G, so 2 mG
 '''
 #Commands for in SDK http://docs.openbci.com/software/01-Open BCI_SDK:
 
@@ -73,8 +73,8 @@ class OpenBCICyton(object):
 	"""
 
 	def __init__(self, port=None, baud=115200, filter_data=True, scaled_output=True,
-				 daisy=False, aux=False, impedance=False, log=True, timeout=None,
-				 lowerBoundFrequency=None, higherBoundFrequency=100, enabledChannels=None, windowSize=None):
+	             daisy=False, aux=False, impedance=False, log=True, timeout=None,
+	             lowerBoundFrequency=None, higherBoundFrequency=100, enabledChannels=None, windowSize=None):
 		self.baudrate = baud
 		self.timeout = timeout
 		self.log = log  # print_incoming_text needs log
@@ -127,7 +127,6 @@ class OpenBCICyton(object):
 
 	def setHigherBoundFrequency(self, freq):
 		self.higherBoundFrequency = freq
-		pass
 
 	def setWindowSize(self, size):
 		self.windowSize = size
@@ -451,7 +450,7 @@ class OpenBCICyton(object):
 					return sample
 				else:
 					self.warn("ID:<%d> <Unexpected END_BYTE found <%s> instead of <%s>"
-							  % (packet_id, val, cnts.RAW_BYTE_STOP))
+					          % (packet_id, val, cnts.RAW_BYTE_STOP))
 					logging.debug(log_bytes_in)
 					self.packets_dropped = self.packets_dropped + 1
 
@@ -460,7 +459,7 @@ class OpenBCICyton(object):
 			# log how many packets where sent successfully in between warnings
 			if self.log_packet_count:
 				logging.info('Data packets received:' +
-							 str(self.log_packet_count))
+				             str(self.log_packet_count))
 				self.log_packet_count = 0
 			logging.warning(text)
 		print("Warning: %s" % text)
@@ -539,38 +538,38 @@ class OpenBCICyton(object):
 					logging.debug('SKIPPED\n' + skipped_str + '\nSKIPPED')
 					skipped_str = ''
 
-				packet_str = "%03d" % (b) + '|'
+				packet_str = "%03d" % b + '|'
 				b = struct.unpack('B', self.ser.read())[0]
-				packet_str = packet_str + "%03d" % (b) + '|'
+				packet_str = packet_str + "%03d" % b + '|'
 
 				# data channels
 				for i in range(24 - 1):
 					b = struct.unpack('B', self.ser.read())[0]
-					packet_str = packet_str + '.' + "%03d" % (b)
+					packet_str = packet_str + '.' + "%03d" % b
 
 				b = struct.unpack('B', self.ser.read())[0]
-				packet_str = packet_str + '.' + "%03d" % (b) + '|'
+				packet_str = packet_str + '.' + "%03d" % b + '|'
 
 				# aux channels
 				for i in range(6 - 1):
 					b = struct.unpack('B', self.ser.read())[0]
-					packet_str = packet_str + '.' + "%03d" % (b)
+					packet_str = packet_str + '.' + "%03d" % b
 
 				b = struct.unpack('B', self.ser.read())[0]
-				packet_str = packet_str + '.' + "%03d" % (b) + '|'
+				packet_str = packet_str + '.' + "%03d" % b + '|'
 
 				# end byte
 				b = struct.unpack('B', self.ser.read())[0]
 
 				# Valid Packet
 				if b == cnts.RAW_BYTE_STOP:
-					packet_str = packet_str + '.' + "%03d" % (b) + '|VAL'
+					packet_str = packet_str + '.' + "%03d" % b + '|VAL'
 					print(packet_str)
 				# logging.debug(packet_str)
 
 				# Invalid Packet
 				else:
-					packet_str = packet_str + '.' + "%03d" % (b) + '|INV'
+					packet_str = packet_str + '.' + "%03d" % b + '|INV'
 					# Reset
 					self.attempt_reconnect = True
 
@@ -579,7 +578,7 @@ class OpenBCICyton(object):
 				if b == cnts.RAW_BYTE_STOP:
 					skipped_str = skipped_str + '|END|'
 				else:
-					skipped_str = skipped_str + "%03d" % (b) + '.'
+					skipped_str = skipped_str + "%03d" % b + '.'
 
 			if self.attempt_reconnect and \
 					(timeit.default_timer() - self.last_reconnect) > self.reconnect_freq:
