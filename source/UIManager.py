@@ -30,6 +30,20 @@ class MyManager(SyncManager):
 # register the OpenBCICyton class; make its functions accessible via proxy
 MyManager.register('OpenBCICyton', OpenBCICyton)
 
+
+def printData(br, dataDict, _newDataAvailable):
+	while True:
+		_newDataAvailable.wait()
+		b = br
+		while not dataDict.queue.empty():
+			dataDict.lock.acquire()
+			try:
+				dt = dataDict.queue.get()
+				print(dt)
+			finally:
+				dataDict.lock.release()
+
+
 if __name__ == '__main__':
 	try:
 		# create board through manager so as to have a proxy for the object to _share through processes
