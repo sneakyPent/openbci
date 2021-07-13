@@ -39,6 +39,10 @@ class DataManager(object):
 					print("_share Data func:" + dt.__str__())
 					for procArgs in self.processesArgsList:
 						procArgs.lock.acquire()
+						# if any queue for any reason get full release lock and continue to next one
+						if procArgs.queue.full():
+							procArgs.lock.release()
+							continue
 						try:
 							procArgs.queue.put(dt)
 						finally:
