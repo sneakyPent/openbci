@@ -246,7 +246,7 @@ class OpenBCICyton(object):
 			self.ser.close()
 			logging.warning('serial closed')
 
-	def v(self):
+	def stream_one_sample(self):
 		"""
 				This method read one sample per calling and return it to parent method
 
