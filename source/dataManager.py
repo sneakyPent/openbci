@@ -20,11 +20,14 @@ class DataManager(object):
 		self._newDataAvailable = dataManagerEvents.newDataAvailable
 
 	def disableNewDataAvailable(self):
-		while True:
-			NonEmpty = any(proc.queue.qsize() > 0 for proc in self.processesArgsList)
-			if not NonEmpty:
-				self._newDataAvailable.clear()
-				self._share.wait()
+		try:
+			while True:
+				NonEmpty = any(proc.queue.qsize() > 0 for proc in self.processesArgsList)
+				if not NonEmpty:
+					self._newDataAvailable.clear()
+					self._share.wait()
+		except Exception:
+			pass
 
 	def shareData(self):
 		print("shareData: waiting")
