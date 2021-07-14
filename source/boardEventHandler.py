@@ -1,6 +1,6 @@
 import os
 import sys
-from multiprocessing import Process
+from multiprocessing import Process, Event
 from utils.coloringPrint import *
 
 
@@ -12,27 +12,36 @@ class BoardEventHandler:
 		self.dataManagerEvents = dataManagerEvents
 		self.boardSettings = boardSettings
 		self.dataBuffer = dataBuffer
+		self.connected = Event()
 
 	def connect(self):
 		ev = self.boardApiCallEvents.connect
 		while True:
 			ev.wait()
-			printInfo("Connecting...")
-			try:
-				self.board.connect()
-			except OSError:
-				printError("Could not connect to board. Make sure it is properly connected and enabled")
+			if not self.connected.is_set():
+				printInfo("Connecting...")
+				try:
+					self.board.connect()
+					self.connected.set()
+				except OSError:
+					printError("Could not connect to board. Make sure it is properly connected and enabled")
+			else:
+				printInfo("Already have a connection!")
 			ev.clear()
 
 	def disconnect(self):
 		ev = self.boardApiCallEvents.disconnect
 		while True:
 			ev.wait()
-			printInfo("Disconnecting...")
-			try:
-				self.board.disconnect()
-			except:
-				printError("No connection to disconnect from ")
+			if self.connected.is_set():
+				printInfo("Disconnecting...")
+				try:
+					self.board.disconnect()
+					self.connected.clear()
+				except:
+					printError("No connection to disconnect from ")
+			else:
+				printInfo("No connection to disconnect from")
 			ev.clear()
 
 	def startStreaming(self):
@@ -40,30 +49,41 @@ class BoardEventHandler:
 		ev = self.boardApiCallEvents.startStreaming
 		while True:
 			ev.wait()
-			printInfo("Starting streaming...")
-			while ev.is_set():
-				try:
-					sample = self.board.stream_one_sample()
-					self.dataBuffer.put(sample.channel_data)
-					self.dataManagerEvents.share.set()
-				except Exception as e:
-					ev.clear()
-					exc_type, exc_obj, exc_tb = sys.exc_info()
-					fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-					printError("There was a problem on starting streaming in: " + fname.__str__() +
-					           ' line: ' + exc_tb.tb_lineno.__str__() + "\nError Message: " + repr(e))
+			if self.connected.is_set():
+				printInfo("Starting streaming...")
+				while ev.is_set():
+					try:
+						sample = self.board.stream_one_sample()
+						self.dataBuffer.put(sample.channel_data)
+						self.dataManagerEvents.share.set()
+					except Exception as e:
+						ev.clear()
+						exc_type, exc_obj, exc_tb = sys.exc_info()
+						fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+						printError("There was a problem on starting streaming in: " + fname.__str__() +
+						           ' line: ' + exc_tb.tb_lineno.__str__() + "\nError Message: " + repr(e))
+			else:
+				if not self.connected.is_set():
+					printInfo("No connection to stop streaming from.")
+			ev.clear()
 
 	def stopStreaming(self):
 		ev = self.boardApiCallEvents.stopStreaming
 		while True:
 			ev.wait()
-			printInfo("Stopping streaming...")
-			try:
-				self.boardApiCallEvents.startStreaming.clear()
-				self.board.stopStreaming()
-			except:
-				printError("There is no stream to stop")
-			# self.dataManagerEvents.share.clear()
+			if self.connected.is_set() and self.boardApiCallEvents.startStreaming.is_set():
+				printInfo("Stopping streaming...")
+				try:
+					self.boardApiCallEvents.startStreaming.clear()
+					self.board.stopStreaming()
+				except:
+					printError("There is no stream to stop.")
+			else:
+				if not self.connected.is_set():
+					printInfo("No connection to stop streaming from.")
+				elif not self.boardApiCallEvents.startStreaming.is_set():
+					printInfo("No active streaming to stop.")
+
 			ev.clear()
 
 	def newBoardSettingsAvailable(self):
