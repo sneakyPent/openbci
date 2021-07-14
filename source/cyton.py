@@ -19,6 +19,7 @@ TODO: enable impedance
 """
 
 from __future__ import print_function
+import os
 import serial
 import struct
 import numpy as np
@@ -29,6 +30,8 @@ import logging
 import threading
 import glob
 import sys
+
+from utils.coloringPrint import *
 
 sys.path.append('..')
 from utils.constants import Constants as cnts
@@ -214,17 +217,17 @@ class OpenBCICyton(object):
 	# API CALLS
 	def connect(self):
 		if not self.port:
-			print("Searching for connection port...")
+			printInfo("Searching for connection port...")
 			self.port = self.find_port()
 
-		print("Connecting to V3 at port %s" % self.port)
+		printInfo("Connecting to V3 at port %s" % self.port)
 		if self.port == "loop://":
 			# For testing purposes
 			self.ser = serial.serial_for_url(self.port, baudrate=self.baudrate, timeout=self.timeout)
 		else:
 			self.ser = serial.Serial(port=self.port, baudrate=self.baudrate, timeout=self.timeout)
 
-		print("Serial established...")
+		printSuccess("Serial established...")
 
 		time.sleep(2)
 		# Initialize 32-bit board, doesn't affect 8bit board
