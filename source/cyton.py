@@ -255,50 +255,57 @@ class OpenBCICyton(object):
 		  callback: A callback function, or a list of functions, that will receive a single
 		   argument of the OpenBCISample object captured.
 		"""
-		if not self.streaming:
-			self.ser.write(cnts.startStreamingData)
-			self.streaming = True
+		try:
+			if not self.streaming:
+				self.ser.write(cnts.startStreamingData)
+				self.streaming = True
 
-		start_time = timeit.default_timer()
+			start_time = timeit.default_timer()
 
-		# Enclose callback function in a list if it comes alone
-		if not isinstance(callback, list):
-			callback = [callback]
+			# Enclose callback function in a list if it comes alone
+			if not isinstance(callback, list):
+				callback = [callback]
 
-		# Initialize check connection
-		self.check_connection()
+			# Initialize check connection
+			self.check_connection()
 
-		while self.streaming:
+			while self.streaming:
 
-			# read current sample
-			sample = self._read_sample()
-			# if a daisy module is attached, wait to concatenate two samples
-			# (main board + daisy) before passing it to callback
-			if self.board_type == cnts.BOARD_DAISY:
-				# odd sample: daisy sample, save for later
-				if ~sample.id % 2:
-					self.last_odd_sample = sample
-				# even sample: concatenate and send if last sample was the fist part,
-				#  otherwise drop the packet
-				elif sample.id - 1 == self.last_odd_sample.id:
-					# the aux data will be the average between the two samples, as the channel
-					#  samples themselves have been averaged by the board
-					avg_aux_data = list(
-						(np.array(sample.aux_data) + np.array(self.last_odd_sample.aux_data)) / 2)
-					whole_sample = OpenBCISample(sample.id,
-					                             sample.channel_data +
-					                             self.last_odd_sample.channel_data,
-					                             avg_aux_data)
+				# read current sample
+				sample = self._read_sample()
+				# if a daisy module is attached, wait to concatenate two samples
+				# (main board + daisy) before passing it to callback
+				if self.board_type == cnts.BOARD_DAISY:
+					# odd sample: daisy sample, save for later
+					if ~sample.id % 2:
+						self.last_odd_sample = sample
+					# even sample: concatenate and send if last sample was the fist part,
+					#  otherwise drop the packet
+					elif sample.id - 1 == self.last_odd_sample.id:
+						# the aux data will be the average between the two samples, as the channel
+						#  samples themselves have been averaged by the board
+						avg_aux_data = list(
+							(np.array(sample.aux_data) + np.array(self.last_odd_sample.aux_data)) / 2)
+						whole_sample = OpenBCISample(sample.id,
+						                             sample.channel_data +
+						                             self.last_odd_sample.channel_data,
+						                             avg_aux_data)
+						for call in callback:
+							call(whole_sample)
+				else:
 					for call in callback:
-						call(whole_sample)
-			else:
-				for call in callback:
-					call(sample)
+						call(sample)
 
-			if 0 < lapse < (timeit.default_timer() - start_time):
-				self.stopStreaming()
-			if self.log:
-				self.log_packet_count = self.log_packet_count + 1
+				if 0 < lapse < (timeit.default_timer() - start_time):
+					self.stopStreaming()
+				if self.log:
+					self.log_packet_count = self.log_packet_count + 1
+		except Exception as e:
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+			print(exc_type, fname, exc_tb.tb_lineno)
+			printError("There was a problem on starting streaming in: " + fname.__str__() +
+			           ' line: ' + exc_tb.tb_lineno.__str__() + "\nError Message: " + repr(e))
 
 	def stopStreaming(self):
 		print("Stopping streaming...\nWait for buffer to flush...")
@@ -489,9 +496,7 @@ class OpenBCICyton(object):
 
 	def openbci_id(self, ser):
 		"""
-
 		When automatically detecting port, parse the serial return for the "OpenBCI" ID.
-
 		"""
 		line = ''
 		# Wait for device to send data
