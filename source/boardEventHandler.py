@@ -30,8 +30,7 @@ class BoardEventHandler:
 			ev.wait()
 			printInfo("Disconnecting...")
 			try:
-				if self.board.ser_inWaiting():
-					self.board.disconnect()
+				self.board.disconnect()
 			except:
 				printError("No connection to disconnect from ")
 			ev.clear()
