@@ -36,35 +36,22 @@ class BoardEventHandler:
 			ev.clear()
 
 	def startStreaming(self):
-		class MyManager(BaseManager):
-			pass
-
-		class SampleHandler:
-			tst = self.dataBuffer
-			e = self.dataManagerEvents
-
-			def addInQueue(self, sample):
-				self.tst.put(sample.channel_data)
-				self.e.share.set()
-
-			def printSample(self, sample):
-				print(sample.channel_data)
-
-		MyManager.register('SampleHandler', SampleHandler)
-
-		manager = MyManager()
-		manager.start()
-		sampleHandler = manager.SampleHandler()
 
 		ev = self.boardApiCallEvents.startStreaming
 		while True:
 			ev.wait()
-			printInfo("Starting streaming..")
-			ev.clear()
-			try:
-				self.board.start_streaming(sampleHandler.addInQueue)
-			except:
-				printError("There was a problem on starting streaming")
+			printInfo("Starting streaming...")
+			while ev.is_set():
+				try:
+					sample = self.board.stream_one_sample()
+					self.dataBuffer.put(sample.channel_data)
+					self.dataManagerEvents.share.set()
+				except Exception as e:
+					ev.clear()
+					exc_type, exc_obj, exc_tb = sys.exc_info()
+					fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+					printError("There was a problem on starting streaming in: " + fname.__str__() +
+					           ' line: ' + exc_tb.tb_lineno.__str__() + "\nError Message: " + repr(e))
 
 	def stopStreaming(self):
 		ev = self.boardApiCallEvents.stopStreaming
@@ -72,6 +59,7 @@ class BoardEventHandler:
 			ev.wait()
 			printInfo("Stopping streaming...")
 			try:
+				self.boardApiCallEvents.startStreaming.clear()
 				self.board.stopStreaming()
 			except:
 				printError("There is no stream to stop")
