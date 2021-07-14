@@ -246,6 +246,41 @@ class OpenBCICyton(object):
 			self.ser.close()
 			logging.warning('serial closed')
 
+	def v(self):
+		"""
+				This method read one sample per calling and return it to parent method
+
+		"""
+		if not self.streaming:
+			self.ser.write(cnts.startStreamingData)
+			self.streaming = True
+
+		# Initialize check connection
+		self.check_connection()
+
+		# read current sample
+		sample = self._read_sample()
+		# if a daisy module is attached, wait to concatenate two samples
+		# (main board + daisy) before passing it to callback
+		if self.board_type == cnts.BOARD_DAISY:
+			# odd sample: daisy sample, save for later
+			if ~sample.id % 2:
+				self.last_odd_sample = sample
+			# even sample: concatenate and send if last sample was the fist part,
+			#  otherwise drop the packet
+			elif sample.id - 1 == self.last_odd_sample.id:
+				# the aux data will be the average between the two samples, as the channel
+				#  samples themselves have been averaged by the board
+				avg_aux_data = list(
+					(np.array(sample.aux_data) + np.array(self.last_odd_sample.aux_data)) / 2)
+				whole_sample = OpenBCISample(sample.id,
+				                             sample.channel_data +
+				                             self.last_odd_sample.channel_data,
+				                             avg_aux_data)
+				return whole_sample
+		else:
+			return sample
+
 	def start_streaming(self, callback, lapse=-1):
 		"""
 		Start handling streaming data from the board. Call a provided callback
