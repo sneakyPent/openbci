@@ -1,5 +1,6 @@
+import os
+import sys
 from multiprocessing import Process
-from multiprocessing.managers import BaseManager
 from utils.coloringPrint import *
 
 
@@ -16,7 +17,7 @@ class BoardEventHandler:
 		ev = self.boardApiCallEvents.connect
 		while True:
 			ev.wait()
-			printInfo("Connecting..")
+			printInfo("Connecting...")
 			try:
 				self.board.connect()
 			except OSError:
@@ -27,7 +28,7 @@ class BoardEventHandler:
 		ev = self.boardApiCallEvents.disconnect
 		while True:
 			ev.wait()
-			printInfo("Disconnecting..")
+			printInfo("Disconnecting...")
 			try:
 				if self.board.ser_inWaiting():
 					self.board.disconnect()
@@ -70,7 +71,7 @@ class BoardEventHandler:
 		ev = self.boardApiCallEvents.stopStreaming
 		while True:
 			ev.wait()
-			printInfo("Stopping streaming..")
+			printInfo("Stopping streaming...")
 			try:
 				self.board.stopStreaming()
 			except:
@@ -82,7 +83,7 @@ class BoardEventHandler:
 		ev = self.boardApiCallEvents.newBoardSettingsAvailable
 		while True:
 			ev.wait()
-			printInfo("New board setting Available..")
+			printInfo("New board setting Available...")
 			if self.boardSettings["lowerBand"] != self.board.getLowerBoundFrequency():
 				self.board.setLowerBoundFrequency(self.boardSettings["lowerBand"])
 			if self.boardSettings["upperBand"] != self.board.getHigherBoundFrequency():
