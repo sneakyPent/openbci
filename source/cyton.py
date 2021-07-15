@@ -31,6 +31,7 @@ import threading
 import glob
 import sys
 
+from utils import filters
 from utils.coloringPrint import *
 
 sys.path.append('..')
@@ -398,7 +399,8 @@ class OpenBCICyton(object):
 			packet_channel_data = self.get_channel_data_array(packet)
 			packet_aux_data = self.get_aux_data_array(packet)
 			packet_stop_byte = packet[cnts.RAW_PACKET_POSITION_STOP_BYTE]
-
+			if self.filtering_data:
+				packet_channel_data = self.filterChannel(packet_channel_data)
 			if is_stop_byte(packet_stop_byte):
 				sample = OpenBCISample(packet_id, packet_channel_data, packet_aux_data)
 				self.packets_dropped = 0
@@ -827,6 +829,14 @@ class OpenBCICyton(object):
 				scale_fac_accel_G_per_count * dt if self.scaling_output else dt
 			)
 		return channel_data
+
+	def filterChannel(self, channel_data):
+		filteredData = []
+		for i in range(len(channel_data)):
+			filteredData.append(
+				filters.bandpass([channel_data[i]], self.lowerBoundFrequency, self.higherBoundFrequency,
+				                 self.sample_rate).item(0))
+		return filteredData
 
 
 def is_stop_byte(byte):
