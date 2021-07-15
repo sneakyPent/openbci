@@ -99,16 +99,7 @@ class BoardEventHandler:
 		while True:
 			self.newBoardSettingsAvailableEvent.wait()
 			printInfo("New board setting Available...")
-			if self.boardSettings["lowerBand"] != self.board.getLowerBoundFrequency():
-				self.board.setLowerBoundFrequency(self.boardSettings["lowerBand"])
-			if self.boardSettings["upperBand"] != self.board.getHigherBoundFrequency():
-				self.board.setHigherBoundFrequency(self.boardSettings["upperBand"])
-			if self.boardSettings["windowSize"] != self.board.getWindowSize():
-				self.board.setWindowSize(self.boardSettings["windowSize"])
-			if self.boardSettings["filtering_data"] != self.board.isFilteringData():
-				self.board.setFilteringData(self.boardSettings["filtering_data"])
-			if self.boardSettings["scaling_output"] != self.board.isScalingOutput():
-				self.board.setScaledOutput(self.boardSettings["scaling_output"])
+			self.board.setBoardSettingAttributes(self.boardSettings)
 			self.newBoardSettingsAvailableEvent.clear()
 
 	"""     Assistive functions     """

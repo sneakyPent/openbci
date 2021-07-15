@@ -51,7 +51,9 @@ if __name__ == '__main__':
 		manager.start()
 		board = manager.OpenBCICyton()
 		dataBuffer = manager.Queue(maxsize=maxQueueSize)
-		boardCytonSettings = manager.dict()
+		# add the board settings in the boardCytonSettings will be given to the boardEventHandler and guiProcess
+		# Through this dictionary, the board settings given from ui, will be applied to board data
+		boardCytonSettings = manager.dict(board.getBoardSettingAttributes())
 
 		# Events will be used for the dataManager
 		dataManagerEvents = DottedDict({
@@ -64,14 +66,6 @@ if __name__ == '__main__':
 		printDataProcArgs = DottedDict({"queue": Queue(maxsize=maxQueueSize), "lock": Lock()})
 		# add queue and lock in the lists
 		processesArgsList = [guiProcArgs, printDataProcArgs]
-
-		# add the board settings in the boardCytonSettings will be given to the boardEventHandler and guiProcess
-		# Through this dictionary the board settings,given from ui, will be applied to board data
-		boardCytonSettings["lowerBand"] = None
-		boardCytonSettings["upperBand"] = None
-		boardCytonSettings["windowSize"] = None
-		boardCytonSettings["filtering_data"] = None
-		boardCytonSettings["scaling_output"] = None
 
 		# init DataManager and event BoardEventHandler
 		dataManager = DataManager(dataBuffer, processesArgsList, dataManagerEvents)

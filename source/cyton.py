@@ -78,7 +78,7 @@ class OpenBCICyton(object):
 
 	def __init__(self, port=None, baud=115200, filter_data=True, scaled_output=True,
 	             daisy=False, aux=False, impedance=False, log=True, timeout=None,
-	             lowerBoundFrequency=None, higherBoundFrequency=100, enabledChannels=None, windowSize=None):
+	             lowerBoundFrequency=None, higherBoundFrequency=None, enabledChannels=None, windowSize=None):
 		self.baudrate = baud
 		self.timeout = timeout
 		self.log = log  # print_incoming_text needs log
@@ -166,6 +166,18 @@ class OpenBCICyton(object):
 		""" Enable/disable impedance measure. Not implemented at the moment on Cyton. """
 		return
 
+	def setBoardSettingAttributes(self, settings):
+		if settings["lowerBand"] != self.getLowerBoundFrequency():
+			self.setLowerBoundFrequency(settings["lowerBand"])
+		if settings["upperBand"] != self.getHigherBoundFrequency():
+			self.setHigherBoundFrequency(settings["upperBand"])
+		if settings["windowSize"] != self.getWindowSize():
+			self.setWindowSize(settings["windowSize"])
+		if settings["filtering_data"] != self.isFilteringData():
+			self.setFilteringData(settings["filtering_data"])
+		if settings["scaling_output"] != self.isScalingOutput():
+			self.setScaledOutput(settings["scaling_output"])
+
 	# GET BOARD VARIABLES FUNCTIONS
 
 	def getBoardType(self):
@@ -201,6 +213,17 @@ class OpenBCICyton(object):
 
 	def getAvailableNbImpChannels(self):
 		return self.imp_channels_per_sample
+
+	def getBoardSettingAttributes(self):
+		return {
+			"lowerBand": self.lowerBoundFrequency,
+			"upperBand": self.higherBoundFrequency,
+			"windowSize": self.windowSize,
+			"filtering_data": self.filtering_data,
+			"scaling_output": self.scaling_output,
+			"enabledChannels": self.enabledChannels
+
+		}
 
 	# SERIAL PORT FUNCTIONS
 	def ser_write(self, b):
