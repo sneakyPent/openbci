@@ -61,8 +61,11 @@ class BoardEventHandler:
 				while self.startStreamingEvent.is_set():
 					try:
 						sample = self.board.stream_one_sample()
-						self.dataBuffer.put(sample.channel_data)
-						self.dataManagerEvents.share.set()
+						if not self.dataBuffer.full():
+							self.dataBuffer.put(sample.channel_data)
+							self.dataManagerEvents.share.set()
+						else:
+							printError('Data buffer queue is full')
 					except Exception as e:
 						self.startStreamingEvent.clear()
 						exc_type, exc_obj, exc_tb = sys.exc_info()
