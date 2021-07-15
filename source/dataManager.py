@@ -1,4 +1,4 @@
-from multiprocessing import Process
+from multiprocessing import Process, Event
 
 
 class DataManager(object):
@@ -7,27 +7,34 @@ class DataManager(object):
 
 		Args:
 			data: queue type data will be shared
-			processesArgsList: A list of dictionaries with queues the data will get into and their locks
-			dataManagerEvents.share: Event used to wait when there is no data to _share
-			dataManagerEvents.newDataAvailable: Event used to inform ,for new data, every other process that is using at least one of
-								the queues contained in processesQueuesList
-		"""
+			processesArgsList: A list of dictionaries with queues and their locks for the other processes the data will be shared
 
-	def __init__(self, data, processesArgsList, dataManagerEvents):
+	"""
+
+	def __init__(self, data, processesArgsList):
 		self.data = data
 		self.processesArgsList = processesArgsList
-		self._share = dataManagerEvents.share
-		self._newDataAvailable = dataManagerEvents.newDataAvailable
+
+		# share event will be set only by the process will be put data into primary 'data' queue
+		self.share = Event()
+		# newDataAvailable event will be used by the other processes to wait for new data and it set by DataManager only
+		self.newDataAvailable = Event()
 
 	def disableNewDataAvailable(self):
 		try:
 			while True:
 				NonEmpty = any(proc.queue.qsize() > 0 for proc in self.processesArgsList)
 				if not NonEmpty:
-					self._newDataAvailable.clear()
-					self._share.wait()
+					self.newDataAvailable.clear()
+					self.share.wait()
 		except Exception:
 			pass
+
+	def getDataManagerEvents(self):
+		return {
+			"share": self.share,
+			"newDataAvailable": self.newDataAvailable,
+		}
 
 	def shareData(self):
 		print("shareData: waiting")
@@ -36,7 +43,7 @@ class DataManager(object):
 		p.start()
 		try:
 			while True:
-				self._share.wait()
+				self.share.wait()
 				while not self.data.empty():
 					dt = self.data.get()
 					print("_share Data func:" + dt.__str__())
@@ -50,7 +57,7 @@ class DataManager(object):
 							procArgs.queue.put(dt)
 						finally:
 							procArgs.lock.release()
-					self._newDataAvailable.set()
-				self._share.clear()
+					self.newDataAvailable.set()
+				self.share.clear()
 		except KeyboardInterrupt:
 			p.terminate()

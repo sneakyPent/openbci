@@ -55,24 +55,21 @@ if __name__ == '__main__':
 		# Through this dictionary, the board settings given from ui, will be applied to board data
 		boardCytonSettings = manager.dict(board.getBoardSettingAttributes())
 
-		# Events will be used for the dataManager
-		dataManagerEvents = DottedDict({
-			"share": Event(),
-			"newDataAvailable": Event(),
-		})
-
 		# main queue that will read data from board
 		guiProcArgs = DottedDict({"queue": Queue(maxsize=maxQueueSize), "lock": Lock()})
 		printDataProcArgs = DottedDict({"queue": Queue(maxsize=maxQueueSize), "lock": Lock()})
 		# add queue and lock in the lists
 		processesArgsList = [guiProcArgs, printDataProcArgs]
 
-		# init DataManager and event BoardEventHandler
-		dataManager = DataManager(dataBuffer, processesArgsList, dataManagerEvents)
-		boardEventHandler = BoardEventHandler(board, boardCytonSettings, dataManagerEvents,
-		                                      dataBuffer)
+		# Create a DataManager Instance
+		dataManager = DataManager(dataBuffer, processesArgsList)
+		# Events will be used for the dataManager
+		dataManagerEvents = DottedDict(dataManager.getDataManagerEvents())
+		# Create a BoardEventHandler Instance
+		boardEventHandler = BoardEventHandler(board, boardCytonSettings, dataManagerEvents, dataBuffer)
 		# events will be used to control board through any gui
 		boardApiCallEvents = DottedDict(boardEventHandler.getBoardHandlerEvents())
+
 		mode = args.mode[0]
 		if mode == 'pygui':
 
