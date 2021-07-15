@@ -1,3 +1,6 @@
+import time
+
+
 class Constants:
 	"""The constants!"""
 
@@ -159,3 +162,7 @@ class Constants:
 	ENDC = '\033[0m'
 	BOLD = '\033[1m'
 	UNDERLINE = '\033[4m'
+
+	"""Streaming File names"""
+
+	dateTimeFilename = 'Streaming' + time.strftime("%d_%m_%Y_%H:%M:%S")
