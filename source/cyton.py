@@ -256,7 +256,9 @@ class OpenBCICyton(object):
 			self.streaming = True
 
 		# Initialize check connection
-		self.check_connection()
+		# TODO: check_connection creates a lot of threads and crashes system
+		#   check what's it doing and replace functionality
+		# self.check_connection()
 
 		# read current sample
 		sample = self._read_sample()
