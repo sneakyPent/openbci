@@ -823,7 +823,6 @@ class OpenBCICyton(object):
 			# convert the 24-bit signed integer format data into a more standard 32-bit signed integer
 			dt = interpret_24_bit_as_int_32(bytes(currentChannel))
 			# append current channel data to the list, scaled or not depend on the board settings
-			# TODO: put scale factor in constants or sth like that
 			channel_data.append(
 				scale_fac_uVolts_per_count * dt if self.scaling_output else dt
 			)
@@ -847,7 +846,6 @@ class OpenBCICyton(object):
 			# convert the 16-bit signed integer format data into a more standard 32-bit signed integer
 			dt = interpret_16_bit_as_int_32(bytes(currentAux))
 			# append current aux data to the list, scaled or not depend on the board settings
-			# TODO: put scale factor in constants or sth like that
 			channel_data.append(
 				scale_fac_accel_G_per_count * dt if self.scaling_output else dt
 			)
