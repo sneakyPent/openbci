@@ -53,14 +53,6 @@ if __name__ == '__main__':
 		dataBuffer = manager.Queue(maxsize=maxQueueSize)
 		boardCytonSettings = manager.dict()
 
-		# events will be used to control board through any gui
-		boardApiCallEvents = DottedDict({
-			"connect": Event(),
-			"disconnect": Event(),
-			"startStreaming": Event(),
-			"stopStreaming": Event(),
-			"newBoardSettingsAvailable": Event()
-		})
 		# Events will be used for the dataManager
 		dataManagerEvents = DottedDict({
 			"share": Event(),
@@ -83,9 +75,10 @@ if __name__ == '__main__':
 
 		# init DataManager and event BoardEventHandler
 		dataManager = DataManager(dataBuffer, processesArgsList, dataManagerEvents)
-		boardEventHandler = BoardEventHandler(board, boardApiCallEvents, boardCytonSettings, dataManagerEvents,
+		boardEventHandler = BoardEventHandler(board, boardCytonSettings, dataManagerEvents,
 		                                      dataBuffer)
-
+		# events will be used to control board through any gui
+		boardApiCallEvents = DottedDict(boardEventHandler.getBoardHandlerEvents())
 		mode = args.mode[0]
 		if mode == 'pygui':
 

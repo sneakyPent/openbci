@@ -6,18 +6,28 @@ from utils.coloringPrint import *
 
 class BoardEventHandler:
 
-	def __init__(self, board, boardApiCallEvents, boardSettings, dataManagerEvents, dataBuffer):
+	def __init__(self, board, boardSettings, dataManagerEvents, dataBuffer):
 		self.board = board
-		self.boardApiCallEvents = boardApiCallEvents
 		self.dataManagerEvents = dataManagerEvents
 		self.boardSettings = boardSettings
+		# The data buffer queue used to put streaming data
 		self.dataBuffer = dataBuffer
 		self.connected = Event()
 
+		# events used to start and stop the BoardEventHandler functions
+		self.connectEvent = Event()
+		self.disconnectEvent = Event()
+		self.startStreamingEvent = Event()
+		self.stopStreamingEvent = Event()
+		self.newBoardSettingsAvailableEvent = Event()
+
+	""" 
+				Action Functions
+	"""
+
 	def connect(self):
-		ev = self.boardApiCallEvents.connect
 		while True:
-			ev.wait()
+			self.connectEvent.wait()
 			if not self.connected.is_set():
 				printInfo("Connecting...")
 				try:
@@ -27,12 +37,11 @@ class BoardEventHandler:
 					printError("Could not connect to board. Make sure it is properly connected and enabled")
 			else:
 				printInfo("Already have a connection!")
-			ev.clear()
+			self.connectEvent.clear()
 
 	def disconnect(self):
-		ev = self.boardApiCallEvents.disconnect
 		while True:
-			ev.wait()
+			self.disconnectEvent.wait()
 			if self.connected.is_set():
 				printInfo("Disconnecting...")
 				try:
@@ -42,22 +51,20 @@ class BoardEventHandler:
 					printError("No connection to disconnect from ")
 			else:
 				printInfo("No connection to disconnect from")
-			ev.clear()
+			self.disconnectEvent.clear()
 
 	def startStreaming(self):
-
-		ev = self.boardApiCallEvents.startStreaming
 		while True:
-			ev.wait()
+			self.startStreamingEvent.wait()
 			if self.connected.is_set():
 				printInfo("Starting streaming...")
-				while ev.is_set():
+				while self.startStreamingEvent.is_set():
 					try:
 						sample = self.board.stream_one_sample()
 						self.dataBuffer.put(sample.channel_data)
 						self.dataManagerEvents.share.set()
 					except Exception as e:
-						ev.clear()
+						self.startStreamingEvent.clear()
 						exc_type, exc_obj, exc_tb = sys.exc_info()
 						fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 						printError("There was a problem on starting streaming in: " + fname.__str__() +
@@ -65,31 +72,29 @@ class BoardEventHandler:
 			else:
 				if not self.connected.is_set():
 					printInfo("No connection to stop streaming from.")
-			ev.clear()
+			self.startStreamingEvent.clear()
 
 	def stopStreaming(self):
-		ev = self.boardApiCallEvents.stopStreaming
 		while True:
-			ev.wait()
-			if self.connected.is_set() and self.boardApiCallEvents.startStreaming.is_set():
+			self.stopStreamingEvent.wait()
+			if self.connected.is_set() and self.startStreamingEvent.is_set():
 				printInfo("Stopping streaming...")
 				try:
-					self.boardApiCallEvents.startStreaming.clear()
+					self.startStreamingEvent.clear()
 					self.board.stopStreaming()
 				except:
 					printError("There is no stream to stop.")
 			else:
 				if not self.connected.is_set():
 					printInfo("No connection to stop streaming from.")
-				elif not self.boardApiCallEvents.startStreaming.is_set():
+				elif not self.startStreamingEvent.is_set():
 					printInfo("No active streaming to stop.")
 
-			ev.clear()
+			self.stopStreamingEvent.clear()
 
 	def newBoardSettingsAvailable(self):
-		ev = self.boardApiCallEvents.newBoardSettingsAvailable
 		while True:
-			ev.wait()
+			self.newBoardSettingsAvailableEvent.wait()
 			printInfo("New board setting Available...")
 			if self.boardSettings["lowerBand"] != self.board.getLowerBoundFrequency():
 				self.board.setLowerBoundFrequency(self.boardSettings["lowerBand"])
@@ -101,7 +106,22 @@ class BoardEventHandler:
 				self.board.setFilteringData(self.boardSettings["filtering_data"])
 			if self.boardSettings["scaling_output"] != self.board.isScalingOutput():
 				self.board.setScaledOutput(self.boardSettings["scaling_output"])
-			ev.clear()
+			self.newBoardSettingsAvailableEvent.clear()
+
+	"""     Assistive functions     """
+
+	def getBoardHandlerEvents(self):
+		"""
+		Returns the events used to start and stop the BoardEventHandler functions in dictionary format
+
+		"""
+		return {
+			"connect": self.connectEvent,
+			"disconnect": self.disconnectEvent,
+			"startStreaming": self.startStreamingEvent,
+			"stopStreaming": self.stopStreamingEvent,
+			"newBoardSettingsAvailable": self.newBoardSettingsAvailableEvent
+		}
 
 	def start(self):
 		procList = []
