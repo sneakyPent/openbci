@@ -38,12 +38,10 @@ class GUI(QMainWindow):
 		self.mainLayout.addLayout(self.boardSettingLayout, 0, 0)
 		# add a layout for the graphs
 		self.graphLayout = QVBoxLayout()
-		self.mainLayout.addLayout(self.graphLayout, 0, 0, 2, 5)
+		self.mainLayout.addLayout(self.graphLayout, 1, 0, 2, 5)
 
 		# enable not stretching layouts on the vertical axis
 		self.mainLayout.setRowStretch(self.mainLayout.rowCount(), 1)
-		# enable not stretching layouts on the horizontal axis
-		self.mainLayout.setColumnStretch(self.mainLayout.columnCount(), 1)
 
 		# init settings bar and menu bar
 		self.initBoardSettingsBar()
@@ -108,7 +106,6 @@ class GUI(QMainWindow):
 		self.freqComboChoices.addItems(cnst.bandPassFreqList)
 		freqCombo.addWidget(freqComboTitle)
 		freqCombo.addWidget(self.freqComboChoices)
-		freqCombo.addStretch()
 		self.freqComboChoices.activated[str].connect(self.freqComboClick)
 
 		# add frequency combo to boardSettingLayout
@@ -125,7 +122,6 @@ class GUI(QMainWindow):
 		self.timeWindowComboChoices.addItems(cnst.windowSizeList)
 		timeWindowCombo.addWidget(timeWindowComboTitle)
 		timeWindowCombo.addWidget(self.timeWindowComboChoices)
-		timeWindowCombo.addStretch()
 		self.timeWindowComboChoices.activated[str].connect(self.windowComboClick)
 
 		# add timeWindow combo to boardSettingLayout
