@@ -12,3 +12,6 @@ python-sudo.sh
 .idea/*
 .idea/codeStyleSettings.xml
 .idea/vcs.xml
+
+# stream data result files directory
+streamData/
