@@ -6,7 +6,7 @@ from utils.coloringPrint import *
 
 class BoardEventHandler:
 
-	def __init__(self, board, boardSettings, dataManagerEvents, dataBuffer):
+	def __init__(self, board, boardSettings, dataManagerEvents, dataBuffer,writeDataEvent):
 		self.board = board
 		self.dataManagerEvents = dataManagerEvents
 		self.boardSettings = boardSettings
@@ -14,6 +14,7 @@ class BoardEventHandler:
 		self.dataBuffer = dataBuffer
 		self.connected = Event()
 		self.shutdownEvent = None
+		self.writeDataEvent = writeDataEvent
 
 		# events used to start and stop the BoardEventHandler functions
 		self.connectEvent = Event()
@@ -91,6 +92,7 @@ class BoardEventHandler:
 					printInfo("Stopping streaming...")
 					try:
 						self.startStreamingEvent.clear()
+						self.writeDataEvent.set()
 						self.board.stopStreaming()
 					except:
 						printError("There is no stream to stop.")

@@ -170,7 +170,6 @@ class GUI(QMainWindow):
 		self.boardApiCallEvents.startStreaming.set()
 
 	def stopStreaming(self):
-		self.writeDataEvent.set()
 		self.boardApiCallEvents.stopStreaming.set()
 
 	def connectBoard(self):

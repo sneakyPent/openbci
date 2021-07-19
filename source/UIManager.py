@@ -95,7 +95,7 @@ if __name__ == '__main__':
 	# Events will be used for the dataManager
 	dataManagerEvents = DottedDict(dataManager.getDataManagerEvents())
 	# Create a BoardEventHandler Instance
-	boardEventHandler = BoardEventHandler(board, boardCytonSettings, dataManagerEvents, dataBuffer)
+	boardEventHandler = BoardEventHandler(board, boardCytonSettings, dataManagerEvents, dataBuffer,writeDataEvent)
 	# events will be used to control board through any gui
 	boardApiCallEvents = DottedDict(boardEventHandler.getBoardHandlerEvents())
 
