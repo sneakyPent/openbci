@@ -36,14 +36,14 @@ class DataManager(object):
 			"newDataAvailable": self.newDataAvailable,
 		}
 
-	def shareData(self):
+	def shareData(self, _shutdownEvent):
 		print("shareData: waiting")
 		print("shareData size: " + self.data.qsize().__str__())
 		p = Process(target=self.disableNewDataAvailable)
 		p.start()
-		try:
-			while True:
-				self.share.wait()
+		while not _shutdownEvent.is_set():
+			self.share.wait(1)
+			if self.share.is_set():
 				while not self.data.empty():
 					dt = self.data.get()
 					print("_share Data func:" + dt.__str__())
@@ -59,5 +59,4 @@ class DataManager(object):
 							procArgs.lock.release()
 					self.newDataAvailable.set()
 				self.share.clear()
-		except KeyboardInterrupt:
-			p.terminate()
+		p.terminate()

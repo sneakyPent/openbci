@@ -10,12 +10,16 @@ colors = 'rgbycmwr'
 
 
 class GUI(QMainWindow):
-	def __init__(self, dataDict, board, boardApiCallEvents, boardCytonSettings):
+	def __init__(self, dataDict, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
+	             writeDataEvent):
 		super().__init__()
 
 		self.dataDict = dataDict
+		self.newDataAvailableEvent = newDataAvailableEvent
 		self.board = board
 		self.boardApiCallEvents = boardApiCallEvents
+		self.shutdownEvent = _shutdownEvent
+		self.writeDataEvent = writeDataEvent
 		self.boardCytonSettings = boardCytonSettings
 		self.graphData = []
 
@@ -170,6 +174,7 @@ class GUI(QMainWindow):
 		self.boardApiCallEvents.startStreaming.set()
 
 	def stopStreaming(self):
+		self.writeDataEvent.set()
 		self.boardApiCallEvents.stopStreaming.set()
 
 	def connectBoard(self):
@@ -179,6 +184,9 @@ class GUI(QMainWindow):
 		self.boardApiCallEvents.disconnect.set()
 
 	def quitGUI(self):
+		while self.writeDataEvent.is_set():
+			pass
+		self.shutdownEvent.set()
 		QApplication.instance().quit()
 
 	#  calling functions
@@ -230,9 +238,12 @@ class GUI(QMainWindow):
 			print("scalingDataFunction ERROR!")
 
 
-def startGUI(dataDict, board, boardApiCallEvents, boardCytonSettings):
+
+def startGUI(dataDict, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
+             writeDataEvent):
 	app = QApplication(sys.argv)
-	gui = GUI(dataDict, board, boardApiCallEvents, boardCytonSettings)
+	gui = GUI(dataDict, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
+	          writeDataEvent)
 	gui.show()
 	sys.exit(app.exec_())
 

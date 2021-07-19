@@ -1,6 +1,9 @@
 import time
 
 
+def dateTimeFilename(): return Constants.destinationFolder + 'Streaming' + time.strftime("%d_%m_%Y_%H:%M:%S")
+
+
 class Constants:
 	"""The constants!"""
 
@@ -164,5 +167,4 @@ class Constants:
 	UNDERLINE = '\033[4m'
 
 	"""Streaming File names"""
-
-	dateTimeFilename = 'Streaming' + time.strftime("%d_%m_%Y_%H:%M:%S")
+	destinationFolder = '../streamData/'
