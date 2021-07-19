@@ -149,7 +149,7 @@ class OpenBCICyton(object):
 		"""
 		self.enabledChannels = []
 		for channel in channelsList:
-			if 0 < channel < self.number_of_channels:
+			if 0 < channel <= self.number_of_channels:
 				self.set_channel(channel, 1)
 				self.number_of_channels.append(channel)
 			#           TODO: remove that after check
