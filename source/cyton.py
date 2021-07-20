@@ -78,7 +78,8 @@ class OpenBCICyton(object):
 
 	def __init__(self, port=None, baud=115200, filter_data=True, scaled_output=True,
 	             daisy=False, aux=False, impedance=False, log=True, timeout=None,
-	             lowerBoundFrequency=None, higherBoundFrequency=None, enabledChannels=None, windowSize=None):
+	             lowerBoundFrequency=None, higherBoundFrequency=None, enabledChannels=None, windowSize=None,
+	             windowStepSize=None):
 		self.baudrate = baud
 		self.timeout = timeout
 		self.log = log  # print_incoming_text needs log
@@ -93,6 +94,7 @@ class OpenBCICyton(object):
 		self.lowerBoundFrequency = lowerBoundFrequency
 		self.higherBoundFrequency = higherBoundFrequency
 		self.windowSize = windowSize
+		self.windowStepSize = windowStepSize
 		if enabledChannels is None:
 			enabledChannels = []
 		self.enabledChannels = enabledChannels
@@ -175,8 +177,13 @@ class OpenBCICyton(object):
 			self.setWindowSize(settings["windowSize"])
 		if settings["filtering_data"] != self.isFilteringData():
 			self.setFilteringData(settings["filtering_data"])
+		if settings["windowStepSize"] != self.getWindowStepSize():
+			self.setWindowStepSize(settings["windowStepSize"])
 		if settings["scaling_output"] != self.isScalingOutput():
 			self.setScaledOutput(settings["scaling_output"])
+
+	def setWindowStepSize(self, size):
+		self.windowStepSize = size
 
 	# GET BOARD VARIABLES FUNCTIONS
 
@@ -192,6 +199,9 @@ class OpenBCICyton(object):
 
 	def getWindowSize(self):
 		return self.windowSize
+
+	def getWindowStepSize(self):
+		return self.windowStepSize
 
 	def getEnabledChannels(self):
 		return self.enabledChannels
@@ -221,9 +231,16 @@ class OpenBCICyton(object):
 			"windowSize": self.windowSize,
 			"filtering_data": self.filtering_data,
 			"scaling_output": self.scaling_output,
-			"enabledChannels": self.enabledChannels
+			"enabledChannels": self.enabledChannels,
+			"windowStepSize": self.windowStepSize
 
 		}
+
+	def getWindow(self):
+		return int(self.sample_rate * self.windowSize)
+
+	def getWindowStep(self):
+		return int(self.sample_rate * self.windowStepSize)
 
 	# SERIAL PORT FUNCTIONS
 	def ser_write(self, b):
