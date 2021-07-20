@@ -50,6 +50,7 @@ class GUI(QMainWindow):
 		# send board settings with current init choices
 		self.freqComboClick(self.freqComboChoices.currentText())
 		self.windowComboClick(self.timeWindowComboChoices.currentText())
+		self.windowStepComboClick(self.stepWindowSizeComboChoices.currentText())
 		self.filteringDataFunction(self.filterDataCheckbox.checkState())
 		self.scalingDataFunction(self.scalingDataCheckbox.checkState())
 		# set central widget
@@ -112,7 +113,7 @@ class GUI(QMainWindow):
 		self.boardSettingLayout.addLayout(freqCombo)
 		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
 
-		# create a combo menu for the timeWindow choices
+		# create a combo menu for the Window choices
 		timeWindowCombo = QHBoxLayout()
 		timeWindowComboTitle = QLabel('Window size:')
 		self.timeWindowComboChoices = QComboBox()
@@ -126,6 +127,22 @@ class GUI(QMainWindow):
 
 		# add timeWindow combo to boardSettingLayout
 		self.boardSettingLayout.addLayout(timeWindowCombo)
+		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+
+		# create a combo menu for the stepWindowSize choices
+		stepWindowSizeCombo = QHBoxLayout()
+		stepWindowSizeComboTitle = QLabel('Step size:')
+		self.stepWindowSizeComboChoices = QComboBox()
+		stepWindowSizeComboTitle.setFont(self.font)
+		self.stepWindowSizeComboChoices.setFont(self.font)
+		self.stepWindowSizeComboChoices.setEditable(True)
+		self.stepWindowSizeComboChoices.addItems(cnst.windowStepSizeList)
+		stepWindowSizeCombo.addWidget(stepWindowSizeComboTitle)
+		stepWindowSizeCombo.addWidget(self.stepWindowSizeComboChoices)
+		self.stepWindowSizeComboChoices.activated[str].connect(self.windowStepComboClick)
+
+		# add stepWindowSizeCombo combo to boardSettingLayout
+		self.boardSettingLayout.addLayout(stepWindowSizeCombo)
 		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
 
 		# add checkbox for enabling filtering Data
@@ -211,6 +228,13 @@ class GUI(QMainWindow):
 			self.boardApiCallEvents.newBoardSettingsAvailable.set()
 		except Exception:
 			print("windowComboClick ERROR!")
+
+	def windowStepComboClick(self, size):
+		try:
+			self.boardCytonSettings["windowStepSize"] = float(size)
+			self.boardApiCallEvents.newBoardSettingsAvailable.set()
+		except Exception:
+			print("windowStepComboClick ERROR!")
 
 	def filteringDataFunction(self, state):
 		try:
