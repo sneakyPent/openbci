@@ -428,7 +428,7 @@ class OpenBCICyton(object):
 
 			if rep != 0:
 				self.warn(
-					'S>kipped %d bytes before start found' % (rep))
+					'Skipped %d bytes before start found' % (rep))
 				rep = 0
 
 			packet.append(struct.unpack('B', b)[0])
