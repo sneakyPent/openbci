@@ -12,16 +12,13 @@ from source.windowing import windowing
 from utils.coloringPrint import printWarning
 from writeToFile import writing
 from cyton import OpenBCICyton
+from utils.constants import Constants as cnst
 
 parser = argparse.ArgumentParser(prog='UIManager',
                                  description='Python scripts that determines which UI will be used for the cyton board ')
 parser.add_argument('-m', '--mode', nargs=1, choices=('pygui', 'online'), help='Choose the preferred mode',
                     required=True)
 args = parser.parse_args()
-
-# queues Size
-maxQueueSize = 2500
-writeDataMaxQueueSize = maxQueueSize * 100  # approximate 15 minutes of streaming
 
 # process list in queue
 processesList = []
@@ -31,7 +28,7 @@ writeDataEvent = Event()
 shutdownEvent = Event()
 newDataAvailable = Event()
 
-windowedDataBuffer = Queue(maxsize=writeDataMaxQueueSize)
+windowedDataBuffer = Queue(maxsize=cnst.writeDataMaxQueueSize)
 
 
 # create a SyncManager and register openbci cyton board object so as to create a proxy and share it to every subprocess
@@ -74,10 +71,10 @@ if __name__ == '__main__':
 	boardCytonSettings = manager.dict(board.getBoardSettingAttributes())
 
 	# main queue that will read data from board
-	guiProcArgs = DottedDict({"queue": Queue(maxsize=maxQueueSize), "lock": Lock()})
-	printBuffer = Queue(maxsize=maxQueueSize)
-	writingBuffer = Queue(maxsize=writeDataMaxQueueSize)
-	windowingBuffer = Queue(maxsize=writeDataMaxQueueSize)
+	guiBuffer = Queue(maxsize=cnst.maxQueueSize)
+	printBuffer = Queue(maxsize=cnst.maxQueueSize)
+	writingBuffer = Queue(maxsize=cnst.writeDataMaxQueueSize)
+	windowingBuffer = Queue(maxsize=cnst.writeDataMaxQueueSize)
 	# add queue and lock in the lists
 	dataBuffersList = [writingBuffer, windowingBuffer, printBuffer]
 
@@ -101,7 +98,7 @@ if __name__ == '__main__':
 
 		# create Process for the gui
 		guiProcess = Process(target=startGUI, name='startGUI',
-		                     args=(guiProcArgs, newDataAvailable, board, boardApiCallEvents,
+		                     args=(guiBuffer, newDataAvailable, board, boardApiCallEvents,
 		                           boardCytonSettings, shutdownEvent, writeDataEvent))
 		processesList.append(guiProcess)
 
