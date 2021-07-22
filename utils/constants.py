@@ -168,3 +168,7 @@ class Constants:
 
 	"""Streaming File names"""
 	destinationFolder = '../streamData/'
+
+	""" Queue size """
+	maxQueueSize = 2500
+	writeDataMaxQueueSize = maxQueueSize * 100  # approximate 15 minutes of streaming
