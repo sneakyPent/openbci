@@ -154,7 +154,7 @@ class Constants:
 	""" Cyton board settings """
 	bandPassFreqList = ["1-50", "3-30", "4-40", "5-50"]
 	windowSizeList = ["1", "2", "3", "4", "5"]
-
+	windowStepSizeList = ["0.5", "1", "1.5"]
 	""" printng massages colors"""
 	FAIL = '\033[91m'
 	OKGREEN = '\033[92m'
