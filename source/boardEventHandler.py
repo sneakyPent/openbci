@@ -1,5 +1,6 @@
 import os
 import sys
+import queue
 from multiprocessing import Process, Event
 from utils.coloringPrint import *
 
@@ -63,21 +64,25 @@ class BoardEventHandler:
 				self.disconnectEvent.clear()
 
 	def startStreaming(self):
+		numofsamples = 0
+		printing = False
+
 		while not self.shutdownEvent.is_set():
 			self.startStreamingEvent.wait(1)
-			# print('running')
 			if self.startStreamingEvent.is_set():
-				print('running')
+				printing = True
 				if self.connected.is_set():
 					printInfo("Starting streaming...")
 					while self.startStreamingEvent.is_set():
 						try:
 							sample = self.board.stream_one_sample()
-							if not self.dataBuffer.full():
-								self.dataBuffer.put(sample.channel_data)
-								self.dataManagerEvents.share.set()
-							else:
-								printError('Data buffer queue is full')
+							for buffer in self.dataBuffersList:
+								try:
+									buffer.put_nowait(sample.channel_data)
+									self.newDataAvailable.set()
+								except queue.Full:
+									printWarning("Queue full")
+							numofsamples += 1
 						except Exception as e:
 							self.startStreamingEvent.clear()
 							exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -88,6 +93,17 @@ class BoardEventHandler:
 					if not self.connected.is_set():
 						printInfo("No connection to stop streaming from.")
 				self.startStreamingEvent.clear()
+			else:
+				self.newDataAvailable.clear()
+				if self.shutdownEvent.is_set():
+					for buffer in self.dataBuffersList:
+						if buffer.qsize() != 0:
+							printInfo("Empty the queues")
+						while not buffer.qsize() == 0:
+							buffer.get_nowait()
+				if printing:
+					print(numofsamples)
+					printing = False
 
 	def stopStreaming(self):
 		while not self.shutdownEvent.is_set():
@@ -153,4 +169,3 @@ class BoardEventHandler:
 		# join processes
 		for proc in procList:
 			proc.join()
-
