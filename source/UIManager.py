@@ -56,10 +56,6 @@ def printData(br, dataDict, _newDataAvailable, _shutdownEvent):
 
 def signal_handler(signal, frame):
 	if type(current_process()) != Process:
-		# if not writeDataEvent.is_set():
-		# 	writeDataEvent.set()
-		# while writeDataEvent.is_set():
-		# 	pass
 		shutdownEvent.set()
 		printWarning("shuttingDown")
 
@@ -134,9 +130,6 @@ if __name__ == '__main__':
 
 	elif mode == 'online':
 		print("online")
-		dataManagerProcess = Process(target=dataManager.shareData)
-
-		processesList.append(dataManagerProcess)
 		# start processes
 		for proc in processesList:
 			proc.start()
