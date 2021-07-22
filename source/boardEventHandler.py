@@ -5,13 +5,18 @@ from utils.coloringPrint import *
 
 
 class BoardEventHandler:
+	"""
+	Args:
+		dataBuffersList: {[]} - list with every buffer we want to add streaming data into
+		newDataAvailable: {Event} - Event in which process owners of queues contained in dataBuffersList are waiting for
+	"""
 
-	def __init__(self, board, boardSettings, dataManagerEvents, dataBuffer,writeDataEvent):
+	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writeDataEvent):
 		self.board = board
-		self.dataManagerEvents = dataManagerEvents
+		self.newDataAvailable = newDataAvailable
 		self.boardSettings = boardSettings
-		# The data buffer queue used to put streaming data
-		self.dataBuffer = dataBuffer
+		# The list with the buffers, the streaming data will be stored
+		self.dataBuffersList = dataBuffersList
 		self.connected = Event()
 		self.shutdownEvent = None
 		self.writeDataEvent = writeDataEvent
