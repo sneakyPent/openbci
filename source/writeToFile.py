@@ -1,30 +1,32 @@
 import h5py
 
-from utils.coloringPrint import printInfo
+from utils.coloringPrint import printInfo, printError, printWarning
 from utils.constants import dateTimeFilename
 
 
-def writing(br, dataDict, writeDataEvent, _shutdownEvent ):
+def writing(writeBuf, windowedData, writeDataEvent, _shutdownEvent):
 	while not _shutdownEvent.is_set():
 		writeDataEvent.wait(1)
 		if writeDataEvent.is_set():
 			printInfo('Start writing data into file...')
 			signal = []
+			windowedSignal = []
 			filename = dateTimeFilename()
 			print(filename)
 			hf = h5py.File(filename + '.hdf5', 'w')
-			while not dataDict.queue.empty():
-				dataDict.lock.acquire()
-				try:
-					dt = dataDict.queue.get()
-					signal.append(dt)
-				finally:
-					dataDict.lock.release()
+			printWarning('signal buffer size: ' + writeBuf.qsize().__str__())
+			while not writeBuf.qsize() == 0:
+				dt = writeBuf.get()
+				signal.append(dt)
 			hf.create_dataset("signal", data=signal)
-			print("Finish with signal")
+			printInfo("Finish with signal")
+			printWarning('windowData buffer size: ' + windowedData.qsize().__str__())
+			while not windowedData.qsize() == 0:
+				dt = windowedData.get()
+				windowedSignal.append(dt)
+			hf.create_dataset("windowed", data=windowedSignal)
+			printInfo("Finish with windowed signal")
 			hf.close()
 			writeDataEvent.clear()
 		if _shutdownEvent.is_set():
 			break
-
-
