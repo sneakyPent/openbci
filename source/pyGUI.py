@@ -1,7 +1,11 @@
 import sys
+from threading import Thread
+import queue
+import numpy as np
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import *
 from checkComboBox import *
+import pyqtgraph as pg
 
 sys.path.append('..')
 from utils.constants import Constants as cnst
@@ -10,11 +14,12 @@ colors = 'rgbycmwr'
 
 
 class GUI(QMainWindow):
-	def __init__(self, dataDict, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
+	def __init__(self, guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
 	             writeDataEvent):
 		super().__init__()
-
-		self.dataDict = dataDict
+		# pg.setConfigOption('background', 'w')
+		# pg.setConfigOption('foreground', 'k')
+		self.guiBuffer = guiBuffer
 		self.newDataAvailableEvent = newDataAvailableEvent
 		self.board = board
 		self.boardApiCallEvents = boardApiCallEvents
@@ -22,7 +27,7 @@ class GUI(QMainWindow):
 		self.writeDataEvent = writeDataEvent
 		self.boardCytonSettings = boardCytonSettings
 		self.graphData = []
-
+		self.channelDataGraphWidgets = []
 		# QMainWindow settings
 		self.setWindowTitle("My GUI for Cyton Board")
 		self.font = QFont('sanserif', 13)
@@ -55,6 +60,16 @@ class GUI(QMainWindow):
 		self.scalingDataFunction(self.scalingDataCheckbox.checkState())
 		# set central widget
 		self.setCentralWidget(mainWidget)
+		#
+		self.t_data = []
+		self.t1 = Thread(target=self.acquirePlottingData)
+		self.t1.start()
+		self.timer = QTimer()
+		self.timer.timeout.connect(self.graphUpdater)
+		self.timer.setInterval(100)
+		self.timer.start()
+
+	#
 
 	def initMenuBar(self):
 		self.menubar.setFont(self.font)
@@ -89,9 +104,9 @@ class GUI(QMainWindow):
 		disconnectAction.triggered.connect(self.disconnectBoard)
 		quitting.triggered.connect(self.quitGUI)
 
-		# timeSeriesPlotAction.triggered.connect(self.addTimeSeriesPlot)
-		# fftPlotAction.triggered.connect(self.addFFTPlot)
-		# linearPlotAction.triggered.connect(self.addLinearPlot)
+		timeSeriesPlotAction.triggered.connect(self.addTimeSeriesPlot)
+		fftPlotAction.triggered.connect(self.addFFTPlot)
+		linearPlotAction.triggered.connect(self.addLinearPlot)
 
 		self.resize(1500, 800)
 
@@ -256,12 +271,52 @@ class GUI(QMainWindow):
 		except Exception:
 			print("scalingDataFunction ERROR!")
 
+	def addTimeSeriesPlot(self):
+		for i in range(1, 9):
+			graphWidget = pg.plot(title='Channel %d' % i,
+			                      labels={'left': 'uV', 'bottom': 'sec'},
+			                      )
+			graphWidget.setStyleSheet("border : 2px solid black;"
+			                          "padding : 0px;")
+			self.channelDataGraphWidgets.append(graphWidget)
+			self.graphLayout.addWidget(graphWidget)
+		self.graphLayout.addStretch()
+
+	def addFFTPlot(self):
+		print('addFFTPlot')
+
+	def addLinearPlot(self):
+		print('addLinearPlot')
+
+	def acquirePlottingData(self):
+		while not self.shutdownEvent.is_set():
+			self.newDataAvailableEvent.wait(1)
+			if self.newDataAvailableEvent.is_set():
+				try:
+					dt = self.guiBuffer.get()
+					if len(self.graphData) < self.board.getSampleRate() * 4:
+						self.graphData.append(dt)
+					else:
+						del self.graphData[
+						    0:len(self.graphData) - self.board.getSampleRate() * 4 + 1]
+						self.graphData.append(dt)
+					self.t_data = np.array(self.graphData).T
+				except queue.Empty:
+					pass
+
+	def graphUpdater(self):
+		if not self.shutdownEvent.is_set():
+			for i in range(len(self.channelDataGraphWidgets)):
+				if len(self.channelDataGraphWidgets) == 8:
+					if len(self.t_data) > 0:
+						self.channelDataGraphWidgets[i].clear()
+						self.channelDataGraphWidgets[i].plot(pen=colors[i]).setData(self.t_data[i])
 
 
-def startGUI(dataDict, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
+def startGUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
              writeDataEvent):
 	app = QApplication(sys.argv)
-	gui = GUI(dataDict, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
+	gui = GUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
 	          writeDataEvent)
 	gui.show()
 	sys.exit(app.exec_())
