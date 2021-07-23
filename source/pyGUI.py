@@ -215,6 +215,7 @@ class GUI(QMainWindow):
 			pass
 		self.shutdownEvent.set()
 		QApplication.instance().quit()
+		# sys.exit()
 
 	#  calling functions
 
@@ -300,12 +301,12 @@ class GUI(QMainWindow):
 						del self.graphData[
 						    0:len(self.graphData) - self.board.getSampleRate() * 4 + 1]
 						self.graphData.append(dt)
-					self.t_data = np.array(self.graphData).T
 				except queue.Empty:
 					pass
 
 	def graphUpdater(self):
 		if not self.shutdownEvent.is_set():
+			self.t_data = np.array(self.graphData).T
 			for i in range(len(self.channelDataGraphWidgets)):
 				if len(self.channelDataGraphWidgets) == 8:
 					if len(self.t_data) > 0:
@@ -319,7 +320,7 @@ def startGUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardC
 	gui = GUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
 	          writeDataEvent)
 	gui.show()
-	sys.exit(app.exec_())
+	app.exec_()
 
 
 if __name__ == "__main__":
