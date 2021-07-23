@@ -10,8 +10,6 @@ import pyqtgraph as pg
 sys.path.append('..')
 from utils.constants import Constants as cnst
 
-colors = 'rgbycmwr'
-
 
 class GUI(QMainWindow):
 	def __init__(self, guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
@@ -63,6 +61,7 @@ class GUI(QMainWindow):
 		#
 		self.t_data = []
 		self.t1 = Thread(target=self.acquirePlottingData)
+		self.t1.daemon = True
 		self.t1.start()
 		self.timer = QTimer()
 		self.timer.timeout.connect(self.graphUpdater)
@@ -215,7 +214,6 @@ class GUI(QMainWindow):
 			pass
 		self.shutdownEvent.set()
 		QApplication.instance().quit()
-		# sys.exit()
 
 	#  calling functions
 
@@ -311,7 +309,7 @@ class GUI(QMainWindow):
 				if len(self.channelDataGraphWidgets) == 8:
 					if len(self.t_data) > 0:
 						self.channelDataGraphWidgets[i].clear()
-						self.channelDataGraphWidgets[i].plot(pen=colors[i]).setData(self.t_data[i])
+						self.channelDataGraphWidgets[i].plot(pen=cnst.GUIChannelColors[i]).setData(self.t_data[i])
 
 
 def startGUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
@@ -320,7 +318,7 @@ def startGUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardC
 	gui = GUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
 	          writeDataEvent)
 	gui.show()
-	app.exec_()
+	sys.exit(app.exec_())
 
 
 if __name__ == "__main__":

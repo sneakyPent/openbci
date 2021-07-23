@@ -1,4 +1,7 @@
 import time
+from matplotlib import colors as mcolors
+
+colrs = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
 
 
 def dateTimeFilename(): return Constants.destinationFolder + 'Streaming' + time.strftime("%d_%m_%Y_%H:%M:%S")
@@ -155,6 +158,7 @@ class Constants:
 	bandPassFreqList = ["1-50", "3-30", "4-40", "5-50"]
 	windowSizeList = ["1", "2", "3", "4", "5"]
 	windowStepSizeList = ["0.5", "1", "1.5"]
+
 	""" printng massages colors"""
 	FAIL = '\033[91m'
 	OKGREEN = '\033[92m'
@@ -172,3 +176,8 @@ class Constants:
 	""" Queue size """
 	maxQueueSize = 2500
 	writeDataMaxQueueSize = maxQueueSize * 100  # approximate 15 minutes of streaming
+
+	""" GUI """
+	# the order of the channels' color  is the same order as the wires' colors in the equivalent pin
+	GUIChannelColors = [colrs['red'], colrs['orange'], colrs['yellow'], colrs['green'], colrs['blue'], colrs['purple'],
+	                    colrs['white'], colrs['gray']]
