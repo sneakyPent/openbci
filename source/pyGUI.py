@@ -9,6 +9,7 @@ import pyqtgraph as pg
 
 sys.path.append('..')
 from utils.constants import Constants as cnst
+from utils import filters
 
 
 class GUI(QMainWindow):
@@ -26,6 +27,7 @@ class GUI(QMainWindow):
 		self.boardCytonSettings = boardCytonSettings
 		self.graphData = []
 		self.channelDataGraphWidgets = []
+		self.channelFftWidget = None
 		# QMainWindow settings
 		self.setWindowTitle("My GUI for Cyton Board")
 		self.font = QFont('sanserif', 13)
@@ -39,9 +41,14 @@ class GUI(QMainWindow):
 		self.mainLayout = QGridLayout(mainWidget)
 		self.boardSettingLayout = QHBoxLayout()
 		self.mainLayout.addLayout(self.boardSettingLayout, 0, 0)
+
 		# add a layout for the graphs
 		self.graphLayout = QVBoxLayout()
-		self.mainLayout.addLayout(self.graphLayout, 1, 0, 2, 5)
+		self.mainLayout.addLayout(self.graphLayout, 1, 0, -1, 2)
+
+		# add a layout for the fft
+		self.fftLayout = QVBoxLayout()
+		self.mainLayout.addLayout(self.fftLayout, 1, 2, -1, -1)
 
 		# enable not stretching layouts on the vertical axis
 		self.mainLayout.setRowStretch(self.mainLayout.rowCount(), 1)
@@ -65,7 +72,8 @@ class GUI(QMainWindow):
 		self.t1.start()
 		self.timer = QTimer()
 		self.timer.timeout.connect(self.graphUpdater)
-		self.timer.setInterval(100)
+		self.timer.timeout.connect(self.fftUpdater)
+		self.timer.setInterval(50)
 		self.timer.start()
 
 	#
@@ -162,7 +170,7 @@ class GUI(QMainWindow):
 
 		# add checkbox for enabling filtering Data
 		self.filterDataCheckbox = QCheckBox("Filter Data")
-		self.filterDataCheckbox.setChecked(True)
+		self.filterDataCheckbox.setChecked(False)
 		self.filterDataCheckbox.setFont(self.font)
 		self.filterDataCheckbox.stateChanged.connect(self.filteringDataFunction)
 		self.boardSettingLayout.addWidget(self.filterDataCheckbox)
@@ -211,6 +219,7 @@ class GUI(QMainWindow):
 		self.boardApiCallEvents.disconnect.set()
 
 	def quitGUI(self):
+		self.stopStreaming()
 		while self.writeDataEvent.is_set():
 			pass
 		self.shutdownEvent.set()
@@ -273,17 +282,19 @@ class GUI(QMainWindow):
 
 	def addTimeSeriesPlot(self):
 		for i in range(1, 9):
-			graphWidget = pg.plot(title='Channel %d' % i,
-			                      labels={'left': 'uV', 'bottom': 'sec'},
-			                      )
-			graphWidget.setStyleSheet("border : 2px solid black;"
-			                          "padding : 0px;")
+			graphWidget = pg.PlotWidget(title='Channel %d' % i)
+			graphWidget.setLabel('left', 'Voltage (uv)')
+			graphWidget.setLabel('bottom', 'Time (sec)')
 			self.channelDataGraphWidgets.append(graphWidget)
 			self.graphLayout.addWidget(graphWidget)
 		self.graphLayout.addStretch()
 
 	def addFFTPlot(self):
-		print('addFFTPlot')
+		graphWidget = pg.PlotWidget()
+		graphWidget.setTitle("FFT Plot", size="20pt")
+
+		self.channelFftWidget = graphWidget
+		self.fftLayout.addWidget(graphWidget)
 
 	def addLinearPlot(self):
 		print('addLinearPlot')
@@ -311,6 +322,43 @@ class GUI(QMainWindow):
 					if len(self.t_data) > 0:
 						self.channelDataGraphWidgets[i].clear()
 						self.channelDataGraphWidgets[i].plot(pen=cnst.GUIChannelColors[i]).setData(self.t_data[i])
+
+	def fftUpdater(self):
+		if not self.shutdownEvent.is_set():
+			d1 = np.array(self.graphData)
+			if len(self.t_data) > 0:
+				lowcut = 4
+				highcut = 40
+				fs = 250
+				freq_6 = d1[:, 0:4]
+				mm = np.array(freq_6)
+				tt = mm[1:]
+				freq_6 = tt
+				data_processed_freq_6 = []
+				i = 0
+
+				while i < freq_6.shape[1]:
+					# bandpass filtering            !! ATTENTION: how many channels you want<
+					data_filt = filters.butter_bandpass_filter(freq_6[:, i], lowcut, highcut, fs, order=10)
+					# hamming window
+					data_fft = np.abs(np.fft.fft(data_filt)) ** 2
+					# # fft
+					data_processed_freq_6.append(data_fft)  # = np.array(data_processed)
+					i = i + 1
+
+				time_step = 1 / fs
+
+				colors = cnst.GUIChannelColors[0:8]
+				lb = ['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6', 'ch7', 'ch8']
+
+				# calculate the frequencies
+				freqs3 = np.fft.fftfreq(freq_6[:, 0].size, time_step)
+				idx3 = np.argsort(freqs3)
+
+				for w in range(len(data_processed_freq_6)):
+					ps = data_processed_freq_6[w]
+					self.channelFftWidget.clear()
+					self.channelFftWidget.plot(pen=colors[w], label=lb[w]).setData(freqs3[idx3], ps[idx3])
 
 
 def startGUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
