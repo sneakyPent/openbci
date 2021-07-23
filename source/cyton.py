@@ -472,7 +472,7 @@ class OpenBCICyton(object):
 				if struct.unpack('B', b)[0] == cnts.RAW_BYTE_START:
 					if rep != 0:
 						self.warn(
-							'S>kipped %d bytes before start found' % (rep))
+							'Skipped %d bytes before start found' % (rep))
 						rep = 0
 					# packet id goes from 0-255
 					packet_id = struct.unpack('B', read(1))[0]
