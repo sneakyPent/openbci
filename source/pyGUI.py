@@ -107,7 +107,8 @@ class GUI(QMainWindow):
 		fftPlotAction.triggered.connect(self.addFFTPlot)
 		linearPlotAction.triggered.connect(self.addLinearPlot)
 
-		self.resize(1500, 800)
+		# self.resize(1500, 800)
+		self.resize(1000, 100)
 
 	def initBoardSettingsBar(self):
 		boardSettingsSpacing = 30
