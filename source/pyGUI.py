@@ -231,10 +231,8 @@ class GUI(QMainWindow):
 		print("test")
 		print(choices)
 
-    def infoButtonClick(self, btn):
-        self.board.setHigherBoundFrequency(200)
-        print(self.board.getBoardType())
-        # changing the text of label after button get clicked
+	def infoButtonClick(self, btn):
+		pass
 
 	def freqComboClick(self, freq):
 		try:
