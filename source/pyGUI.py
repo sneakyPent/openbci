@@ -292,7 +292,7 @@ class GUI(QMainWindow):
 	def addFFTPlot(self):
 		graphWidget = pg.PlotWidget()
 		graphWidget.setTitle("FFT Plot", size="20pt")
-
+		graphWidget.setXRange(0, 40, padding=0)
 		self.channelFftWidget = graphWidget
 		self.fftLayout.addWidget(graphWidget)
 
