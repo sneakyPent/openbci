@@ -5,3 +5,4 @@ dotted
 pyserial~=3.5
 scipy ~= 1.7.0
 h5py ~= 3.3.0
+numpy ~= 1.21.1
