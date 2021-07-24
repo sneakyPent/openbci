@@ -2,9 +2,9 @@ import sys
 from threading import Thread
 import queue
 import numpy as np
+from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import *
-from checkComboBox import *
 import pyqtgraph as pg
 
 sys.path.append('..')
