@@ -325,10 +325,11 @@ class GUI(QMainWindow):
 		if not self.shutdownEvent.is_set():
 			d1 = np.array(self.graphData)
 			if len(self.t_data) > 0:
-				lowcut = 4
-				highcut = 40
-				fs = 250
-				freq_6 = d1[:, 0:4]
+				lowcut = self.board.getLowerBoundFrequency()
+				highcut = self.board.getHigherBoundFrequency()
+				fs = self.board.getSampleRate()
+				channels = 8
+				freq_6 = d1[:, 0:channels]
 				mm = np.array(freq_6)
 				tt = mm[1:]
 				freq_6 = tt
@@ -346,7 +347,7 @@ class GUI(QMainWindow):
 
 				time_step = 1 / fs
 
-				colors = cnst.GUIChannelColors[0:8]
+				colors = cnst.GUIChannelColors[0:channels]
 				lb = ['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6', 'ch7', 'ch8']
 
 				# calculate the frequencies
