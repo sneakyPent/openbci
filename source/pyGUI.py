@@ -94,16 +94,6 @@ class GUI(QMainWindow):
 		graphs.addActions([timeSeriesPlotAction, fftPlotAction, linearPlotAction])
 		self.menubar.addActions(
 			[startStreamAction, stopStreamAction, connectAction, disconnectAction, quitting])
-		"""
-				-MENU BAR ACTIONS FOR EACH OPTION 
-
-		Adding every action in thread so as the GUI not freezing,
-		when waiting each process to finished. In order to do this 
-		we create a worker object, pass the function as argument,
-		and then add the worker object to QThreadPool of GUI-QMainWindow
-		object. Lastly pass this action in connect as lambda expression
-
-		"""
 
 		startStreamAction.triggered.connect(self.startStreaming)
 		stopStreamAction.triggered.connect(self.stopStreaming)
