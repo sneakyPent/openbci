@@ -181,3 +181,6 @@ class Constants:
 	# the order of the channels' color  is the same order as the wires' colors in the equivalent pin
 	GUIChannelColors = [colrs['red'], colrs['orange'], colrs['yellow'], colrs['green'], colrs['blue'], colrs['purple'],
 	                    colrs['white'], colrs['gray']]
+
+	""" Unity exe """
+	unityExePath = "/home/zn/Desktop/targets/Ubuntu/TargetUbuntu.exe"

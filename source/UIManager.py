@@ -8,7 +8,7 @@ from multiprocessing.managers import SyncManager
 from multiprocessing import Process, Queue, Lock, Event, current_process
 from dotted.collection import DottedDict
 from boardEventHandler import BoardEventHandler
-from source.mySocket import connectTraining
+from source.training import startTraining
 from source.windowing import windowing
 from utils.coloringPrint import printWarning
 from writeToFile import writing
@@ -28,6 +28,7 @@ processesList = []
 writeDataEvent = Event()
 shutdownEvent = Event()
 newDataAvailable = Event()
+startTrainingEvent = Event()
 
 windowedDataBuffer = Queue(maxsize=cnst.writeDataMaxQueueSize)
 # Queue for the communication between socket and boardEventHandler
@@ -102,7 +103,7 @@ if __name__ == '__main__':
 		# create Process for the gui
 		guiProcess = Process(target=startGUI, name='startGUI',
 		                     args=(guiBuffer, newDataAvailable, board, boardApiCallEvents,
-		                           boardCytonSettings, shutdownEvent, writeDataEvent))
+		                           boardCytonSettings, shutdownEvent, writeDataEvent, startTrainingEvent))
 		processesList.append(guiProcess)
 
 		# create Process to write data from board to file
@@ -116,9 +117,9 @@ if __name__ == '__main__':
 		processesList.append(windowingProcess)
 
 		# create Process for connecting to unity program socket
-		socketProcess = Process(target=connectTraining, name='training',
-		                        args=(trainingClassBuffer,))
-		processesList.append(socketProcess)
+		trainingProcess = Process(target=startTraining, name='training',
+		                          args=(startTrainingEvent, boardApiCallEvents, shutdownEvent, trainingClassBuffer))
+		processesList.append(trainingProcess)
 
 		# start processes in the processList
 		for proc in processesList:

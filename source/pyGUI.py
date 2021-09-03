@@ -14,7 +14,7 @@ from utils import filters
 
 class GUI(QMainWindow):
 	def __init__(self, guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
-	             writeDataEvent):
+	             writeDataEvent, startTrainingEvent):
 		super().__init__()
 		# pg.setConfigOption('background', 'w')
 		# pg.setConfigOption('foreground', 'k')
@@ -24,6 +24,7 @@ class GUI(QMainWindow):
 		self.boardApiCallEvents = boardApiCallEvents
 		self.shutdownEvent = _shutdownEvent
 		self.writeDataEvent = writeDataEvent
+		self.startTrainingEvent = startTrainingEvent
 		self.boardCytonSettings = boardCytonSettings
 		self.graphData = []
 		self.channelDataGraphWidgets = []
@@ -181,6 +182,13 @@ class GUI(QMainWindow):
 		self.boardSettingLayout.addWidget(self.infoButton)
 		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
 
+		# add a push button to start Training mode
+		self.trainingButton = QPushButton("Training")
+		self.trainingButton.setFont(self.font)
+		self.trainingButton.clicked.connect(self.trainingButtonClick)
+		self.boardSettingLayout.addWidget(self.trainingButton)
+		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+
 		# channelsList = ['channel 1', 'channel 2', 'channel 3', 'channel 4', 'channel 5', 'channel 6', 'channel 7',
 		#            'channel 8']
 		# channelsCombo = CheckComboBox(placeholderText='Enable Channels')
@@ -220,6 +228,9 @@ class GUI(QMainWindow):
 	def channelsComboChange(self, choices):
 		print("test")
 		print(choices)
+
+	def trainingButtonClick(self):
+		self.startTrainingEvent.set()
 
 	def infoButtonClick(self, btn):
 		pass
@@ -351,10 +362,10 @@ class GUI(QMainWindow):
 
 
 def startGUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
-             writeDataEvent):
+             writeDataEvent, startTrainingEvent):
 	app = QApplication(sys.argv)
 	gui = GUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
-	          writeDataEvent)
+	          writeDataEvent, startTrainingEvent)
 	gui.show()
 	sys.exit(app.exec_())
 

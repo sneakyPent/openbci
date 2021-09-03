@@ -1,14 +1,13 @@
 import socket
-import struct
-import traceback
-import logging
-import time
-import numpy as np
-import sys, string, os  # , arcgisscripting
+import subprocess
+import sys, os
+from multiprocessing import Process
+
+sys.path.append('..')
+from utils.constants import Constants as cnst
 
 
 def connectTraining(trainingClassBuffer):
-	# with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 	# create socket
 	s = socket.socket()
 	socket.setdefaulttimeout(None)
@@ -57,3 +56,24 @@ def connectTraining(trainingClassBuffer):
 
 	c.shutdown(socket.SHUT_RDWR)
 	c.close()
+
+
+def startTrainingApp(boardApiCallEvents):
+	with open(os.devnull, 'wb') as devnull:
+		subprocess.check_call([cnst.unityExePath], stdout=devnull, stderr=subprocess.STDOUT)
+	boardApiCallEvents.stopStreaming.set()
+
+
+def startTraining(startTrainingEvent, boardApiCallEvents, _shutdownEvent, trainingClassBuffer):
+	while not _shutdownEvent.is_set():
+		startTrainingEvent.wait(1)
+		if startTrainingEvent.is_set():
+			socketProcess = Process(target=connectTraining, args=(trainingClassBuffer,))
+			applicationProcess = Process(target=startTrainingApp, args=(boardApiCallEvents,))
+			if not socketProcess.is_alive():
+				socketProcess.start()
+			# socketProcess.join()
+			if not applicationProcess.is_alive():
+				applicationProcess.start()
+			# applicationProcess.join()
+			startTrainingEvent.clear()
