@@ -8,6 +8,7 @@ from multiprocessing.managers import SyncManager
 from multiprocessing import Process, Queue, Lock, Event, current_process
 from dotted.collection import DottedDict
 from boardEventHandler import BoardEventHandler
+from source.mySocket import connectTraining
 from source.windowing import windowing
 from utils.coloringPrint import printWarning
 from writeToFile import writing
@@ -29,6 +30,8 @@ shutdownEvent = Event()
 newDataAvailable = Event()
 
 windowedDataBuffer = Queue(maxsize=cnst.writeDataMaxQueueSize)
+# Queue for the communication between socket and boardEventHandler
+trainingClassBuffer = Queue(maxsize=1)
 
 
 # create a SyncManager and register openbci cyton board object so as to create a proxy and share it to every subprocess
@@ -79,7 +82,7 @@ if __name__ == '__main__':
 	dataBuffersList = [writingBuffer, windowingBuffer, printBuffer]
 
 	# Create a BoardEventHandler Instance
-	boardEventHandler = BoardEventHandler(board, boardCytonSettings, newDataAvailable, dataBuffersList, writeDataEvent)
+	boardEventHandler = BoardEventHandler(board, boardCytonSettings, newDataAvailable, dataBuffersList, writeDataEvent,trainingClassBuffer)
 	# events will be used to control board through any gui
 	boardApiCallEvents = DottedDict(boardEventHandler.getBoardHandlerEvents())
 
@@ -111,6 +114,11 @@ if __name__ == '__main__':
 		windowingProcess = Process(target=windowing, name='windowing',
 		                           args=(board, windowingBuffer, windowedDataBuffer, newDataAvailable, shutdownEvent))
 		processesList.append(windowingProcess)
+
+		# create Process for connecting to unity program socket
+		socketProcess = Process(target=connectTraining, name='training',
+		                        args=(trainingClassBuffer,))
+		processesList.append(socketProcess)
 
 		# start processes in the processList
 		for proc in processesList:

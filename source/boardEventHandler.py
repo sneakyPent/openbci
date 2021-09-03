@@ -12,7 +12,7 @@ class BoardEventHandler:
 		newDataAvailable: {Event} - Event in which process owners of queues contained in dataBuffersList are waiting for
 	"""
 
-	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writeDataEvent):
+	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writeDataEvent, trainingClassBuffer):
 		self.board = board
 		self.newDataAvailable = newDataAvailable
 		self.boardSettings = boardSettings
@@ -21,7 +21,8 @@ class BoardEventHandler:
 		self.connected = Event()
 		self.shutdownEvent = None
 		self.writeDataEvent = writeDataEvent
-
+		self.trainingClassBuffer = trainingClassBuffer
+		self.trainingClass = 200
 		# events used to start and stop the BoardEventHandler functions
 		self.connectEvent = Event()
 		self.disconnectEvent = Event()
@@ -76,6 +77,14 @@ class BoardEventHandler:
 					while self.startStreamingEvent.is_set():
 						try:
 							sample = self.board.stream_one_sample()
+							# append training class in the channel data before put in the buffer
+							try:
+								# check if training class has been changed, if so then replace
+								if self.trainingClassBuffer.qsize() != 0:
+									self.trainingClass = self.trainingClassBuffer.get()
+							except Exception:
+								printWarning("Something Went Wrong in boardEventHandler line 83")
+							sample.channel_data.append(self.trainingClass)
 							for buffer in self.dataBuffersList:
 								try:
 									buffer.put_nowait(sample.channel_data)
