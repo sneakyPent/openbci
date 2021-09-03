@@ -322,7 +322,7 @@ class GUI(QMainWindow):
 						self.channelDataGraphWidgets[i].plot(pen=cnst.GUIChannelColors[i]).setData(self.t_data[i])
 
 	def fftUpdater(self):
-		if not self.shutdownEvent.is_set():
+		if not self.shutdownEvent.is_set() and self.channelFftWidget:
 			d1 = np.array(self.graphData)
 			if len(self.t_data) > 0:
 				lowcut = self.board.getLowerBoundFrequency()
