@@ -90,9 +90,9 @@ if __name__ == '__main__':
 	if mode == 'pygui':
 
 		# create Process for printing Data
-		printData = Process(target=printData, name='printData',
-		                    args=(printBuffer, newDataAvailable, shutdownEvent))
-		processesList.append(printData)
+		printDataProcess = Process(target=printData, name='printData',
+		                           args=(printBuffer, newDataAvailable, shutdownEvent))
+		processesList.append(printDataProcess)
 
 		# create Process for the boardEventHandler
 		boardEventHandlerProcess = Process(target=boardEventHandler.start, name='boardEventHandler',
