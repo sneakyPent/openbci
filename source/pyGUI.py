@@ -292,7 +292,7 @@ class GUI(QMainWindow):
 			self.newDataAvailableEvent.wait(1)
 			if self.newDataAvailableEvent.is_set():
 				try:
-					dt = self.guiBuffer.get()
+					dt = self.guiBuffer.get()[0:8]
 					if len(self.graphData) < self.board.getSampleRate() * 4:
 						self.graphData.append(dt)
 					else:
