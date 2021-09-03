@@ -123,6 +123,7 @@ class OpenBCICyton(object):
 		self.last_reconnect = 0
 		self.reconnect_freq = 5
 		self.packets_dropped = 0
+		self.synched = False
 
 		# Disconnects from board when terminated
 		atexit.register(self.disconnect)
@@ -185,6 +186,8 @@ class OpenBCICyton(object):
 	def setWindowStepSize(self, size):
 		self.windowStepSize = size
 
+	def setSynching(self, st):
+		self.synched = st
 	# GET BOARD VARIABLES FUNCTIONS
 
 	def getBoardType(self):
@@ -241,6 +244,9 @@ class OpenBCICyton(object):
 
 	def getWindowStep(self):
 		return int(self.sample_rate * self.windowStepSize)
+
+	def isSynched(self):
+		return self.synched
 
 	# SERIAL PORT FUNCTIONS
 	def ser_write(self, b):

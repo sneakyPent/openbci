@@ -78,20 +78,23 @@ class BoardEventHandler:
 						try:
 							sample = self.board.stream_one_sample()
 							# append training class in the channel data before put in the buffer
-							try:
-								# check if training class has been changed, if so then replace
-								if self.trainingClassBuffer.qsize() != 0:
-									self.trainingClass = self.trainingClassBuffer.get()
-							except Exception:
-								printWarning("Something Went Wrong in boardEventHandler line 83")
-							sample.channel_data.append(self.trainingClass)
-							for buffer in self.dataBuffersList:
+							if self.board.isSynched():
 								try:
-									buffer.put_nowait(sample.channel_data)
-									self.newDataAvailable.set()
-								except queue.Full:
-									printWarning("Queue full")
-							numofsamples += 1
+									# check if training class has been changed, if so then replace
+									if self.trainingClassBuffer.qsize() != 0:
+										self.trainingClass = self.trainingClassBuffer.get()
+								except Exception:
+									printWarning("Something Went Wrong in boardEventHandler line 83")
+								sample.channel_data.append(self.trainingClass)
+								for buffer in self.dataBuffersList:
+									try:
+										buffer.put_nowait(sample.channel_data)
+										self.newDataAvailable.set()
+									except queue.Full:
+										printWarning("Queue full")
+								numofsamples += 1
+							elif sample.channel_data == cnst.synchingSignal:
+								self.board.setSynching(True)
 						except Exception as e:
 							self.startStreamingEvent.clear()
 							exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -124,6 +127,8 @@ class BoardEventHandler:
 						self.startStreamingEvent.clear()
 						self.writeDataEvent.set()
 						self.board.stopStreaming()
+						self.trainingClass = 200
+						self.board.setSynching(False)
 					except:
 						printError("There is no stream to stop.")
 				else:
