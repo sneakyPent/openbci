@@ -73,8 +73,8 @@ def startTraining(startTrainingEvent, boardApiCallEvents, _shutdownEvent, traini
 			applicationProcess = Process(target=startTrainingApp, args=(boardApiCallEvents,))
 			if not socketProcess.is_alive():
 				socketProcess.start()
-			# socketProcess.join()
 			if not applicationProcess.is_alive():
 				applicationProcess.start()
-			# applicationProcess.join()
+			socketProcess.join()
+			applicationProcess.join()
 			startTrainingEvent.clear()
