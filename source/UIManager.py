@@ -79,8 +79,9 @@ if __name__ == '__main__':
 	printBuffer = Queue(maxsize=cnst.maxQueueSize)
 	writingBuffer = Queue(maxsize=cnst.writeDataMaxQueueSize)
 	windowingBuffer = Queue(maxsize=cnst.writeDataMaxQueueSize)
-	# add queue and lock in the lists
-	dataBuffersList = [writingBuffer, windowingBuffer, printBuffer]
+	# add queues in the list
+	# dataBuffersList = [writingBuffer, windowingBuffer, printBuffer, guiBuffer]
+	dataBuffersList = [writingBuffer, windowingBuffer, guiBuffer]
 
 	# Create a BoardEventHandler Instance
 	boardEventHandler = BoardEventHandler(board, boardCytonSettings, newDataAvailable, dataBuffersList, writeDataEvent,
