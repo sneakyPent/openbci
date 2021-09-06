@@ -45,11 +45,11 @@ class GUI(QMainWindow):
 
 		# add a layout for the graphs
 		self.graphLayout = QVBoxLayout()
-		self.mainLayout.addLayout(self.graphLayout, 1, 0, -1, 2)
+		self.mainLayout.addLayout(self.graphLayout, 2, 0, -1, 2)
 
 		# add a layout for the fft
 		self.fftLayout = QVBoxLayout()
-		self.mainLayout.addLayout(self.fftLayout, 1, 2, -1, -1)
+		self.mainLayout.addLayout(self.fftLayout, 2, 2, -1, -1)
 
 		# enable not stretching layouts on the vertical axis
 		self.mainLayout.setRowStretch(self.mainLayout.rowCount(), 1)
@@ -291,7 +291,7 @@ class GUI(QMainWindow):
 	def addFFTPlot(self):
 		graphWidget = pg.PlotWidget()
 		graphWidget.setTitle("FFT Plot", size="20pt")
-		graphWidget.setXRange(0, 40, padding=0)
+		graphWidget.setXRange(0, 10, padding=0)
 		self.channelFftWidget = graphWidget
 		self.fftLayout.addWidget(graphWidget)
 
