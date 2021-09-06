@@ -83,7 +83,8 @@ if __name__ == '__main__':
 	dataBuffersList = [writingBuffer, windowingBuffer, printBuffer]
 
 	# Create a BoardEventHandler Instance
-	boardEventHandler = BoardEventHandler(board, boardCytonSettings, newDataAvailable, dataBuffersList, writeDataEvent,trainingClassBuffer)
+	boardEventHandler = BoardEventHandler(board, boardCytonSettings, newDataAvailable, dataBuffersList, writeDataEvent,
+	                                      trainingClassBuffer)
 	# events will be used to control board through any gui
 	boardApiCallEvents = DottedDict(boardEventHandler.getBoardHandlerEvents())
 
