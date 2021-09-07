@@ -12,17 +12,21 @@ class BoardEventHandler:
 		newDataAvailable: {Event} - Event in which process owners of queues contained in dataBuffersList are waiting for
 	"""
 
-	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writeDataEvent, trainingClassBuffer):
+	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writeDataEvent, trainingClassBuffer,
+	             _shutdownEvent):
 		self.board = board
 		self.newDataAvailable = newDataAvailable
 		self.boardSettings = boardSettings
 		# The list with the buffers, the streaming data will be stored
 		self.dataBuffersList = dataBuffersList
 		self.connected = Event()
-		self.shutdownEvent = None
+		""" Event used to know when there is an accomplished connection with the openbci Board"""
+		self.shutdownEvent = _shutdownEvent
 		self.writeDataEvent = writeDataEvent
 		self.trainingClassBuffer = trainingClassBuffer
-		self.trainingClass = 200
+		self.trainingClass = cnst.unknownClass
+		""" The current training class value read by trainingClassBuffer, initialized in :data:`utils.constants.Constants.unknownClass` value"""
+
 		# events used to start and stop the BoardEventHandler functions
 		self.connectEvent = Event()
 		self.disconnectEvent = Event()
@@ -127,7 +131,7 @@ class BoardEventHandler:
 						self.startStreamingEvent.clear()
 						self.writeDataEvent.set()
 						self.board.stopStreaming()
-						self.trainingClass = 200
+						self.trainingClass = cnst.unknownClass
 						self.board.setSynching(False)
 					except:
 						printError("There is no stream to stop.")
@@ -163,7 +167,6 @@ class BoardEventHandler:
 
 	def start(self, _shutdownEvent):
 		procList = []
-		self.shutdownEvent = _shutdownEvent
 		printInfo("Starting eventHandler")
 		connectProcess = Process(target=self.connect)
 		disconnectProcess = Process(target=self.disconnect)
