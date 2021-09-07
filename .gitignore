@@ -15,3 +15,6 @@ python-sudo.sh
 
 # stream data result files directory
 streamData/
+
+#documentation
+docs/_build
