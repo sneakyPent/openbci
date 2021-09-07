@@ -7,9 +7,20 @@ from utils.coloringPrint import *
 
 class BoardEventHandler:
 	"""
-	Args:
-		dataBuffersList: {[]} - list with every buffer we want to add streaming data into
-		newDataAvailable: {Event} - Event in which process owners of queues contained in dataBuffersList are waiting for
+	Mainly responsible to manage the below Events and "control" the openbci board via the corresponding method
+		* connectEvent -> connect()
+		* disconnectEvent -> disconnect()
+		* startStreamingEvent -> startStreaming()
+		* stopStreamingEvent -> stopStreaming()
+		* newBoardSettingsAvailableEvent -> newBoardSettingsAvailable()
+
+	:param board: {} - Represents the OpenBCICyton class in BoardEventHandler class
+	:param boardSettings: {Dotted dict} - Contains all board settings set by the GUI and used in cyton.py
+	:param newDataAvailable: {Event} - Event in which process owners of queues contained in dataBuffersList are waiting for to get the new sample read from board
+	:param dataBuffersList: {[]} - list with every buffer we want to add streaming data into, and pass to other processes
+	:param writeDataEvent: {Event} - Event to inform the writeProcess of UImanager.py to start writing the data into an hdf5 file
+	:param trainingClassBuffer: {Queue} - Buffer letting this process to get sample's class, that the training program showing every frame via socket.py
+	:param _shutdownEvent: {Event} - Event used to know when to let every running process terminate
 	"""
 
 	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writeDataEvent, trainingClassBuffer,
@@ -17,7 +28,6 @@ class BoardEventHandler:
 		self.board = board
 		self.newDataAvailable = newDataAvailable
 		self.boardSettings = boardSettings
-		# The list with the buffers, the streaming data will be stored
 		self.dataBuffersList = dataBuffersList
 		self.connected = Event()
 		""" Event used to know when there is an accomplished connection with the openbci Board"""
@@ -34,11 +44,14 @@ class BoardEventHandler:
 		self.stopStreamingEvent = Event()
 		self.newBoardSettingsAvailableEvent = Event()
 
-	""" 
-				Action Functions
-	"""
-
 	def connect(self):
+		"""
+		Method run via connectProcess:
+			* A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
+			* When the connectEvent has been set it is trying to accomplish a connection with the openbci board, only if connected event is not set.
+			* Whether it successes or not, it clears the connectEvent
+		"""
+
 		while not self.shutdownEvent.is_set():
 			self.connectEvent.wait(1)
 			if self.connectEvent.is_set():
@@ -54,9 +67,19 @@ class BoardEventHandler:
 				self.connectEvent.clear()
 
 	def disconnect(self):
+		"""
+		Method run via disconnectProcess:
+			* A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
+			* When the disconnectEvent has been set it is trying to clear the existing connection with the openbci board, only if startStreamingEvent event is not set, which means that board is not transmitting data
+			* Whether it successes or not, it clears the disconnectEvent
+		"""
+
 		while not self.shutdownEvent.is_set():
 			self.disconnectEvent.wait(1)
 			if self.disconnectEvent.is_set():
+				if self.startStreamingEvent.is_set():
+					printWarning("Cannot disconnect while streaming")
+					continue
 				if self.connected.is_set():
 					printInfo("Disconnecting...")
 					try:
@@ -69,9 +92,21 @@ class BoardEventHandler:
 				self.disconnectEvent.clear()
 
 	def startStreaming(self):
-		numofsamples = 0
-		printing = False
+		"""
+		Method run via startStreamingProcess:
+			*   A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
+			*   Whether it successes or not, it clears the startStreamingEvent
+			*   When the startStreamingProcess has been set, if there is a valid connection and an active streaming:
 
+			    1. Starts the streaming
+			    2. Puts the read sample, into every buffer contained in the dataBuffersList for the other processes
+			    3. Inform other processes to get tha sample from the buffer, via the newDataAvailable Event
+
+		"""
+		numofsamples = 0
+		"minor counter, helps to count the number of samples read by the cyton board"
+		printing = False
+		"minor flag, helps to print the number of samples read by the cyton board"
 		while not self.shutdownEvent.is_set():
 			self.startStreamingEvent.wait(1)
 			if self.startStreamingEvent.is_set():
@@ -80,6 +115,7 @@ class BoardEventHandler:
 					printInfo("Starting streaming...")
 					while self.startStreamingEvent.is_set():
 						try:
+							# get sample from board
 							sample = self.board.stream_one_sample()
 							# append training class in the channel data before put in the buffer
 							if self.board.isSynched():
@@ -89,7 +125,10 @@ class BoardEventHandler:
 										self.trainingClass = self.trainingClassBuffer.get()
 								except Exception:
 									printWarning("Something Went Wrong in boardEventHandler line 83")
+								# append training class in the channel data before put in the buffer
 								sample.channel_data.append(self.trainingClass)
+								# Put the read sample in every buffer contained in the dataBuffersList and then inform
+								# other processes via newDataAvailable event
 								for buffer in self.dataBuffersList:
 									try:
 										buffer.put_nowait(sample.channel_data)
@@ -97,6 +136,7 @@ class BoardEventHandler:
 									except queue.Full:
 										printWarning("Queue full")
 								numofsamples += 1
+							# check for the synching zeros array sample ( [0, 0, 0, 0 ,0 , 0, 0, 0] )
 							elif sample.channel_data == cnst.synchingSignal:
 								self.board.setSynching(True)
 						except Exception as e:
@@ -112,6 +152,7 @@ class BoardEventHandler:
 			else:
 				self.newDataAvailable.clear()
 				if self.shutdownEvent.is_set():
+					# empty queues before terminating to prevent zombie processes
 					for buffer in self.dataBuffersList:
 						if buffer.qsize() != 0:
 							printInfo("Empty the queues")
@@ -122,6 +163,18 @@ class BoardEventHandler:
 					printing = False
 
 	def stopStreaming(self):
+		"""
+		Method run via stopStreamingProcess:
+			*   A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
+			*   Whether it successes or not, it clears the stopStreamingEvent
+			*   When the stopStreamingEvent has been set, if there is a valid connection and an active streaming:
+
+			    1. Stops the streaming
+			    2. Inform the writeProcess of UIManager to start writing the data to hdf5 file via writeDataEvent
+			    3. Reinitialize the trainingClass to :data:`utils.constants.Constants.unknownClass` value
+
+		"""
+
 		while not self.shutdownEvent.is_set():
 			self.stopStreamingEvent.wait(1)
 			if self.stopStreamingEvent.is_set():
@@ -143,14 +196,19 @@ class BoardEventHandler:
 				self.stopStreamingEvent.clear()
 
 	def newBoardSettingsAvailable(self):
+		"""
+		Method run via newBoardSettingsAvailableProcess:
+			* A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
+			* When the newBoardSettingsAvailableEvent has been set it is calling the cyton board method :func:`source.cyton.OpenBCICyton.setBoardSettingAttributes` to change the board settings according to GUI
+			* Whether it successes or not, it clears the newBoardSettingsAvailableEvent
+		"""
+
 		while not self.shutdownEvent.is_set():
 			self.newBoardSettingsAvailableEvent.wait(1)
 			if self.newBoardSettingsAvailableEvent.is_set():
 				printInfo("New board setting Available...")
 				self.board.setBoardSettingAttributes(self.boardSettings)
 				self.newBoardSettingsAvailableEvent.clear()
-
-	"""     Assistive functions     """
 
 	def getBoardHandlerEvents(self):
 		"""
@@ -165,7 +223,17 @@ class BoardEventHandler:
 			"newBoardSettingsAvailable": self.newBoardSettingsAvailableEvent
 		}
 
-	def start(self, _shutdownEvent):
+	def start(self):
+		"""
+		*   Its the only method of BoardEventHandler should be called from outer methods
+		*   its responsible to run the five below methods in 5 independent processes
+			*   :meth:`source.boardEventHandler.BoardEventHandler.connect`
+			*   :meth:`source.boardEventHandler.BoardEventHandler.disconnect`
+			*   :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`
+			*   :meth:`source.boardEventHandler.BoardEventHandler.stopStreaming`
+			*   :meth:`source.boardEventHandler.BoardEventHandler.newBoardSettingsAvailable`
+		*   The above methods are completely controlled by their corresponding events when they are triggered (set)
+		"""
 		procList = []
 		printInfo("Starting eventHandler")
 		connectProcess = Process(target=self.connect)
