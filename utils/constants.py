@@ -185,3 +185,4 @@ class Constants:
 
 	""" Unity exe """
 	unityExePath = "/home/zn/Desktop/targets/Ubuntu/TargetUbuntu.exe"
+	unknownClass = 200
