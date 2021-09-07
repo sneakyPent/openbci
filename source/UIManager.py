@@ -2,17 +2,19 @@
 import argparse
 import os
 import signal
+import sys
 
-from pyGUI import *
+sys.path.append('..')
 from multiprocessing.managers import SyncManager
 from multiprocessing import Process, Queue, Lock, Event, current_process
 from dotted.collection import DottedDict
-from boardEventHandler import BoardEventHandler
+from source.boardEventHandler import BoardEventHandler
+from source.pyGUI import startGUI
 from source.training import startTraining
 from source.windowing import windowing
 from utils.coloringPrint import printWarning
-from writeToFile import writing
-from cyton import OpenBCICyton
+from source.writeToFile import writing
+from source.cyton import OpenBCICyton
 from utils.constants import Constants as cnst
 
 parser = argparse.ArgumentParser(prog='UIManager',
@@ -60,6 +62,26 @@ def signal_handler(signal, frame):
 
 
 if __name__ == '__main__':
+
+	parser = argparse.ArgumentParser(prog='UIManager',
+	                                 description='Python scripts that determines which UI will be used for the cyton board ')
+	parser.add_argument('-m', '--mode', nargs=1, choices=('pygui', 'online'), help='Choose the preferred mode',
+	                    required=True)
+	args = parser.parse_args()
+
+	# process list in queue
+	processesList = []
+
+	# main events
+	writeDataEvent = Event()
+	shutdownEvent = Event()
+	newDataAvailable = Event()
+	startTrainingEvent = Event()
+
+	windowedDataBuffer = Queue(maxsize=cnst.writeDataMaxQueueSize)
+	# Queue for the communication between socket and boardEventHandler
+	trainingClassBuffer = Queue(maxsize=1)
+
 	if not os.path.exists(cnst.destinationFolder):
 		os.makedirs(cnst.destinationFolder)
 
