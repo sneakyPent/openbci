@@ -1,3 +1,11 @@
+"""
+Consist of 3 method
+	* connectTraining
+	* startTrainingApp
+	* startTraining
+used only for the training and in order to run it needs the unity target executable.
+
+"""
 import socket
 import subprocess
 import sys, os
@@ -8,6 +16,15 @@ from utils.constants import Constants as cnst
 
 
 def connectTraining(trainingClassBuffer):
+	"""
+	Responsible
+		* to create a socket communication with the target executable.
+		* to receive the training class byte from the open connection.
+		* to put the receiving byte into trainingClassBuffer parameter.
+
+	:param trainingClassBuffer: {Queue(maxsize=1)} - Buffer used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`
+
+	"""
 	# create socket
 	s = socket.socket()
 	socket.setdefaulttimeout(None)
@@ -59,12 +76,26 @@ def connectTraining(trainingClassBuffer):
 
 
 def startTrainingApp(boardApiCallEvents):
+	"""
+	Simple method, that only executes the unity target executable given in :data:`utils.constants.Constants.unityExePath`
+
+	:param boardApiCallEvents: Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
+
+	"""
 	with open(os.devnull, 'wb') as devnull:
 		subprocess.check_call([cnst.unityExePath], stdout=devnull, stderr=subprocess.STDOUT)
 	boardApiCallEvents.stopStreaming.set()
 
 
 def startTraining(startTrainingEvent, boardApiCallEvents, _shutdownEvent, trainingClassBuffer):
+	"""
+	Method runs via trainingProcess in :py:mod:`source.UIManager`
+
+	:param startTrainingEvent: {Event} - Event which this process will be waiting for, before starting the connectTraining, startTrainingApp processes. This Event is set only by the :py:meth:`source.pyGUI.GUI.trainingButtonClick`
+	:param boardApiCallEvents:  Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
+	:param _shutdownEvent:  {Event} - Event used to know when to let every running process terminate
+	:param trainingClassBuffer: {Queue} -  Buffer will be used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
+	"""
 	while not _shutdownEvent.is_set():
 		startTrainingEvent.wait(1)
 		if startTrainingEvent.is_set():
