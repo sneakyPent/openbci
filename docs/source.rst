@@ -28,13 +28,6 @@ source\.cyton module
     :undoc-members:
     :show-inheritance:
 
-source\.dataManager module
---------------------------
-
-.. automodule:: source.dataManager
-    :members:
-    :undoc-members:
-    :show-inheritance:
 
 source\.pyGUI module
 --------------------
