@@ -107,7 +107,7 @@ if __name__ == '__main__':
 
 	# Create a BoardEventHandler Instance
 	boardEventHandler = BoardEventHandler(board, boardCytonSettings, newDataAvailable, dataBuffersList, writeDataEvent,
-	                                      trainingClassBuffer)
+	                                      trainingClassBuffer, shutdownEvent)
 	# events will be used to control board through any gui
 	boardApiCallEvents = DottedDict(boardEventHandler.getBoardHandlerEvents())
 
@@ -120,8 +120,7 @@ if __name__ == '__main__':
 		processesList.append(printDataProcess)
 
 		# create Process for the boardEventHandler
-		boardEventHandlerProcess = Process(target=boardEventHandler.start, name='boardEventHandler',
-		                                   args=(shutdownEvent,))
+		boardEventHandlerProcess = Process(target=boardEventHandler.start, name='boardEventHandler', )
 		processesList.append(boardEventHandlerProcess)
 
 		# create Process for the gui
