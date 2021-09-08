@@ -16,7 +16,7 @@ class BoardEventHandler:
 
 	:param board: {} - Represents the OpenBCICyton class in BoardEventHandler class
 	:param boardSettings: {Dotted dict} - Contains all board settings set by the GUI and used in cyton.py
-	:param newDataAvailable: {Event} - Event in which process owners of queues contained in dataBuffersList are waiting for to get the new sample read from board
+	:param newDataAvailable: {Event} - Event which processes' owners of queues contained in dataBuffersList are waiting for to get the new sample read from board
 	:param dataBuffersList: {[]} - list with every buffer we want to add streaming data into, and pass to other processes
 	:param writeDataEvent: {Event} - Event to inform the writeProcess of UImanager.py to start writing the data into an hdf5 file
 	:param trainingClassBuffer: {Queue} - Buffer letting this process to get sample's class, that the training program showing every frame via socket.py
@@ -46,7 +46,7 @@ class BoardEventHandler:
 
 	def connect(self):
 		"""
-		Method run via connectProcess:
+		Method runs via connectProcess:
 			* A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
 			* When the connectEvent has been set it is trying to accomplish a connection with the openbci board, only if connected event is not set.
 			* Whether it successes or not, it clears the connectEvent
@@ -68,7 +68,7 @@ class BoardEventHandler:
 
 	def disconnect(self):
 		"""
-		Method run via disconnectProcess:
+		Method runs via disconnectProcess:
 			* A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
 			* When the disconnectEvent has been set it is trying to clear the existing connection with the openbci board, only if startStreamingEvent event is not set, which means that board is not transmitting data
 			* Whether it successes or not, it clears the disconnectEvent
@@ -93,14 +93,15 @@ class BoardEventHandler:
 
 	def startStreaming(self):
 		"""
-		Method run via startStreamingProcess:
+		Method runs via startStreamingProcess:
 			*   A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
 			*   Whether it successes or not, it clears the startStreamingEvent
 			*   When the startStreamingProcess has been set, if there is a valid connection and an active streaming:
 
 			    1. Starts the streaming
-			    2. Puts the read sample, into every buffer contained in the dataBuffersList for the other processes
-			    3. Inform other processes to get tha sample from the buffer, via the newDataAvailable Event
+			    2. Appends the training class into the channel_data array, if training is enabled.
+			    3. Puts the read sample, into every buffer contained in the dataBuffersList for the other processes
+			    4. Inform other processes to get tha sample from the buffer, via the newDataAvailable Event
 
 		"""
 		numofsamples = 0
@@ -164,7 +165,7 @@ class BoardEventHandler:
 
 	def stopStreaming(self):
 		"""
-		Method run via stopStreamingProcess:
+		Method runs via stopStreamingProcess:
 			*   A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
 			*   Whether it successes or not, it clears the stopStreamingEvent
 			*   When the stopStreamingEvent has been set, if there is a valid connection and an active streaming:
@@ -197,7 +198,7 @@ class BoardEventHandler:
 
 	def newBoardSettingsAvailable(self):
 		"""
-		Method run via newBoardSettingsAvailableProcess:
+		Method runs via newBoardSettingsAvailableProcess:
 			* A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
 			* When the newBoardSettingsAvailableEvent has been set it is calling the cyton board method :func:`source.cyton.OpenBCICyton.setBoardSettingAttributes` to change the board settings according to GUI
 			* Whether it successes or not, it clears the newBoardSettingsAvailableEvent
