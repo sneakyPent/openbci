@@ -78,8 +78,8 @@ class OpenBCICyton(object):
 
 	def __init__(self, port=None, baud=115200, filter_data=True, scaled_output=True,
 	             daisy=False, aux=False, impedance=False, log=True, timeout=None,
-	             lowerBoundFrequency=None, higherBoundFrequency=None, enabledChannels=None, windowSize=None,
-	             windowStepSize=None):
+	             lowerBoundFrequency=0, higherBoundFrequency=0, enabledChannels=None, windowSize=0,
+	             windowStepSize=0):
 		self.baudrate = baud
 		self.timeout = timeout
 		self.log = log  # print_incoming_text needs log
