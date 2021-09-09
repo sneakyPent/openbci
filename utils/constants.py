@@ -4,7 +4,7 @@ from matplotlib import colors as mcolors
 colrs = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
 
 
-def dateTimeFilename(): return Constants.destinationFolder + 'Streaming' + time.strftime("%d_%m_%Y_%H:%M:%S")
+def dateTimeFilename(): return Constants.destinationFolder + 'Streaming' + time.strftime("%d_%m_%Y__%H_%M_%S")
 
 
 class Constants:
