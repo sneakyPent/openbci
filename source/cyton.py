@@ -833,6 +833,7 @@ class OpenBCICyton(object):
 		OpenBCI Incoming Packet Positions
 		  Start Byte(1)|Sample ID(1)|Channel Data(24)|Aux Data(6)|End Byte(1)
 				0xA0|0-255|8, 3-byte signed ints|3 2-byte signed ints|0xC0
+
 		:param readPacket: packet has been read from the board
 		:return: List with the channel data only
 		"""
@@ -856,9 +857,11 @@ class OpenBCICyton(object):
 		OpenBCI Incoming Packet Positions
 		  Start Byte(1)|Sample ID(1)|Channel Data(24)|Aux Data(6)|End Byte(1)
 				0xA0|0-255|8, 3-byte signed ints|3 2-byte signed ints|0xC0
+
 		:param readPacket: packet has been read from the board
 		:return: List with the channel data only
 		"""
+
 		channel_data = []
 		# Get the accelerometer' data one by one from the packet
 		for i in range(self.aux_channels_per_sample):
@@ -887,6 +890,7 @@ def is_stop_byte(byte):
 	"""
 	Used to check and see if a byte adheres to the stop byte structure
 		of 0xCx where x is the set of numbers from 0-F in hex of 0-15 in decimal.
+
 	:param byte: {int} - The number to test
 	:return: {boolean} - True if `byte` follows the correct form
 	"""
