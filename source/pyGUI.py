@@ -205,16 +205,16 @@ class GUI(QMainWindow):
 		self.boardSettingLayout.addStretch()
 
 	def startStreaming(self):
-		self.boardApiCallEvents.startStreaming.set()
+		self.boardApiCallEvents["startStreaming"].set()
 
 	def stopStreaming(self):
-		self.boardApiCallEvents.stopStreaming.set()
+		self.boardApiCallEvents["stopStreaming"].set()
 
 	def connectBoard(self):
-		self.boardApiCallEvents.connect.set()
+		self.boardApiCallEvents["connect"].set()
 
 	def disconnectBoard(self):
-		self.boardApiCallEvents.disconnect.set()
+		self.boardApiCallEvents["disconnect"].set()
 
 	def quitGUI(self):
 		self.stopStreaming()
@@ -241,21 +241,21 @@ class GUI(QMainWindow):
 			upperBound = int(freq.split("-")[1])
 			self.boardCytonSettings["lowerBand"] = lowerBound
 			self.boardCytonSettings["upperBand"] = upperBound
-			self.boardApiCallEvents.newBoardSettingsAvailable.set()
+			self.boardApiCallEvents["newBoardSettingsAvailable"].set()
 		except Exception:
 			print("freqComboClick ERROR!")
 
 	def windowComboClick(self, size):
 		try:
 			self.boardCytonSettings["windowSize"] = int(size)
-			self.boardApiCallEvents.newBoardSettingsAvailable.set()
+			self.boardApiCallEvents["newBoardSettingsAvailable"].set()
 		except Exception:
 			print("windowComboClick ERROR!")
 
 	def windowStepComboClick(self, size):
 		try:
 			self.boardCytonSettings["windowStepSize"] = float(size)
-			self.boardApiCallEvents.newBoardSettingsAvailable.set()
+			self.boardApiCallEvents["newBoardSettingsAvailable"].set()
 		except Exception:
 			print("windowStepComboClick ERROR!")
 
@@ -265,7 +265,7 @@ class GUI(QMainWindow):
 				self.boardCytonSettings["filtering_data"] = True
 			else:
 				self.boardCytonSettings["filtering_data"] = False
-			self.boardApiCallEvents.newBoardSettingsAvailable.set()
+			self.boardApiCallEvents["newBoardSettingsAvailable"].set()
 		except Exception:
 			print("filteringDataFunction ERROR!")
 
@@ -275,7 +275,7 @@ class GUI(QMainWindow):
 				self.boardCytonSettings["scaling_output"] = True
 			else:
 				self.boardCytonSettings["scaling_output"] = False
-			self.boardApiCallEvents.newBoardSettingsAvailable.set()
+			self.boardApiCallEvents["newBoardSettingsAvailable"].set()
 		except Exception:
 			print("scalingDataFunction ERROR!")
 

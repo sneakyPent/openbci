@@ -7,7 +7,6 @@ import sys
 sys.path.append('..')
 from multiprocessing.managers import SyncManager
 from multiprocessing import Process, Queue, Lock, Event, current_process
-from dotted.collection import DottedDict
 from source.boardEventHandler import BoardEventHandler
 from source.pyGUI import startGUI
 from source.training import startTraining
@@ -109,7 +108,7 @@ if __name__ == '__main__':
 	boardEventHandler = BoardEventHandler(board, boardCytonSettings, newDataAvailable, dataBuffersList, writeDataEvent,
 	                                      trainingClassBuffer, shutdownEvent)
 	# events will be used to control board through any gui
-	boardApiCallEvents = DottedDict(boardEventHandler.getBoardHandlerEvents())
+	boardApiCallEvents = boardEventHandler.getBoardHandlerEvents()
 
 	mode = args.mode[0]
 	if mode == 'pygui':
