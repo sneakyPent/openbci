@@ -285,6 +285,12 @@ class OpenBCICyton(object):
 		if self.port != "loop://":
 			self.print_incoming_text()
 
+		# fake streaming to force board send synchronization zeros array
+		sam = self.stream_one_sample()
+		print(sam.channel_data)
+		self.streaming = False
+		self.ser.write(cnts.stopStreamingData)
+
 	def disconnect(self):
 		if self.streaming:
 			self.stopStreaming()
