@@ -16,24 +16,22 @@ from source.writeToFile import writing
 from source.cyton import OpenBCICyton
 from utils.constants import Constants as cnst
 
-parser = argparse.ArgumentParser(prog='UIManager',
-                                 description='Python scripts that determines which UI will be used for the cyton board ')
-parser.add_argument('-m', '--mode', nargs=1, choices=('pygui', 'online'), help='Choose the preferred mode',
-                    required=True)
-args = parser.parse_args()
+"""
+							UIMANAGER.PY
+* Main process to run and create every other process needed for main use
+	
+	* boardEventHandlerProcess:
+		check comments in BoardEventHandler.py
+	* guiProcess
+	* printDataProcess:
+		Simple process that just run printData function of line 63 and prints the sample read by the openbci board 
 
-# process list in queue
-processesList = []
+	* writeProcess
+	* windowingProcess
+	* trainingProcess
 
-# main events
-writeDataEvent = Event()
-shutdownEvent = Event()
-newDataAvailable = Event()
-startTrainingEvent = Event()
 
-windowedDataBuffer = Queue(maxsize=cnst.writeDataMaxQueueSize)
-# Queue for the communication between socket and boardEventHandler
-trainingClassBuffer = Queue(maxsize=1)
+"""
 
 
 # create a SyncManager and register openbci cyton board object so as to create a proxy and share it to every subprocess
