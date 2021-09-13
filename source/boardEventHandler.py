@@ -127,6 +127,7 @@ class BoardEventHandler:
 								except Exception:
 									printWarning("Something Went Wrong in boardEventHandler line 83")
 								# append training class in the channel data before put in the buffer
+								# TODO: append training class only while training
 								sample.channel_data.append(self.trainingClass)
 								# Put the read sample in every buffer contained in the dataBuffersList and then inform
 								# other processes via newDataAvailable event
@@ -149,6 +150,7 @@ class BoardEventHandler:
 				else:
 					if not self.connected.is_set():
 						printInfo("No connection to stop streaming from.")
+						# TODO: Raise exception
 				self.startStreamingEvent.clear()
 			else:
 				self.newDataAvailable.clear()
