@@ -27,7 +27,7 @@ def writing(writeBuf, windowedData, writeDataEvent, _shutdownEvent):
 				dt = windowedData.get()
 				windowedSignal.append(dt)
 			windowedSignal = np.array(windowedSignal).astype(float)
-			hf.create_dataset("windowed", data=windowedSignal)
+			hf.create_dataset("packages", data=windowedSignal)
 			printInfo("Finish with windowed signal")
 			hf.close()
 			writeDataEvent.clear()
