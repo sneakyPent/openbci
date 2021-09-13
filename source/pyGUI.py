@@ -43,6 +43,16 @@ class GUI(QMainWindow):
 		self.boardSettingLayout = QHBoxLayout()
 		self.mainLayout.addLayout(self.boardSettingLayout, 0, 0)
 
+		# # add message viewer in the gui
+		# TODO: Make general printer with a pattern so as to choose where to send the output
+		# self.messageViewerLayout = QHBoxLayout()
+		# self.mainLayout.addLayout(self.messageViewerLayout, 1, 0)
+		# self.messageViewer = QTextBrowser()
+		# self.messageViewer.resize(5, 5)
+		# self.messageViewerLayout.addWidget(self.messageViewer)
+		# self.messageViewerLayout.addStretch(0)
+		# self.mainLayout.addStretch(1)
+
 		# add a layout for the graphs
 		self.graphLayout = QVBoxLayout()
 		self.mainLayout.addLayout(self.graphLayout, 2, 0, -1, 2)
@@ -128,6 +138,7 @@ class GUI(QMainWindow):
 		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
 
 		# create a combo menu for the Window choices
+		# TODO: Allow only integers
 		timeWindowCombo = QHBoxLayout()
 		timeWindowComboTitle = QLabel('Window size:')
 		self.timeWindowComboChoices = QComboBox()
@@ -144,6 +155,7 @@ class GUI(QMainWindow):
 		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
 
 		# create a combo menu for the stepWindowSize choices
+		# TODO: check if the size * sample rate is integer
 		stepWindowSizeCombo = QHBoxLayout()
 		stepWindowSizeComboTitle = QLabel('Step size:')
 		self.stepWindowSizeComboChoices = QComboBox()
