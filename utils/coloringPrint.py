@@ -1,6 +1,7 @@
 from utils.constants import Constants as cnst
 
 
+# TODO: make print error adds error in log file too
 def printError(string):
 	print(cnst.FAIL + 'ERROR: ' + cnst.ENDC + string)
 
