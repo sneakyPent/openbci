@@ -1,22 +1,19 @@
-"""
-Core OpenBCI object for handling connections and samples from the board.
-
-EXAMPLE USE:
-
-def handle_sample(sample):
-  print(sample.channel_data)
-
-board = OpenBCIBoard()
-board.print_register_settings()
-board.start_streaming(handle_sample)
-
-NOTE: If daisy modules is enabled, the callback will occur every two samples, hence "packet_id"
- will only contain even numbers. As a side effect, the sampling rate will be divided by 2.
-
-FIXME: at the moment we can just force daisy mode, do not check that the module is detected.
-TODO: enable impedance
-
-"""
+# Core OpenBCI object for handling connections and samples from the board.
+#
+# EXAMPLE USE:
+#
+# def handle_sample(sample):
+#   print(sample.channel_data)
+#
+# board = OpenBCIBoard()
+# board.print_register_settings()
+# board.start_streaming(handle_sample)
+#
+# NOTE: If daisy modules is enabled, the callback will occur every two samples, hence "packet_id"
+#  will only contain even numbers. As a side effect, the sampling rate will be divided by 2.
+#
+# FIXME: at the moment we can just force daisy mode, do not check that the module is detected.
+# TODO: enable impedance
 
 from __future__ import print_function
 import os
