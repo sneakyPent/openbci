@@ -19,7 +19,7 @@ def windowing(board, windowingBuf, windowedData, newDataAvailable, _shutdownEven
 				currentWindowList.append(dt)
 				# append until the package size, then put in queue and remove the first "step" samples
 				if len(currentWindowList) == window:
-					printWarning("created window No." + windowCounter.__str__())
+					# printWarning("created window No." + windowCounter.__str__())
 					windowCounter += 1
 					windowedData.put(np.copy(currentWindowList).tolist())
 					del currentWindowList[0:step]
