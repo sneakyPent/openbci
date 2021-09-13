@@ -11,6 +11,7 @@ def windowing(board, windowingBuf, windowedData, newDataAvailable, _shutdownEven
 		# the desired package-window size (windowSize*sampleRate) EG: 1*250
 		window = board.getWindow()
 		# the desired step size for each package
+		# FIXME: step is step(sec)*sampling, or step(sec) * windowSize
 		step = board.getWindowStep()
 		if newDataAvailable.is_set():
 			while not windowingBuf.empty():
