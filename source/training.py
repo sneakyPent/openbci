@@ -53,6 +53,7 @@ def connectTraining(trainingClassBuffer):
 	# Quest sends the arrow number
 	bytes_received = c.recv(1).decode("utf-8")  # received bytes
 	print(bytes_received)
+	trainingClassBuffer.put_nowait(bytes_received)
 
 	if bytes_received != "E" and bytes_received != "":
 
