@@ -85,7 +85,7 @@ def startTrainingApp(boardApiCallEvents):
 	"""
 	with open(os.devnull, 'wb') as devnull:
 		subprocess.check_call([cnst.unityExePath], stdout=devnull, stderr=subprocess.STDOUT)
-	boardApiCallEvents.stopStreaming.set()
+	boardApiCallEvents["stopStreaming"].set()
 
 
 def startTraining(startTrainingEvent, boardApiCallEvents, _shutdownEvent, trainingClassBuffer):
@@ -100,7 +100,7 @@ def startTraining(startTrainingEvent, boardApiCallEvents, _shutdownEvent, traini
 	while not _shutdownEvent.is_set():
 		startTrainingEvent.wait(1)
 		if startTrainingEvent.is_set():
-			boardApiCallEvents.startStreaming.set()
+			boardApiCallEvents["startStreaming"].set()
 			socketProcess = Process(target=connectTraining, args=(trainingClassBuffer,))
 			applicationProcess = Process(target=startTrainingApp, args=(boardApiCallEvents,))
 			if not socketProcess.is_alive():
