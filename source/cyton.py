@@ -287,7 +287,6 @@ class OpenBCICyton(object):
 
 		# fake streaming to force board send synchronization zeros array
 		sam = self.stream_one_sample()
-		print(sam.channel_data)
 		self.streaming = False
 		self.ser.write(cnts.stopStreamingData)
 
