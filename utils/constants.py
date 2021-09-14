@@ -187,3 +187,4 @@ class Constants:
 	unityExePath = "/home/zn/Desktop/targets/Ubuntu/TargetUbuntu.exe"
 	unknownClass = 200
 	trainingClasses = [0, 1, 2, 3, 4]
+	trainingClassesFrequencies = [0, 3, 3.75, 3.33, 4.28]
