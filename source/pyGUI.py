@@ -10,6 +10,7 @@ import pyqtgraph as pg
 sys.path.append('..')
 from utils.constants import Constants as cnst
 from utils import filters
+from utils import fft_analysis
 
 
 class GUI(QMainWindow):
@@ -187,11 +188,11 @@ class GUI(QMainWindow):
 		self.boardSettingLayout.addWidget(self.scalingDataCheckbox)
 		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
 
-		# add a push button to send query for RegisteSettings
-		self.infoButton = QPushButton("Board info")
-		self.infoButton.setFont(self.font)
-		self.infoButton.clicked.connect(self.infoButtonClick)
-		self.boardSettingLayout.addWidget(self.infoButton)
+		# add a push button to plot FFT from specific file
+		self.plotFftButton = QPushButton("Plot stream FFT")
+		self.plotFftButton.setFont(self.font)
+		self.plotFftButton.clicked.connect(self.plotFftButtonClick)
+		self.boardSettingLayout.addWidget(self.plotFftButton)
 		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
 
 		# add a push button to start Training mode
@@ -244,8 +245,15 @@ class GUI(QMainWindow):
 	def trainingButtonClick(self):
 		self.startTrainingEvent.set()
 
-	def infoButtonClick(self, btn):
-		pass
+	def plotFftButtonClick(self, btn):
+		options = QFileDialog.Options()
+		options |= QFileDialog.DontUseNativeDialog
+		file_filter = 'HDF5 File (*.hdf5 )'
+		fileName, _ = QFileDialog.getOpenFileName(self, "Choose HDF5 Stream file ",
+		                                          directory="../streamData",
+		                                          filter=file_filter, options=options)
+		if fileName:
+			fft_analysis.printfft(fileName)
 
 	def freqComboClick(self, freq):
 		try:
