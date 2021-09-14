@@ -7,25 +7,28 @@ sys.path.append('..')
 from utils.constants import Constants as cnst
 from utils import filters
 
-def printfft():
-	# with h5py.File("../streamData/15minutesStream.hdf5", 'r') as f:
-	# fileNameList = ['panwAristera2', 'katwAristera2', 'panwDexia2', 'katwDexia']
-	# for filename in fileNameList:
-	fileName = 'Streaming10_09_2021__15_39_05'
-	with h5py.File("../streamData/" + fileName + ".hdf5", 'r') as f:
+
+def printfft(fileName):
+	with h5py.File(fileName, 'r') as f:
 		signalData = f['signal']
 		lowcut = 4
 		highcut = 40
 		fs = 250
-		" training class breaking array"
-		"---------"
-		signalDataInClassPackages = [[sample for sample in signalData if sample[8] == cnst.unknownClass]]
+
+		signalDataInClassPackages = []
 		for trClass in cnst.trainingClasses:
+			if trClass == 0:
+				continue
 			signalDataInClassPackages.append([sample for sample in signalData if sample[8] == trClass])
-		"---------"
-		
-		for i in range(len(cnst.trainingClasses)+1):
-			d1 = np.array(signalDataInClassPackages[i])
+
+		fig, axs = plt.subplots(2, 2)
+		axsCols, axsRows = axs.shape
+		subCols = subRows = 0
+		for tClass in range(len(cnst.trainingClasses) - 1):
+			if subRows == axsRows:
+				subCols += 1
+				subRows = 0
+			d1 = np.array(signalDataInClassPackages[tClass])
 			freq_6 = d1[:, 0:4]
 			mm = np.array(freq_6)
 			tt = mm[1:]
@@ -52,19 +55,23 @@ def printfft():
 			freqs3 = np.fft.fftfreq(freq_6[:, 0].size, time_step)
 			idx3 = np.argsort(freqs3)
 
-			# plot1 = plt.figure(1)
-			# plt.plot(x1, y1)
-			# plot2 = plt.figure(2)
-			# plt.plot(x2, y2)
-			plt.figure(i+1)
 			for w in range(len(data_processed_freq_6)):
 				ps = data_processed_freq_6[w]
-				plt.plot(freqs3[idx3], ps[idx3], colors[w], label=lb[w])
-			plt.xlim(left=0, right=40)
-			plt.ylim(bottom=0)
-			plt.legend()
-			plt.show()
+				axs[subCols, subRows].plot(freqs3[idx3], ps[idx3], colors[w], label=lb[w])
+				axs[subCols, subRows].set_title(
+					'Class ' + cnst.trainingClasses[tClass + 1].__str__() + ', Frequency: ' +
+					cnst.trainingClassesFrequencies[
+						tClass + 1].__str__())
+			axs[subCols, subRows].set_xlim(left=0, right=40)
+			axs[subCols, subRows].set_ylim(bottom=0)
+			axs[subCols, subRows].legend()
+			subRows += 1
+		for ax in axs.flat:
+			ax.set(xlabel='Amplitude', ylabel='Frequency (Hertz)')
+		plt.show()
 
 
 if __name__ == '__main__':
-	printfft()
+	sName = 'Streaming10_09_2021__16_21_49'
+	fName = "../streamData/" + sName + ".hdf5"
+	printfft(fName)
