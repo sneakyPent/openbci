@@ -14,6 +14,8 @@ import sys, os
 import time
 from multiprocessing import Process, Event
 
+from utils.coloringPrint import printInfo,printError
+
 sys.path.append('..')
 from utils.constants import Constants as cnst
 
@@ -114,7 +116,7 @@ def startTrainingApp(boardApiCallEvents):
 	boardApiCallEvents["stopStreaming"].set()
 
 
-def startTraining(startTrainingEvent, boardApiCallEvents, _shutdownEvent, trainingClassBuffer):
+def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent, trainingClassBuffer):
 	"""
 	* Method runs via trainingProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process and waits for the startTrainingEvent, which is set only by the boardEventHandler.
@@ -138,6 +140,10 @@ def startTraining(startTrainingEvent, boardApiCallEvents, _shutdownEvent, traini
 	while not _shutdownEvent.is_set():
 		startTrainingEvent.wait(1)
 		if startTrainingEvent.is_set():
+			if not board.isConnected():
+				printError('Could not start straining without connected Board.')
+				startTrainingEvent.clear()
+				continue
 			while not trainingClassBuffer.qsize() == 0:
 				trainingClassBuffer.get_nowait()
 			if not socketProcess.is_alive():
