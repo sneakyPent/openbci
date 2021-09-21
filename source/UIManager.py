@@ -16,34 +16,25 @@ from source.writeToFile import writing
 from source.cyton import OpenBCICyton
 from utils.constants import Constants as cnst
 
-"""
-							UIMANAGER.PY
-* Main process to run and create every other process needed for main use
-	
-	* boardEventHandlerProcess:
-		check comments in BoardEventHandler.py
-	* guiProcess
-	* printDataProcess:
-		Simple process that just run printData function of line 63 and prints the sample read by the openbci board 
 
-	* writeProcess
-	* windowingProcess
-	* trainingProcess
-
-
-"""
-
-
-# create a SyncManager and register openbci cyton board object so as to create a proxy and share it to every subprocess
 class MyManager(SyncManager):
+	"""
+	SyncManager to register openbci cyton board object so as to create a proxy and share it to every subprocess.
+
+	"""
 	pass
 
 
-# register the OpenBCICyton class; make its functions accessible via proxy
-MyManager.register('OpenBCICyton', OpenBCICyton)
-
-
 def printData(data, _newDataAvailable, _shutdownEvent):
+	"""
+	* Runs simultaneously with the boardEventHandler process and waits for the writeDataEvent, which is set only by the boardEventHandler.
+	* Simple process that just printing the data read from cyton board in the terminal.
+
+	:param Queue data: Buffer used for communicating and getting the transmitted data from :py:meth:`source.boardEventHandler.BoardEventHandler.startStreaming`.
+	:param Event _newDataAvailable: The event the method is waiting for, before proceeding to the next step (printing).
+	:param Event _shutdownEvent: Used as condition for the method to run.
+	:return: None
+	"""
 	while not _shutdownEvent.is_set():
 		_newDataAvailable.wait(1)
 		if _newDataAvailable.is_set():
@@ -53,12 +44,31 @@ def printData(data, _newDataAvailable, _shutdownEvent):
 
 
 def signal_handler(signal, frame):
+	"""
+	Used to catch the ctrl^c signal to stop the application via shutdownEvent
+	"""
 	if type(current_process()) != Process:
 		shutdownEvent.set()
 		printWarning("shuttingDown")
 
 
-if __name__ == '__main__':
+shutdownEvent = Event()
+
+
+def uiManager():
+	"""
+	* It's the main process to run
+	* Creates every other process needed for main use.
+
+		1. boardEventHandlerProcess
+		2. guiProcess
+		3. printDataProcess
+		4. writeProcess
+		5. windowingProcess
+		6. trainingProcess
+	"""
+	# register the OpenBCICyton class; make its functions accessible via proxy
+	MyManager.register('OpenBCICyton', OpenBCICyton)
 
 	parser = argparse.ArgumentParser(prog='UIManager',
 	                                 description='Python scripts that determines which UI will be used for the cyton board ')
@@ -71,7 +81,7 @@ if __name__ == '__main__':
 
 	# main events
 	writeDataEvent = Event()
-	shutdownEvent = Event()
+
 	newDataAvailable = Event()
 	startTrainingEvent = Event()
 
@@ -158,3 +168,7 @@ if __name__ == '__main__':
 		# join processes
 		for proc in processesList:
 			proc.join()
+
+
+if __name__ == '__main__':
+	uiManager()
