@@ -12,6 +12,40 @@ from utils.constants import Constants as cnst
 from utils import filters
 from utils import fft_analysis
 
+#
+# class CheckableComboBox(QComboBox):
+# 	def __init__(self):
+# 		super().__init__()
+# 		self._changed = False
+#
+# 		self.view().pressed.connect(self.handleItemPressed)
+#
+# 	def setItemChecked(self, index, checked=False):
+# 		item = self.model().item(index, self.modelColumn())  # QStandardItem object
+#
+# 		if checked:
+# 			item.setCheckState(Qt.Checked)
+# 		else:
+# 			item.setCheckState(Qt.Unchecked)
+#
+# 	def handleItemPressed(self, index):
+# 		item = self.model().itemFromIndex(index)
+#
+# 		if item.checkState() == Qt.Checked:
+# 			item.setCheckState(Qt.Unchecked)
+# 		else:
+# 			item.setCheckState(Qt.Checked)
+# 		self._changed = True
+#
+# 	def hidePopup(self):
+# 		if not self._changed:
+# 			super().hidePopup()
+# 		self._changed = False
+#
+# 	def itemChecked(self, index):
+# 		item = self.model().item(index, self.modelColumn())
+# 		return item.checkState() == Qt.Checked
+#
 
 class MyQComboBox(QComboBox):
 	def addItems(self, Iterable, p_str=None):
@@ -157,6 +191,28 @@ class GUI(QMainWindow):
 		self.boardSettingLayout.addLayout(freqCombo)
 		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
 
+		# # create a combo menu for the channels
+		# channelsCombo = QHBoxLayout()
+		# channelsComboTitle = QLabel('channels: ')
+		# self.channelsComboChoices = CheckableComboBox()
+		# self.channelsComboChoices.adjustSize()
+		# self.channelsComboChoices.setFont(self.font)
+		# self.channelsComboChoices.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+		# for i in range(6):
+		# 	self.channelsComboChoices.addItem('Item {0}'.format(str(i)))
+		# 	self.channelsComboChoices.setItemChecked(i, False)
+		# channelsComboTitle.setFont(self.font)
+		#
+		# # Set the init value form the cnst.windowSizeList
+		# initValueIndex = cnst.windowSizeList.index(cnst.initWindowSizeValue)
+		#
+		# channelsCombo.addWidget(channelsComboTitle)
+		# channelsCombo.addWidget(self.channelsComboChoices)
+		#
+		# # add timeWindow combo to boardSettingLayout
+		# self.boardSettingLayout.addLayout(channelsCombo)
+		# self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+
 		# create a combo menu for the Window choices
 		timeWindowCombo = QHBoxLayout()
 		timeWindowComboTitle = QLabel('Window size:')
@@ -274,11 +330,12 @@ class GUI(QMainWindow):
 		options = QFileDialog.Options()
 		options |= QFileDialog.DontUseNativeDialog
 		file_filter = 'HDF5 File (*.hdf5 )'
-		fileName, _ = QFileDialog.getOpenFileName(self, "Choose HDF5 Stream file ",
-		                                          directory="../streamData",
-		                                          filter=file_filter, options=options)
-		if fileName:
-			fft_analysis.printfft(fileName)
+		fileNames, _ = QFileDialog.getOpenFileNames(self, "Choose HDF5 Stream file ",
+		                                            directory="../streamData",
+		                                            filter=file_filter, options=options)
+		if fileNames:
+			# fft_analysis.printUniqueFFT(fileNames)
+			fft_analysis.printFFT(fileNames)
 
 	def freqComboClick(self, freq):
 		try:
