@@ -32,10 +32,10 @@ from utils.coloringPrint import *
 sys.path.append('..')
 from utils.constants import Constants as cnts
 
-scale_fac_uVolts_per_count = cnts.ADS1299_VREF / \
-                             float((pow(2, 23) - 1)) / cnts.ADS1299_GAIN_24 * 1000000.
-scale_fac_accel_G_per_count = 0.002 / \
-                              (pow(2, 4))  # assume set to +/4G, so 2 mG
+scale_fac_uVolts_per_count = cnts.ADS1299_VREF / float((pow(2, 23) - 1)) / cnts.ADS1299_GAIN_24 * 1000000.
+scale_fac_accel_G_per_count = 0.002 / (pow(2, 4))  # assume set to +/4G, so 2 mG
+
+
 '''
 #Commands for in SDK http://docs.openbci.com/software/01-Open BCI_SDK:
 
