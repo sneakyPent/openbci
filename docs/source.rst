@@ -61,11 +61,3 @@ source\.writeToFile module
     :undoc-members:
     :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: source
-    :members:
-    :undoc-members:
-    :show-inheritance:
