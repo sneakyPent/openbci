@@ -12,8 +12,6 @@
 # NOTE: If daisy modules is enabled, the callback will occur every two samples, hence "packet_id"
 #  will only contain even numbers. As a side effect, the sampling rate will be divided by 2.
 #
-# FIXME: at the moment we can just force daisy mode, do not check that the module is detected.
-# TODO: enable impedance
 
 from __future__ import print_function
 import os
@@ -61,16 +59,19 @@ class OpenBCICyton(object):
 	"""
 	Handle a connection to an OpenBCI board.
 
-	Args:
-	  :port: The port to connect to.
-	  :baud: The baud of the serial connection.
-	  :filter_data: {Boolean} enable or disable filtering data between the given frequencies
-	  :scaled_output: {Boolean} enable or disable scaling reading data with the given scaling factor
-	  :daisy: {Boolean}  Enable or disable daisy module and 16 chans readings
-	  :aux, impedance: unused, for compatibility with ganglion API
-	  :log: {Boolean}
-	  :timeout: the timeout for the serial connection to board receiver
-
+	:param int port: The port to connect to.
+	:param int baudRate: The baud of the serial connection.
+	:param Boolean filter_data: Enable or disable filtering data between the given frequencies
+	:param Boolean scaled_output: Enable or disable scaling reading data with the given scaling factor
+	:param Boolean daisy:  Enable or disable daisy module and 16 chans readings
+	:param Boolean aux, impedance: unused, for compatibility with ganglion API
+	:param Boolean log:
+	:param timeout: the timeout for the serial connection to board receiver
+	:param int lowerBoundFrequency: The lower bound will be used for the filtering (lowpass-bandpass)
+	:param int higherBoundFrequency: The upper bound will be used for the filtering (lowpass-bandpass)
+	:param [] enabledChannels: Array contains the channels will be enabled (unused temporarily)
+	:param int windowSize: The size of the window will be used in :meth:`source.windowing.windowing`
+	:param int windowStepSize: The size of the window will be used in :meth:`source.windowing.windowing`
 	"""
 
 	def __init__(self, port=None, baud=115200, filter_data=True, scaled_output=True,
@@ -137,15 +138,15 @@ class OpenBCICyton(object):
 
 	def setEnabledChannels(self, channelsList):
 		"""
-			Enable channels
-			- values must be in the range of the board type available channels
-					daisy = 1-16
-					cyton = 1-8
+		Enable channels:
+			* Values must be in the range of the board type available channels
 
-			:param channelsList {list} List of the channels want to enable.
-				EX. ch = [5,6,7,8] enables the channels 5-8 and disables 1-4
+				* daisy = 1-16
+				* cyton = 1-8
 
+		:param [] channelsList: List of the channels want to enable.
 
+		E.G. ch = [5,6,7,8] enables the channels 5-8 and disables 1-4
 		"""
 		self.enabledChannels = []
 		for channel in channelsList:
@@ -891,19 +892,31 @@ class OpenBCICyton(object):
 def is_stop_byte(byte):
 	"""
 	Used to check and see if a byte adheres to the stop byte structure
-		of 0xCx where x is the set of numbers from 0-F in hex of 0-15 in decimal.
+	of 0xCx where x is the set of numbers from 0-F in hex of 0-15 in decimal.
 
-	:param byte: {int} - The number to test
-	:return: {boolean} - True if `byte` follows the correct form
+	:param byte byte: The received byte to test.
+	:return: (boolean) - True if `byte` follows the correct form.
 	"""
 	return (byte & 0xF0) == cnts.RAW_BYTE_STOP
 
 
 def interpret_16_bit_as_int_32(two_byte_buffer):
+	"""
+	Used to transform the given 16 bit value into an integer number
+
+	:param bytes two_byte_buffer:
+	:return: (int)
+	"""
 	return struct.unpack('>h', two_byte_buffer)[0]
 
 
 def interpret_24_bit_as_int_32(three_byte_buffer):
+	"""
+	Used to transform a 24 bit value into an integer number
+
+	:param bytes three_byte_buffer:
+	:return: (int)
+	"""
 	# 3 byte ints
 	unpacked = struct.unpack('3B', three_byte_buffer)
 
@@ -920,8 +933,13 @@ def interpret_24_bit_as_int_32(three_byte_buffer):
 
 
 class OpenBCISample(object):
-	"""Object encapulsating a single sample from the OpenBCI board.
-	NB: dummy imp for plugin compatiblity
+	"""
+	Object encapsulating a single sample from the OpenBCI board.
+
+	:param int packet_id: The packets id (0-255).
+	:param [] channel_data: The packets channel data, size of 8, one for each transmitted channel.
+	:param [] aux_data: The packets accelerometer data, size of 3, one for each transmitted channel.
+
 	"""
 
 	def __init__(self, packet_id, channel_data, aux_data):
