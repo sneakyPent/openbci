@@ -6,6 +6,21 @@ from utils.constants import dateTimeFilename
 
 
 def writing(writeBuf, windowedData, writeDataEvent, _shutdownEvent):
+	"""
+	* Runs simultaneously with the boardEventHandler process and waits for the writeDataEvent, which is set only by the boardEventHandler.
+	* Creates an hdf5 file with name specified by dateTime.
+	* The hdf5 file contains 2 datasets
+
+		1. The unfiltered and unprocessed data samples as read by the cyton board, named ”signal”.
+		2. The same data as “signal” but in this dataset the data are broken into windows, named “packages”.
+
+	:param Queue writeBuf: Buffer used for communicating and getting the transmitted data from :py:meth:`source.boardEventHandler.BoardEventHandler.startStreaming`.
+	:param Queue windowedData: Buffer used for communicating and getting the windowed Data data from :py:meth:`source.windowing.windowing`.
+	:param Event writeDataEvent: The event the method is waiting for, before proceeding to the next step (writing into the file). Sets only by :py:meth:`source.boardEventHandler.BoardEventHandler.stopStreaming`
+	:param Event _shutdownEvent: Used as condition for the method to run.
+
+	:return: None
+	"""
 	while not _shutdownEvent.is_set():
 		writeDataEvent.wait(1)
 		if writeDataEvent.is_set():
