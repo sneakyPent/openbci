@@ -8,11 +8,68 @@ from utils.constants import Constants as cnst
 from utils import filters
 
 
-def printfft(fileName):
+def printUniqueFFT(fileName):
+	"""
+	Method used to plot a training fft without classification. Mainly used to test for unique target training.
+
+	:param str fileName: Full path of the Hdf5 filename contains the training dataset
+	:return: None
+	"""
 	with h5py.File(fileName, 'r') as f:
-		signalData = f['signal']
+		d1 = f['signal']
 		lowcut = 4
 		highcut = 40
+		fs = 250
+		freq_6 = d1[:, 0:4]
+		mm = np.array(freq_6)
+		tt = mm[1:]
+		print(tt.shape)
+		freq_6 = tt
+		data_processed_freq_6 = []
+		i = 0
+
+		while i < freq_6.shape[1]:
+			# bandpass filtering            !! ATTENTION: how many channels you want<
+			data_filt = filters.butter_bandpass_filter(freq_6[:, i], lowcut, highcut, fs, order=10)
+			# hamming window
+			data_fft = np.abs(np.fft.fft(data_filt)) ** 2
+			# # fft
+			data_processed_freq_6.append(data_fft)  # = np.array(data_processed)
+			i = i + 1
+
+		time_step = 1 / fs
+
+		colors = ['r', 'b', 'g', 'orange']
+		lb = ['ch1', 'ch2', 'ch3', 'ch4']
+
+		# calculate the frequencies
+		freqs3 = np.fft.fftfreq(freq_6[:, 0].size, time_step)
+		idx3 = np.argsort(freqs3)
+
+		for w in range(len(data_processed_freq_6)):
+			ps = data_processed_freq_6[w]
+			plt.plot(freqs3[idx3], ps[idx3], colors[w], label=lb[w])
+		plt.xlim(left=0, right=40)
+		plt.ylim(bottom=0)
+		plt.legend()
+		plt.show()
+
+
+def printFFT(fileNames):
+	"""
+	Creates a subplot of 4 plots, one for every class in the 'signal' dataset of the current hdf5 file.
+
+	:param [str] fileNames: List of the full paths of the Hdf5 filenames contains the training dataset
+	:return: None
+	"""
+	# signalData = None
+	fig = 0
+	for fileName in fileNames:
+		with h5py.File(fileName, 'r') as f:
+			signalData = f['signal'][:]
+
+		lowcut = 5
+		highcut = 50
 		fs = 250
 
 		signalDataInClassPackages = []
@@ -32,7 +89,7 @@ def printfft(fileName):
 			freq_6 = d1[:, 0:4]
 			mm = np.array(freq_6)
 			tt = mm[1:]
-			print(tt.shape)
+			print('Class: ' + int(signalDataInClassPackages[tClass][0][8]).__str__() + ' --> Shape: ' + tt.shape.__str__())
 			freq_6 = tt
 			data_processed_freq_6 = []
 			i = 0
@@ -72,6 +129,7 @@ def printfft(fileName):
 
 
 if __name__ == '__main__':
-	sName = 'Streaming10_09_2021__16_21_49'
+	sName = 'Streaming17_09_2021__19_47_55'
 	fName = "../streamData/" + sName + ".hdf5"
-	printfft(fName)
+	fileList = [fName]
+	printFFT(fileList)
