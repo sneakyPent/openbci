@@ -126,6 +126,12 @@ class OpenBCICyton(object):
 
 	# SET BOARD VARIABLES FUNCTIONS
 	def setLowerBoundFrequency(self, freq):
+		"""
+		Sets the :py:data:`source.cyton.OpenBCICyton.lowerBoundFrequency`
+
+		:param int freq: The desired frequency
+
+		"""
 		self.lowerBoundFrequency = freq
 
 	def setHigherBoundFrequency(self, freq):
