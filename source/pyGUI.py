@@ -13,6 +13,25 @@ from utils import filters
 from utils import fft_analysis
 
 
+class MyQComboBox(QComboBox):
+	def addItems(self, Iterable, p_str=None):
+		newIterable = []
+		for vl in Iterable:
+			if isinstance(vl, int):
+				newIterable.append(vl.__str__())
+		super().addItems(newIterable)
+
+
+class MyStepSizeQComboBox(QComboBox):
+	def addItems(self, Iterable, p_str=None):
+		newIterable = []
+		for vl in Iterable:
+			val = float(vl) * cnst.SAMPLE_RATE_250
+			if val.is_integer():
+				newIterable.append(vl.__str__())
+		super().addItems(newIterable)
+
+
 class GUI(QMainWindow):
 	def __init__(self, guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
 	             writeDataEvent, startTrainingEvent):
@@ -71,8 +90,8 @@ class GUI(QMainWindow):
 
 		# send board settings with current init choices
 		self.freqComboClick(self.freqComboChoices.currentText())
-		self.windowComboClick(self.timeWindowComboChoices.currentText())
-		self.windowStepComboClick(self.stepWindowSizeComboChoices.currentText())
+		self.windowComboClick()
+		self.windowStepComboClick()
 		self.filteringDataFunction(self.filterDataCheckbox.checkState())
 		self.scalingDataFunction(self.scalingDataCheckbox.checkState())
 		# set central widget
@@ -139,34 +158,40 @@ class GUI(QMainWindow):
 		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
 
 		# create a combo menu for the Window choices
-		# TODO: Allow only integers
 		timeWindowCombo = QHBoxLayout()
 		timeWindowComboTitle = QLabel('Window size:')
-		self.timeWindowComboChoices = QComboBox()
+		self.timeWindowComboChoices = MyQComboBox()
 		timeWindowComboTitle.setFont(self.font)
 		self.timeWindowComboChoices.setFont(self.font)
 		self.timeWindowComboChoices.setEditable(True)
 		self.timeWindowComboChoices.addItems(cnst.windowSizeList)
+		self.timeWindowComboChoices.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+		# Set the init value form the cnst.windowSizeList
+		initValueIndex = cnst.windowSizeList.index(cnst.initWindowSizeValue)
+		self.timeWindowComboChoices.setCurrentIndex(initValueIndex)
 		timeWindowCombo.addWidget(timeWindowComboTitle)
 		timeWindowCombo.addWidget(self.timeWindowComboChoices)
-		self.timeWindowComboChoices.activated[str].connect(self.windowComboClick)
+		self.timeWindowComboChoices.currentIndexChanged.connect(self.windowComboClick)
 
 		# add timeWindow combo to boardSettingLayout
 		self.boardSettingLayout.addLayout(timeWindowCombo)
 		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
 
 		# create a combo menu for the stepWindowSize choices
-		# TODO: check if the size * sample rate is integer
 		stepWindowSizeCombo = QHBoxLayout()
 		stepWindowSizeComboTitle = QLabel('Step size:')
-		self.stepWindowSizeComboChoices = QComboBox()
+		self.stepWindowSizeComboChoices = MyStepSizeQComboBox()
 		stepWindowSizeComboTitle.setFont(self.font)
 		self.stepWindowSizeComboChoices.setFont(self.font)
 		self.stepWindowSizeComboChoices.setEditable(True)
 		self.stepWindowSizeComboChoices.addItems(cnst.windowStepSizeList)
+		self.stepWindowSizeComboChoices.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+		# Set the init value form the cnst.windowSizeList
+		initValueIndex = cnst.windowStepSizeList.index(cnst.initStepSizeValue)
+		self.stepWindowSizeComboChoices.setCurrentIndex(initValueIndex)
 		stepWindowSizeCombo.addWidget(stepWindowSizeComboTitle)
 		stepWindowSizeCombo.addWidget(self.stepWindowSizeComboChoices)
-		self.stepWindowSizeComboChoices.activated[str].connect(self.windowStepComboClick)
+		self.stepWindowSizeComboChoices.currentIndexChanged.connect(self.windowStepComboClick)
 
 		# add stepWindowSizeCombo combo to boardSettingLayout
 		self.boardSettingLayout.addLayout(stepWindowSizeCombo)
@@ -265,19 +290,29 @@ class GUI(QMainWindow):
 		except Exception:
 			print("freqComboClick ERROR!")
 
-	def windowComboClick(self, size):
+	def windowComboClick(self):
 		try:
-			self.boardCytonSettings["windowSize"] = int(size)
+			self.boardCytonSettings["windowSize"] = int(self.timeWindowComboChoices.currentText())
 			self.boardApiCallEvents["newBoardSettingsAvailable"].set()
 		except Exception:
-			print("windowComboClick ERROR!")
+			self.timeWindowComboChoices.removeItem(self.timeWindowComboChoices.currentIndex())
+			# Set the init value form the cnst.windowSizeList
+			initValueIndex = cnst.windowSizeList.index(cnst.initWindowSizeValue)
+			self.timeWindowComboChoices.setCurrentIndex(initValueIndex)
+			print("Non-Valid value: Window size can only be an integer")
 
-	def windowStepComboClick(self, size):
+	def windowStepComboClick(self):
+		val = float(self.stepWindowSizeComboChoices.currentText()) * cnst.SAMPLE_RATE_250
 		try:
-			self.boardCytonSettings["windowStepSize"] = float(size)
+			if not val.is_integer():
+				raise Exception
+			self.boardCytonSettings["windowStepSize"] = float(self.stepWindowSizeComboChoices.currentText())
 			self.boardApiCallEvents["newBoardSettingsAvailable"].set()
 		except Exception:
-			print("windowStepComboClick ERROR!")
+			initValueIndex = cnst.windowStepSizeList.index(cnst.initStepSizeValue)
+			self.stepWindowSizeComboChoices.setCurrentIndex(initValueIndex)
+			self.stepWindowSizeComboChoices.removeItem(self.stepWindowSizeComboChoices.currentIndex())
+			print("Non-Valid value: stepSize * samplingRate must be an integer")
 
 	def filteringDataFunction(self, state):
 		try:
