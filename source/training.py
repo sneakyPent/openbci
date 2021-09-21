@@ -127,10 +127,11 @@ def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
 		* Starts the startTrainingApp process.
 
 
-	:param startTrainingEvent: {Event} - Event which this process will be waiting for, before starting the connectTraining, startTrainingApp processes. This Event is set only by the :py:meth:`source.pyGUI.GUI.trainingButtonClick`
-	:param boardApiCallEvents:  Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
-	:param _shutdownEvent:  {Event} - Event used to know when to let every running process terminate
-	:param trainingClassBuffer: {Queue} -  Buffer will be used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
+	:param OpenBCICyton board: Represents the OpenBCICyton class
+	:param Event startTrainingEvent: Event which this process will be waiting for, before starting the connectTraining, startTrainingApp processes. This Event is set only by the :py:meth:`source.pyGUI.GUI.trainingButtonClick`
+	:param [Event] boardApiCallEvents:  Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
+	:param Event _shutdownEvent: Event used to know when to let every running process terminate
+	:param Queue trainingClassBuffer: Buffer will be used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
 	"""
 	socketConnection = Event()
 	socketConnection.clear()
