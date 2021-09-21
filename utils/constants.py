@@ -186,7 +186,7 @@ class Constants:
 	                    colrs['white'], colrs['gray']]
 
 	""" Unity exe """
-	unityExePath = "/home/zn/Desktop/targets/Ubuntu/TargetUbuntu.exe"
+	unityExePath = "/home/zn/Desktop/presentation_screen/training.exe"
 	unknownClass = 200
 	trainingClasses = [0, 1, 2, 3, 4]
 	trainingClassesFrequencies = [0, 3, 3.75, 3.33, 4.28]
