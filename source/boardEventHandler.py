@@ -114,6 +114,7 @@ class BoardEventHandler:
 				printing = True
 				if self.connected.is_set():
 					printInfo("Starting streaming...")
+					self.trainingClass = cnst.unknownClass
 					while self.startStreamingEvent.is_set():
 						try:
 							# get sample from board
@@ -187,7 +188,6 @@ class BoardEventHandler:
 						self.startStreamingEvent.clear()
 						self.writeDataEvent.set()
 						self.board.stopStreaming()
-						self.trainingClass = cnst.unknownClass
 						self.board.setSynching(False)
 					except:
 						printError("There is no stream to stop.")
