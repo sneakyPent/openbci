@@ -8,8 +8,9 @@ Welcome to OpenBCI's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents: 
-	modules
+   :caption: Contents:
+
+   modules
 	
 		
 Indices and tables
