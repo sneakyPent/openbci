@@ -156,8 +156,10 @@ class Constants:
 
 	""" Cyton board settings """
 	bandPassFreqList = ["1-50", "3-30", "4-40", "5-50"]
-	windowSizeList = ["1", "2", "3", "4", "5"]
-	windowStepSizeList = ["0.5", "1", "1.5"]
+	windowSizeList = [1, 2, 3, 4, 5]
+	initWindowSizeValue = 3
+	windowStepSizeList = [0.5, 1, 1.5, 0.99, 0.35]
+	initStepSizeValue = 0.5
 	synchingSignal = [0, 0, 0, 0, 0, 0, 0, 0]
 
 	""" printng massages colors"""
