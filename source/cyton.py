@@ -35,7 +35,6 @@ from utils.constants import Constants as cnts
 scale_fac_uVolts_per_count = cnts.ADS1299_VREF / float((pow(2, 23) - 1)) / cnts.ADS1299_GAIN_24 * 1000000.
 scale_fac_accel_G_per_count = 0.002 / (pow(2, 4))  # assume set to +/4G, so 2 mG
 
-
 '''
 #Commands for in SDK http://docs.openbci.com/software/01-Open BCI_SDK:
 
@@ -82,6 +81,7 @@ class OpenBCICyton(object):
 		self.timeout = timeout
 		self.log = log  # print_incoming_text needs log
 		self.streaming = False
+		self.connected = False
 		# if not port:
 		#     port = self.find_port()
 		self.port = port
@@ -96,8 +96,6 @@ class OpenBCICyton(object):
 		if enabledChannels is None:
 			enabledChannels = []
 		self.enabledChannels = enabledChannels
-
-		self.streaming = False
 
 		# number of channels per sample *from the board*
 		if self.daisy:
@@ -186,6 +184,7 @@ class OpenBCICyton(object):
 
 	def setSynching(self, st):
 		self.synched = st
+
 	# GET BOARD VARIABLES FUNCTIONS
 
 	def getBoardType(self):
@@ -246,6 +245,9 @@ class OpenBCICyton(object):
 	def isSynched(self):
 		return self.synched
 
+	def isConnected(self):
+		return self.connected
+
 	# SERIAL PORT FUNCTIONS
 	def ser_write(self, b):
 		"""Access serial port object for write"""
@@ -287,6 +289,7 @@ class OpenBCICyton(object):
 		sam = self.stream_one_sample()
 		self.streaming = False
 		self.ser.write(cnts.stopStreamingData)
+		self.connected = True
 
 	def disconnect(self):
 		if self.streaming:
@@ -295,6 +298,7 @@ class OpenBCICyton(object):
 			print("Closing Serial...")
 			self.ser.close()
 			logging.warning('serial closed')
+			self.connected = False
 
 	def stream_one_sample(self):
 		"""
