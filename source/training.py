@@ -3,6 +3,7 @@ Consist of 3 method
 	* connectTraining
 	* startTrainingApp
 	* startTraining
+
 used only for the training and in order to run it needs the unity target executable.
 
 """
