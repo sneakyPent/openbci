@@ -148,7 +148,7 @@ def uiManager():
 
 		# create Process for connecting to unity program socket
 		trainingProcess = Process(target=startTraining, name='training',
-		                          args=(startTrainingEvent, boardApiCallEvents, shutdownEvent, trainingClassBuffer))
+		                          args=(board, startTrainingEvent, boardApiCallEvents, shutdownEvent, trainingClassBuffer))
 		processesList.append(trainingProcess)
 
 		# start processes in the processList
