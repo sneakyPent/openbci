@@ -91,7 +91,14 @@ def startTrainingApp(boardApiCallEvents):
 
 def startTraining(startTrainingEvent, boardApiCallEvents, _shutdownEvent, trainingClassBuffer):
 	"""
-	Method runs via trainingProcess in :py:mod:`source.UIManager`
+	* Method runs via trainingProcess in :py:mod:`source.UIManager`
+	* Runs simultaneously with the boardEventHandler process and waits for the startTrainingEvent, which is set only by the boardEventHandler.
+	* When the startTrainingEvent is set:
+
+		* Starts streaming from existing connection.
+		* Starts the connectTraining process.
+		* Starts the startTrainingApp process.
+
 
 	:param startTrainingEvent: {Event} - Event which this process will be waiting for, before starting the connectTraining, startTrainingApp processes. This Event is set only by the :py:meth:`source.pyGUI.GUI.trainingButtonClick`
 	:param boardApiCallEvents:  Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
