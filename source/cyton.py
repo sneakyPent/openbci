@@ -73,11 +73,11 @@ class OpenBCICyton(object):
 	:param int windowStepSize: The size of the window will be used in :meth:`source.windowing.windowing`
 	"""
 
-	def __init__(self, port=None, baud=115200, filter_data=True, scaled_output=True,
+	def __init__(self, port=None, baudRate=115200, filter_data=True, scaled_output=True,
 	             daisy=False, aux=False, impedance=False, log=True, timeout=None,
 	             lowerBoundFrequency=0, higherBoundFrequency=0, enabledChannels=None, windowSize=0,
 	             windowStepSize=0):
-		self.baudrate = baud
+		self.baudRate = baudRate
 		self.timeout = timeout
 		self.log = log  # print_incoming_text needs log
 		self.streaming = False
@@ -270,9 +270,9 @@ class OpenBCICyton(object):
 		printInfo("Connecting to V3 at port %s" % self.port)
 		if self.port == "loop://":
 			# For testing purposes
-			self.ser = serial.serial_for_url(self.port, baudrate=self.baudrate, timeout=self.timeout)
+			self.ser = serial.serial_for_url(self.port, baudrate=self.baudRate, timeout=self.timeout)
 		else:
-			self.ser = serial.Serial(port=self.port, baudrate=self.baudrate, timeout=self.timeout)
+			self.ser = serial.Serial(port=self.port, baudrate=self.baudRate, timeout=self.timeout)
 
 		printSuccess("Serial established...")
 
@@ -822,7 +822,7 @@ class OpenBCICyton(object):
 		openbci_port = ''
 		for port in ports:
 			try:
-				s = serial.Serial(port=port, baudrate=self.baudrate, timeout=self.timeout)
+				s = serial.Serial(port=port, baudrate=self.baudRate, timeout=self.timeout)
 				s.write(cnts.softReset)
 				openbci_serial = self.openbci_id(s)
 				s.close()
