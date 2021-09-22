@@ -8,6 +8,23 @@ from utils.constants import Constants as cnst
 from utils import filters
 
 
+def calculateSNR(data):
+	"""
+	Calculates the Signal to Noise Ratio for a given sample.
+		* Find the maximum value in the sample.
+		* sums every other value apart form the maximum.
+		* Get the ratio of the above results.
+
+	:param numpy.array data: The Sample
+	:return: (float) The snr value for the given sample
+	"""
+	# Get the maximum value of the array
+	signal = data.max()
+	noise = data[data != signal].sum()
+	snr = signal / noise
+	return snr
+
+
 def printUniqueFFT(fileName):
 	"""
 	Method used to plot a training fft without classification. Mainly used to test for unique target training.
