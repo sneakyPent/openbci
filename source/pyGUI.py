@@ -334,7 +334,7 @@ class GUI(QMainWindow):
 		                                            directory="../streamData",
 		                                            filter=file_filter, options=options)
 		if fileNames:
-			# fft_analysis.printUniqueFFT(fileNames)
+			# fft_analysis.printUniqueFFT(fileNames[0])
 			fft_analysis.printFFT(fileNames)
 
 	def freqComboClick(self, freq):
