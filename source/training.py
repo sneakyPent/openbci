@@ -64,7 +64,7 @@ def connectTraining(trainingClassBuffer, socketConnection):
 
 			# Quest sends the arrow number
 			bytes_received = c.recv(1).decode("utf-8")  # received bytes
-			print(bytes_received)
+			# print(bytes_received)
 			try:
 				trainingClassBuffer.put_nowait(bytes_received)
 			except queue.Full as error:
@@ -86,7 +86,7 @@ def connectTraining(trainingClassBuffer, socketConnection):
 						break
 					else:
 						if bytes_received != bytes_received_old:
-							print(bytes_received)
+							# print(bytes_received)
 							try:
 								trainingClassBuffer.put_nowait(bytes_received)
 							except queue.Full:
