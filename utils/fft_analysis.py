@@ -65,6 +65,10 @@ def printUniqueFFT(fileName):
 
 		for w in range(len(data_processed_freq_6)):
 			ps = data_processed_freq_6[w]
+			print('Channel ' + w.__str__() + ':' +
+			      ' \t SNR = ' + calculateSNR(ps).__str__() +
+			      ',\t Max = ' + max(ps).__str__() +
+			      ',\t FREQ = ' + abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]).__str__())
 			plt.plot(freqs3[idx3], ps[idx3], colors[w], label=lb[w])
 		plt.xlim(left=0, right=40)
 		plt.ylim(bottom=0)
@@ -106,7 +110,8 @@ def printFFT(fileNames):
 			freq_6 = d1[:, 0:4]
 			mm = np.array(freq_6)
 			tt = mm[1:]
-			print('Class: ' + int(signalDataInClassPackages[tClass][0][8]).__str__() + ' --> Shape: ' + tt.shape.__str__())
+			print('Class: ' + int(
+				signalDataInClassPackages[tClass][0][8]).__str__() + ' --> Shape: ' + tt.shape.__str__())
 			freq_6 = tt
 			data_processed_freq_6 = []
 			i = 0
@@ -131,11 +136,17 @@ def printFFT(fileNames):
 
 			for w in range(len(data_processed_freq_6)):
 				ps = data_processed_freq_6[w]
+				print('Channel ' + w.__str__() + ':' +
+				      ' \t SNR = ' + calculateSNR(ps).__str__() +
+				      ',\t Max = ' + max(ps).__str__() +
+				      ',\t FREQ = ' + abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]).__str__())
 				axs[subCols, subRows].plot(freqs3[idx3], ps[idx3], colors[w], label=lb[w])
 				axs[subCols, subRows].set_title(
-					'Class ' + cnst.trainingClasses[tClass + 1].__str__() + ', Frequency: ' +
-					cnst.trainingClassesFrequencies[
-						tClass + 1].__str__())
+					'Class ' + cnst.trainingClasses[tClass + 1].__str__() +
+					', Frequency: ' + cnst.trainingClassesFrequencies[tClass + 1].__str__() +
+					', Max = ' + round(max(ps), 3).__str__() +
+					', Freq = ' + round(abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]), 3).__str__()
+				)
 			axs[subCols, subRows].set_xlim(left=0, right=40)
 			axs[subCols, subRows].set_ylim(bottom=0)
 			axs[subCols, subRows].legend()
