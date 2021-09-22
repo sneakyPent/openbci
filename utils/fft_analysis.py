@@ -141,7 +141,7 @@ def printFFT(fileNames):
 			axs[subCols, subRows].legend()
 			subRows += 1
 		for ax in axs.flat:
-			ax.set(xlabel='Amplitude', ylabel='Frequency (Hertz)')
+			ax.set(ylabel='Amplitude', xlabel='Frequency (Hertz)')
 		plt.show()
 
 
