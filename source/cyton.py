@@ -282,7 +282,7 @@ class OpenBCICyton(object):
 
 		printSuccess("Serial established...")
 
-		time.sleep(2)
+		time.sleep(1)
 		# Initialize 32-bit board, doesn't affect 8bit board
 		self.ser.write(cnts.softReset)
 
@@ -292,10 +292,11 @@ class OpenBCICyton(object):
 			self.print_incoming_text()
 
 		# fake streaming to force board send synchronization zeros array
-		sam = self.stream_one_sample()
+		self.stream_one_sample()
 		self.streaming = False
 		self.ser.write(cnts.stopStreamingData)
 		self.connected = True
+		time.sleep(1)
 
 	def disconnect(self):
 		if self.streaming:
