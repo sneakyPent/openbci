@@ -1,8 +1,6 @@
-import os
-import sys
 import queue
 from multiprocessing import Process, Event
-from utils.coloringPrint import *
+from utils import *
 
 
 class BoardEventHandler:
