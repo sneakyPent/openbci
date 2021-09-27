@@ -334,7 +334,7 @@ class GUI(QMainWindow):
 	def trainingButtonClick(self):
 		self.startTrainingEvent.set()
 
-	def plotFftButtonClick(self, btn):
+	def plotFftButtonClick(self):
 		options = QFileDialog.Options()
 		options |= QFileDialog.DontUseNativeDialog
 		file_filter = 'HDF5 File (*.hdf5 )'
@@ -345,7 +345,7 @@ class GUI(QMainWindow):
 			# fft_analysis.printUniqueFFT(fileNames[0])
 			fft_analysis.printFFT(fileNames)
 
-	def classificationButtonClick(self, btn):
+	def classificationButtonClick(self):
 		options = QFileDialog.Options()
 		options |= QFileDialog.DontUseNativeDialog
 		file_filter = 'HDF5 File (*.hdf5 )'
