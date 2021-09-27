@@ -25,19 +25,22 @@ def calculateSNR(data):
 	return snr
 
 
-def printUniqueFFT(fileName):
+def printUniqueFFT(fileNames):
 	"""
 	Method used to plot a training fft without classification. Mainly used to test for unique target training.
 
-	:param str fileName: Full path of the Hdf5 filename contains the training dataset
+	:param [str] fileNames: List of the full paths of the Hdf5 filenames contains the training dataset
 	:return: None
 	"""
-	with h5py.File(fileName, 'r') as f:
-		d1 = f['signal']
+	for fileName in fileNames:
+		plt.figure()
+		with h5py.File(fileName, 'r') as f:
+			d1 = f['signal'][:, 0:4]
+
 		lowcut = 4
 		highcut = 40
 		fs = 250
-		freq_6 = d1[:, 0:4]
+		freq_6 = d1
 		mm = np.array(freq_6)
 		tt = mm[1:]
 		print(tt.shape)
@@ -73,7 +76,7 @@ def printUniqueFFT(fileName):
 		plt.xlim(left=0, right=40)
 		plt.ylim(bottom=0)
 		plt.legend()
-		plt.show()
+	plt.show()
 
 
 def printFFT(fileNames):
