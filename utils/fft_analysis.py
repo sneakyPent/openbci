@@ -1,3 +1,4 @@
+import os
 import sys
 import h5py
 import numpy as np
@@ -33,10 +34,10 @@ def printUniqueFFT(fileNames):
 	:return: None
 	"""
 	for fileName in fileNames:
-		plt.figure()
+		fig = plt.figure()
 		with h5py.File(fileName, 'r') as f:
 			d1 = f['signal'][:, 0:4]
-
+		fig.suptitle(os.path.basename(fileName))
 		lowcut = 4
 		highcut = 40
 		fs = 250
@@ -103,6 +104,7 @@ def printFFT(fileNames):
 			signalDataInClassPackages.append([sample for sample in signalData if sample[8] == trClass])
 
 		fig, axs = plt.subplots(2, 2)
+		fig.suptitle(os.path.basename(fileName))
 		axsCols, axsRows = axs.shape
 		subCols = subRows = 0
 		for tClass in range(len(cnst.trainingClasses) - 1):
