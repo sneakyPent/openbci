@@ -148,6 +148,7 @@ def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
 				socketProcess.start()
 			socketConnection.wait(1)
 			if socketConnection.is_set():
+				board.setTrainingMode(True)
 				boardApiCallEvents["startStreaming"].set()
 				if not applicationProcess.is_alive():
 					applicationProcess.start()
@@ -155,6 +156,7 @@ def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
 				applicationProcess.join()
 				startTrainingEvent.clear()
 				socketConnection.clear()
+				board.setTrainingMode(False)
 				# recreating process because eve after Process Termination cannot start a process twice
 				socketProcess = Process(target=connectTraining, args=(trainingClassBuffer, socketConnection,))
 				applicationProcess = Process(target=startTrainingApp, args=(boardApiCallEvents,))

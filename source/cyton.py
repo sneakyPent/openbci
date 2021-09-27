@@ -80,6 +80,7 @@ class OpenBCICyton(object):
 		self.log = log  # print_incoming_text needs log
 		self.streaming = False
 		self.connected = False
+		self.trainingMode = False
 		# if not port:
 		#     port = self.find_port()
 		self.port = port
@@ -189,6 +190,9 @@ class OpenBCICyton(object):
 	def setSynching(self, st):
 		self.synched = st
 
+	def setTrainingMode(self, st):
+		self.trainingMode = st
+
 	# GET BOARD VARIABLES FUNCTIONS
 
 	def getBoardType(self):
@@ -251,6 +255,12 @@ class OpenBCICyton(object):
 
 	def isConnected(self):
 		return self.connected
+
+	def isTrainingMode(self):
+		return self.trainingMode
+
+	def isStreaming(self):
+		return self.streaming
 
 	# SERIAL PORT FUNCTIONS
 	def ser_write(self, b):
