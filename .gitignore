@@ -18,3 +18,6 @@ streamData/
 
 #documentation
 docs/_build
+
+#Classifcation files
+*.sav
