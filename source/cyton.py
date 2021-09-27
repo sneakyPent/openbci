@@ -232,6 +232,17 @@ class OpenBCICyton(object):
 	def getAvailableNbImpChannels(self):
 		return self.imp_channels_per_sample
 
+	def getBoardSettings(self):
+		return {
+			"lowerBand": self.lowerBoundFrequency.__str__(),
+			"upperBand": self.higherBoundFrequency.__str__(),
+			"windowSize": self.windowSize.__str__(),
+			"filtering_data": self.filtering_data.__str__(),
+			"scaling_output": self.scaling_output.__str__(),
+			"enabledChannels": self.enabledChannels.__str__(),
+			"windowStepSize": self.windowStepSize.__str__()
+		}
+
 	def getBoardSettingAttributes(self):
 		return {
 			"lowerBand": self.lowerBoundFrequency,
@@ -241,7 +252,6 @@ class OpenBCICyton(object):
 			"scaling_output": self.scaling_output,
 			"enabledChannels": self.enabledChannels,
 			"windowStepSize": self.windowStepSize
-
 		}
 
 	def getWindow(self):

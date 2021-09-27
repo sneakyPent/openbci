@@ -45,6 +45,10 @@ def writing(board, writeBuf, windowedData, writeDataEvent, _shutdownEvent):
 			windowedSignal = np.array(windowedSignal).astype(float)
 			hf.create_dataset("packages", data=windowedSignal)
 			printInfo("Finish with windowed signal")
+			utf8_type = h5py.string_dtype('utf-8', 100)
+			boardSettings = np.array(list(board.getBoardSettings().items()), dtype=utf8_type)
+			hf.create_dataset("settings", data=boardSettings)
+			printInfo("Finish with settings")
 			hf.close()
 			writeDataEvent.clear()
 		if _shutdownEvent.is_set():
