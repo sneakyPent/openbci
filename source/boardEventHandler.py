@@ -1,4 +1,5 @@
 import queue
+import sys
 from multiprocessing import Process, Event
 from utils import *
 
@@ -27,8 +28,6 @@ class BoardEventHandler:
 		self.newDataAvailable = newDataAvailable
 		self.boardSettings = boardSettings
 		self.dataBuffersList = dataBuffersList
-		self.connected = Event()
-		""" Event used to know when there is an accomplished connection with the openbci Board"""
 		self.shutdownEvent = _shutdownEvent
 		self.writeDataEvent = writeDataEvent
 		self.trainingClassBuffer = trainingClassBuffer
@@ -46,18 +45,17 @@ class BoardEventHandler:
 		"""
 		Method runs via connectProcess:
 			* A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
-			* When the connectEvent has been set it is trying to accomplish a connection with the openbci board, only if connected event is not set.
+			* When the connectEvent has been set it is trying to accomplish a connection with the openbci board, only if there is not an existed connection
 			* Whether it successes or not, it clears the connectEvent
 		"""
 
 		while not self.shutdownEvent.is_set():
 			self.connectEvent.wait(1)
 			if self.connectEvent.is_set():
-				if not self.connected.is_set():
+				if not self.board.isConnected():
 					printInfo("Connecting...")
 					try:
 						self.board.connect()
-						self.connected.set()
 					except OSError:
 						printError("Could not connect to board. Make sure it is properly connected and enabled")
 				else:
@@ -68,21 +66,21 @@ class BoardEventHandler:
 		"""
 		Method runs via disconnectProcess:
 			* A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
-			* When the disconnectEvent has been set it is trying to clear the existing connection with the openbci board, only if startStreamingEvent event is not set, which means that board is not transmitting data
+			* When the disconnectEvent has been set it is trying to clear the existing connection with the openbci board, only if board is NOT streaming, which means that board is not transmitting data
 			* Whether it successes or not, it clears the disconnectEvent
 		"""
 
 		while not self.shutdownEvent.is_set():
 			self.disconnectEvent.wait(1)
 			if self.disconnectEvent.is_set():
-				if self.startStreamingEvent.is_set():
+				if self.board.isStreaming():
 					printWarning("Cannot disconnect while streaming")
+					self.disconnectEvent.clear()
 					continue
-				if self.connected.is_set():
+				if self.board.isConnected():
 					printInfo("Disconnecting...")
 					try:
 						self.board.disconnect()
-						self.connected.clear()
 					except:
 						printError("No connection to disconnect from ")
 				else:
@@ -109,12 +107,13 @@ class BoardEventHandler:
 		while not self.shutdownEvent.is_set():
 			self.startStreamingEvent.wait(1)
 			if self.startStreamingEvent.is_set():
-				printing = True
-				if self.connected.is_set():
+
+				if self.board.isConnected():
 					printInfo("Starting streaming...")
 					self.trainingClass = cnst.unknownClass
 					while self.startStreamingEvent.is_set():
 						try:
+							printing = True
 							# get sample from board
 							sample = self.board.stream_one_sample()
 							# append training class in the channel data before put in the buffer
@@ -124,6 +123,7 @@ class BoardEventHandler:
 									if self.trainingClassBuffer.qsize() != 0:
 										self.trainingClass = self.trainingClassBuffer.get()
 								except Exception:
+									printing = False
 									printWarning("Something Went Wrong in boardEventHandler line 83")
 								# append training class in the channel data before put in the buffer
 								# TODO: append training class only while training
@@ -136,20 +136,22 @@ class BoardEventHandler:
 										self.newDataAvailable.set()
 									except queue.Full:
 										printWarning("Queue full")
+										printing = False
 								numofsamples += 1
 							# check for the synching zeros array sample ( [0, 0, 0, 0 ,0 , 0, 0, 0] )
 							elif sample.channel_data == cnst.synchingSignal:
 								self.board.setSynching(True)
 						except Exception as e:
+							printing = False
 							self.startStreamingEvent.clear()
 							exc_type, exc_obj, exc_tb = sys.exc_info()
 							fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 							printError("There was a problem on starting streaming in: " + fname.__str__() +
 							           ' line: ' + exc_tb.tb_lineno.__str__() + "\nError Message: " + repr(e))
 				else:
-					if not self.connected.is_set():
-						printInfo("No connection to stop streaming from.")
-						# TODO: Raise exception
+					if not self.board.isConnected():
+						printing = False
+						printInfo("No connection to start streaming from.")
 				self.startStreamingEvent.clear()
 			else:
 				self.newDataAvailable.clear()
@@ -180,7 +182,7 @@ class BoardEventHandler:
 		while not self.shutdownEvent.is_set():
 			self.stopStreamingEvent.wait(1)
 			if self.stopStreamingEvent.is_set():
-				if self.connected.is_set() and self.startStreamingEvent.is_set():
+				if self.board.isConnected() and self.board.isStreaming():
 					printInfo("Stopping streaming...")
 					try:
 						self.startStreamingEvent.clear()
@@ -190,9 +192,9 @@ class BoardEventHandler:
 					except:
 						printError("There is no stream to stop.")
 				else:
-					if not self.connected.is_set():
+					if not self.board.isConnected():
 						printInfo("No connection to stop streaming from.")
-					elif not self.startStreamingEvent.is_set():
+					elif not self.board.isStreaming():
 						printInfo("No active streaming to stop.")
 				self.stopStreamingEvent.clear()
 
