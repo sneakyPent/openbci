@@ -11,3 +11,4 @@ autodoc
 sphinx-autodoc-typehints
 sphinx-autobuild
 sphinx_rtd_theme
+sklearn
