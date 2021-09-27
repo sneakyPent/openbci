@@ -28,8 +28,6 @@ import sys
 
 from utils import filters
 from utils.coloringPrint import *
-
-sys.path.append('..')
 from utils.constants import Constants as cnts
 
 scale_fac_uVolts_per_count = cnts.ADS1299_VREF / float((pow(2, 23) - 1)) / cnts.ADS1299_GAIN_24 * 1000000.

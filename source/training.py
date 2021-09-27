@@ -10,13 +10,10 @@ used only for the training and in order to run it needs the unity target executa
 import queue
 import socket
 import subprocess
-import sys, os
+import os
 import time
 from multiprocessing import Process, Event
-
-from utils.coloringPrint import printInfo,printError
-
-sys.path.append('..')
+from utils.coloringPrint import printError
 from utils.constants import Constants as cnst
 
 

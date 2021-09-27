@@ -7,17 +7,6 @@ Created on Wed Jul 10 13:56:22 2019
 
 import numpy as np
 import scipy.signal as signal
-import matplotlib.pyplot as plt
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-import h5py
-from multiprocessing import Event
-# import rcca
-# from parameters import refresh_rate
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn import svm
-
-# from parameters import refresh_rate
-# 
 
 # refresh rate
 refresh_rate = 60
