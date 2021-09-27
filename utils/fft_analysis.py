@@ -153,7 +153,7 @@ def printFFT(fileNames):
 			subRows += 1
 		for ax in axs.flat:
 			ax.set(ylabel='Amplitude', xlabel='Frequency (Hertz)')
-		plt.show()
+	plt.show()
 
 
 if __name__ == '__main__':
