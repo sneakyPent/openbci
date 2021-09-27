@@ -89,9 +89,6 @@ def uiManager():
 	# Queue for the communication between socket and boardEventHandler
 	trainingClassBuffer = Queue(maxsize=1)
 
-	if not os.path.exists(cnst.destinationFolder):
-		os.makedirs(cnst.destinationFolder)
-
 	# catch keyboardinterupt exception and just set shutdownEvent
 	signal.signal(signal.SIGINT, signal_handler)
 	# create board through manager so as to have a proxy for the object to _share through processes
@@ -138,7 +135,7 @@ def uiManager():
 
 		# create Process to write data from board to file
 		writeProcess = Process(target=writing, name='writing',
-		                       args=(writingBuffer, windowedDataBuffer, writeDataEvent, shutdownEvent))
+		                       args=(board, writingBuffer, windowedDataBuffer, writeDataEvent, shutdownEvent))
 		processesList.append(writeProcess)
 
 		# create Process for the windowing data
@@ -148,7 +145,9 @@ def uiManager():
 
 		# create Process for connecting to unity program socket
 		trainingProcess = Process(target=startTraining, name='training',
-		                          args=(board, startTrainingEvent, boardApiCallEvents, shutdownEvent, trainingClassBuffer))
+		                          args=(
+			                          board, startTrainingEvent, boardApiCallEvents, shutdownEvent,
+			                          trainingClassBuffer))
 		processesList.append(trainingProcess)
 
 		# start processes in the processList
