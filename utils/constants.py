@@ -1,10 +1,27 @@
+import os
 import time
 from matplotlib import colors as mcolors
 
 colrs = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
 
 
-def dateTimeFilename(): return Constants.destinationFolder + 'Streaming' + time.strftime("%d_%m_%Y__%H_%M_%S")
+def getSessionFilename(training=False, openbciGUI=False):
+	if training:
+		return Constants.destinationFolder + 'Training__' + time.strftime("%d-%m-%Y__%H-%M-%S")
+	elif openbciGUI:
+		return 'openBCI_GUI_Training__' + time.strftime("%d-%m-%Y__%H-%M-%S")
+	else:
+		return Constants.destinationFolder + 'Streaming__' + time.strftime("%d-%m-%Y__%H-%M-%S")
+
+
+def getDestinationFolderWithDate():
+	path = '../streamData/' + time.strftime("%d-%m-%Y") + "/"
+	isExist = os.path.exists(path)
+
+	if not isExist:
+		# Create a new directory because it does not exist
+		os.makedirs(path)
+	return path
 
 
 class Constants:
@@ -174,7 +191,8 @@ class Constants:
 	UNDERLINE = '\033[4m'
 
 	"""Streaming File names"""
-	destinationFolder = '../streamData/'
+
+	destinationFolder = getDestinationFolderWithDate()
 
 	""" Queue size """
 	maxQueueSize = 2500
