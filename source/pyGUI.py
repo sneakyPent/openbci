@@ -6,6 +6,7 @@ from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import *
 import pyqtgraph as pg
+from classification import *
 
 sys.path.append('..')
 from utils.constants import Constants as cnst
@@ -277,6 +278,13 @@ class GUI(QMainWindow):
 		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
 
 		# add a push button to start Training mode
+		self.classificationButton = QPushButton("Classification")
+		self.classificationButton.setFont(self.font)
+		self.classificationButton.clicked.connect(self.classificationButtonClick)
+		self.boardSettingLayout.addWidget(self.classificationButton)
+		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+
+		# add a push button to start Training mode
 		self.trainingButton = QPushButton("Training")
 		self.trainingButton.setFont(self.font)
 		self.trainingButton.clicked.connect(self.trainingButtonClick)
@@ -336,6 +344,16 @@ class GUI(QMainWindow):
 		if fileNames:
 			# fft_analysis.printUniqueFFT(fileNames[0])
 			fft_analysis.printFFT(fileNames)
+
+	def classificationButtonClick(self, btn):
+		options = QFileDialog.Options()
+		options |= QFileDialog.DontUseNativeDialog
+		file_filter = 'HDF5 File (*.hdf5 )'
+		fileNames, _ = QFileDialog.getOpenFileNames(self, "Choose HDF5 Stream file ",
+		                                            directory="../streamData",
+		                                            filter=file_filter, options=options)
+		if fileNames:
+			classificationOpenBCI.classify(fileNames)
 
 	def freqComboClick(self, freq):
 		try:
