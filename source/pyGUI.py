@@ -65,6 +65,32 @@ class MyStepSizeQComboBox(QComboBox):
 		super().addItems(newIterable)
 
 
+class CustomDialog(QDialog):
+	def __init__(self, parent=None, message=None, buttons=None):
+		super().__init__(parent)
+		self.buttons = buttons
+		self.buttonBox = QDialogButtonBox(Qt.Horizontal)
+		self.buttonBox.setCenterButtons(True)
+		for btn in self.buttons:
+			if isinstance(btn, str):
+				findButton = QPushButton(self.tr(btn))
+				findButton.setCheckable(True)
+				findButton.setAutoDefault(False)
+				self.buttonBox.addButton(findButton, QDialogButtonBox.ActionRole)
+
+		self.buttonBox.clicked.connect(self.cl)
+
+		self.layout = QVBoxLayout()
+		msg = QLabel(message)
+		self.layout.addWidget(msg)
+		self.layout.addWidget(self.buttonBox)
+		self.setLayout(self.layout)
+
+	def cl(self, buttonClicked):
+		# 1 and 2 used ny qDialog so we use 101 102 and we take the (qdialog.result mod 100)
+		self.done(100+self.buttons.index(buttonClicked.text()))
+
+
 class GUI(QMainWindow):
 	def __init__(self, guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
 	             writeDataEvent, startTrainingEvent):
@@ -317,7 +343,9 @@ class GUI(QMainWindow):
 		self.boardApiCallEvents["disconnect"].set()
 
 	def quitGUI(self):
-		self.stopStreaming()
+		if self.board.isStreaming():
+			print('Quiting')
+			self.stopStreaming()
 		while self.writeDataEvent.is_set():
 			pass
 		self.shutdownEvent.set()
@@ -339,9 +367,22 @@ class GUI(QMainWindow):
 		fileNames, _ = QFileDialog.getOpenFileNames(self, "Choose HDF5 Stream file ",
 		                                            directory="../streamData",
 		                                            filter=file_filter, options=options)
+		btns = ['one', 'four']
 		if fileNames:
-			# fft_analysis.printUniqueFFT(fileNames[0])
-			fft_analysis.printFFT(fileNames)
+			dlg = CustomDialog(parent=self,
+			                   message="How many different target classes in the file? ",
+			                   buttons=btns)
+			if dlg.exec():
+				# The CustomDialog.result() returns the index of the pressed button
+				# 1 and 2 used ny qDialog so we use 101 102 and we take the (qdialog.result mod 100)
+				btnIndex = dlg.result() % 100
+				print(btnIndex)
+				print("Success!")
+				if btns[btnIndex] == 'one':
+					fft_analysis.printUniqueFFT(fileNames)
+				elif btns[btnIndex] == 'four':
+					fft_analysis.printFFT(fileNames)
+
 
 	def classificationButtonClick(self):
 		options = QFileDialog.Options()
