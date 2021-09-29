@@ -16,6 +16,7 @@ root = Tk()
 root.withdraw()
 name = filedialog.askopenfilename(title="Choose an openbci GUI streaming text filename",
                                   defaultextension=".txt",
+                                  initialdir=dir,
                                   filetypes=[('Text Document', '*.txt')])
 
 file1 = open(name, 'r')
