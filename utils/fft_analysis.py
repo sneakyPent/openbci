@@ -70,7 +70,15 @@ def printUniqueFFT(fileNames):
 			      ' \t SNR = ' + calculateSNR(ps).__str__() +
 			      ',\t Max = ' + max(ps).__str__() +
 			      ',\t FREQ = ' + abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]).__str__())
-			plt.plot(freqs3[idx3], ps[idx3], colors[w], label=lb[w])
+			lgSNR = ', SNR=' + "{:.5f}".format(calculateSNR(ps))
+			lgMAX = ', Max=' + "{:.2e}".format(max(ps))
+			lgFREQ = ' FREQ=' + "{:.4f}".format(abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]))
+			legnd = lb[w] + lgSNR + lgMAX + lgFREQ
+			plt.plot(freqs3[idx3], ps[idx3], colors[w], label=legnd)
+			plt.title(
+				'Max = ' + round(max(ps), 3).__str__() +
+				', Freq = ' + round(abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]), 3).__str__()
+			)
 		plt.xlim(left=0, right=40)
 		plt.ylim(bottom=0)
 		plt.legend()
@@ -142,7 +150,11 @@ def printFFT(fileNames):
 				      ' \t SNR = ' + calculateSNR(ps).__str__() +
 				      ',\t Max = ' + max(ps).__str__() +
 				      ',\t FREQ = ' + abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]).__str__())
-				axs[subCols, subRows].plot(freqs3[idx3], ps[idx3], colors[w], label=lb[w])
+				lgSNR = ', SNR=' + "{:.5f}".format(calculateSNR(ps))
+				lgMAX = ', Max=' + "{:.2e}".format(max(ps))
+				lgFREQ = ' FREQ=' + "{:.4f}".format(abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]))
+				legnd = lb[w] + lgSNR + lgMAX + lgFREQ
+				axs[subCols, subRows].plot(freqs3[idx3], ps[idx3], colors[w], label=legnd)
 				axs[subCols, subRows].set_title(
 					'Class ' + cnst.trainingClasses[tClass + 1].__str__() +
 					', Frequency: ' + cnst.trainingClassesFrequencies[tClass + 1].__str__() +
