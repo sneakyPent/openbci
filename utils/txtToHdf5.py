@@ -9,8 +9,9 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter.filedialog import asksaveasfilename
 
-readFromLine = 1000
-readToLine = 20000
+readFromLine = 2000
+readToLine = 22000
+dir= "/home/zn/Documents/OpenBCI_GUI/Recordings/OpenBCISession_2021-09-29_15-37-05/"
 root = Tk()
 root.withdraw()
 name = filedialog.askopenfilename(title="Choose an openbci GUI streaming text filename",
@@ -29,7 +30,7 @@ for line in Lines:
 		sp = line.split(',')
 		cp = [float(i) for i in sp[1:5]]
 		dd.append(cp)
-		print(cp)
+		# print(cp)
 
 filename = asksaveasfilename(title="Choose a name for the hdf5 file",
                              initialfile=getSessionFilename(openbciGUI=True),
