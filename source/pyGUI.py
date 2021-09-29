@@ -88,7 +88,7 @@ class CustomDialog(QDialog):
 
 	def cl(self, buttonClicked):
 		# 1 and 2 used ny qDialog so we use 101 102 and we take the (qdialog.result mod 100)
-		self.done(100+self.buttons.index(buttonClicked.text()))
+		self.done(100 + self.buttons.index(buttonClicked.text()))
 
 
 class GUI(QMainWindow):
@@ -382,7 +382,6 @@ class GUI(QMainWindow):
 					fft_analysis.printUniqueFFT(fileNames)
 				elif btns[btnIndex] == 'four':
 					fft_analysis.printFFT(fileNames)
-
 
 	def classificationButtonClick(self):
 		options = QFileDialog.Options()
