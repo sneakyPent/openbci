@@ -15,6 +15,7 @@ from utils.coloringPrint import printWarning
 from source.writeToFile import writing
 from source.cyton import OpenBCICyton
 from utils.constants import Constants as cnst
+from online import *
 
 
 def printData(data, _newDataAvailable, _shutdownEvent):
@@ -76,6 +77,7 @@ def uiManager():
 
 	newDataAvailable = Event()
 	startTrainingEvent = Event()
+	startOnlineEvent = Event()
 
 	windowedDataBuffer = Queue(maxsize=cnst.writeDataMaxQueueSize)
 	# Queue for the communication between socket and boardEventHandler
@@ -122,7 +124,8 @@ def uiManager():
 		# create Process for the gui
 		guiProcess = Process(target=startGUI, name='startGUI',
 		                     args=(guiBuffer, newDataAvailable, board, boardApiCallEvents,
-		                           boardCytonSettings, shutdownEvent, writeDataEvent, startTrainingEvent))
+		                           boardCytonSettings, shutdownEvent, writeDataEvent, startTrainingEvent,
+								   startOnlineEvent))
 		processesList.append(guiProcess)
 
 		# create Process to write data from board to file
@@ -141,6 +144,13 @@ def uiManager():
 			                          board, startTrainingEvent, boardApiCallEvents, shutdownEvent,
 			                          trainingClassBuffer))
 		processesList.append(trainingProcess)
+
+		# create Process for connecting to unity program socket fro online session
+		onlineProcess = Process(target=startOnline, name='online',
+								  args=(
+									  board, startOnlineEvent, boardApiCallEvents, shutdownEvent,
+									  trainingClassBuffer))
+		processesList.append(onlineProcess)
 
 		# start processes in the processList
 		for proc in processesList:
