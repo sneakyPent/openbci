@@ -3,7 +3,7 @@ from threading import Thread
 import queue
 import numpy as np
 from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtWidgets import *
 import pyqtgraph as pg
 from classification import *
@@ -109,7 +109,8 @@ class GUI(QMainWindow):
 		self.channelDataGraphWidgets = []
 		self.channelFftWidget = None
 		# QMainWindow settings
-		self.setWindowTitle("My GUI for Cyton Board")
+		self.setWindowTitle("Cyton Board GUI")
+		self.setWindowIcon(QIcon('../media/openbci_large.png'))
 		self.font = QFont('sanserif', 13)
 
 		# create main widget will be used as CentralWidget in QMainWindow
