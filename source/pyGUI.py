@@ -93,7 +93,7 @@ class CustomDialog(QDialog):
 
 class GUI(QMainWindow):
 	def __init__(self, guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
-	             writeDataEvent, startTrainingEvent):
+	             writeDataEvent, startTrainingEvent, startOnlineEvent):
 		super().__init__()
 		# pg.setConfigOption('background', 'w')
 		# pg.setConfigOption('foreground', 'k')
@@ -104,6 +104,7 @@ class GUI(QMainWindow):
 		self.shutdownEvent = _shutdownEvent
 		self.writeDataEvent = writeDataEvent
 		self.startTrainingEvent = startTrainingEvent
+		self.startOnlineEvent = startOnlineEvent
 		self.boardCytonSettings = boardCytonSettings
 		self.graphData = []
 		self.channelDataGraphWidgets = []
@@ -201,7 +202,7 @@ class GUI(QMainWindow):
 		boardSettingsSpacing = 30
 		# create a combo menu for the frequencies bands
 		freqCombo = QHBoxLayout()
-		freqComboTitle = QLabel('Band pass frequencies:')
+		freqComboTitle = QLabel('Bandpass freq:')
 		self.freqComboChoices = QComboBox()
 		freqComboTitle.setFont(self.font)
 		self.freqComboChoices.setFont(self.font)
@@ -314,6 +315,13 @@ class GUI(QMainWindow):
 		self.boardSettingLayout.addWidget(self.trainingButton)
 		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
 
+		# add a push button to start Training mode
+		self.onlineButton = QPushButton("Online")
+		self.onlineButton.setFont(self.font)
+		self.onlineButton.clicked.connect(self.onlineButtonClick)
+		self.boardSettingLayout.addWidget(self.onlineButton)
+		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+
 		# channelsList = ['channel 1', 'channel 2', 'channel 3', 'channel 4', 'channel 5', 'channel 6', 'channel 7',
 		#            'channel 8']
 		# channelsCombo = CheckComboBox(placeholderText='Enable Channels')
@@ -358,6 +366,9 @@ class GUI(QMainWindow):
 
 	def trainingButtonClick(self):
 		self.startTrainingEvent.set()
+	
+	def onlineButtonClick(self):
+		self.startOnlineEvent.set()
 
 	def plotFftButtonClick(self):
 		options = QFileDialog.Options()
@@ -527,10 +538,10 @@ class GUI(QMainWindow):
 
 
 def startGUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
-             writeDataEvent, startTrainingEvent):
+             writeDataEvent, startTrainingEvent, startOnlineEvent):
 	app = QApplication(sys.argv)
 	gui = GUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
-	          writeDataEvent, startTrainingEvent)
+	          writeDataEvent, startTrainingEvent, startOnlineEvent)
 	gui.show()
 	sys.exit(app.exec_())
 
