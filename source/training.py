@@ -109,7 +109,7 @@ def startTrainingApp(boardApiCallEvents):
 
 	"""
 	with open(os.devnull, 'wb') as devnull:
-		subprocess.check_call([cnst.unityExePath], stdout=devnull, stderr=subprocess.STDOUT)
+		subprocess.check_call([cnst.trainingUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
 	boardApiCallEvents["stopStreaming"].set()
 
 
