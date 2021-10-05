@@ -17,14 +17,6 @@ from source.cyton import OpenBCICyton
 from utils.constants import Constants as cnst
 
 
-class MyManager(SyncManager):
-	"""
-	SyncManager to register openbci cyton board object so as to create a proxy and share it to every subprocess.
-
-	"""
-	pass
-
-
 def printData(data, _newDataAvailable, _shutdownEvent):
 	"""
 	* Runs simultaneously with the boardEventHandler process and waits for the writeDataEvent, which is set only by the boardEventHandler.
@@ -68,7 +60,7 @@ def uiManager():
 		6. trainingProcess
 	"""
 	# register the OpenBCICyton class; make its functions accessible via proxy
-	MyManager.register('OpenBCICyton', OpenBCICyton)
+	SyncManager.register('OpenBCICyton', OpenBCICyton)
 
 	parser = argparse.ArgumentParser(prog='UIManager',
 	                                 description='Python scripts that determines which UI will be used for the cyton board ')
@@ -92,7 +84,7 @@ def uiManager():
 	# catch keyboardinterupt exception and just set shutdownEvent
 	signal.signal(signal.SIGINT, signal_handler)
 	# create board through manager so as to have a proxy for the object to _share through processes
-	manager = MyManager()
+	manager = SyncManager()
 	manager.start()
 	board = manager.OpenBCICyton()
 
