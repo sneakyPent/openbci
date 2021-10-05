@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from utils.constants import Constants as cnst
 from utils import filters
+import sys
+sys.path.append('..')
 
 
 def calculateSNR(data):
@@ -31,7 +33,7 @@ def printUniqueFFT(fileNames):
 	:return: None
 	"""
 	for fileName in fileNames:
-		fig = plt.figure()
+		fig = plt.figure(num=os.path.basename(fileName))
 		with h5py.File(fileName, 'r') as f:
 			d1 = f['signal'][:, 0:4]
 		fig.suptitle(os.path.basename(fileName))
@@ -67,21 +69,28 @@ def printUniqueFFT(fileNames):
 		for w in range(len(data_processed_freq_6)):
 			ps = data_processed_freq_6[w]
 			print('Channel ' + w.__str__() + ':' +
-			      ' \t SNR = ' + calculateSNR(ps).__str__() +
-			      ',\t Max = ' + max(ps).__str__() +
-			      ',\t FREQ = ' + abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]).__str__())
+				  ' \t SNR = ' + calculateSNR(ps).__str__() +
+				  ',\t Max = ' + max(ps).__str__() +
+				  ',\t FREQ = ' + abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]).__str__())
 			lgSNR = ', SNR=' + "{:.5f}".format(calculateSNR(ps))
 			lgMAX = ', Max=' + "{:.2e}".format(max(ps))
 			lgFREQ = ' FREQ=' + "{:.4f}".format(abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]))
 			legnd = lb[w] + lgSNR + lgMAX + lgFREQ
 			plt.plot(freqs3[idx3], ps[idx3], colors[w], label=legnd)
-			plt.title(
-				'Max = ' + round(max(ps), 3).__str__() +
-				', Freq = ' + round(abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]), 3).__str__()
-			)
+			# plt.title(
+			# 	'Max = ' + round(max(ps), 3).__str__() +
+			# 	', Freq = ' + round(abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]), 3).__str__()
+			# )
+			plt.ylabel('Amplitude')
+			plt.xlabel('Frequency (Hertz)')
 		plt.xlim(left=0, right=40)
 		plt.ylim(bottom=0)
-		plt.legend()
+		plt.legend(prop={"size": 9})
+		# ----------- Saving figures ---------------
+		figureName = os.path.splitext(os.path.basename(fileName))[0]
+		plt.savefig('C:/Users/ZN/Desktop/images/'+figureName+'.png', transparent=False)
+
+		# -------
 	plt.show()
 
 
@@ -147,31 +156,38 @@ def printFFT(fileNames):
 			for w in range(len(data_processed_freq_6)):
 				ps = data_processed_freq_6[w]
 				print('Channel ' + w.__str__() + ':' +
-				      ' \t SNR = ' + calculateSNR(ps).__str__() +
-				      ',\t Max = ' + max(ps).__str__() +
-				      ',\t FREQ = ' + abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]).__str__())
+					  ' \t SNR = ' + calculateSNR(ps).__str__() +
+					  ',\t Max = ' + max(ps).__str__() +
+					  ',\t FREQ = ' + abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]).__str__())
 				lgSNR = ', SNR=' + "{:.5f}".format(calculateSNR(ps))
 				lgMAX = ', Max=' + "{:.2e}".format(max(ps))
 				lgFREQ = ' FREQ=' + "{:.4f}".format(abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]))
 				legnd = lb[w] + lgSNR + lgMAX + lgFREQ
 				axs[subCols, subRows].plot(freqs3[idx3], ps[idx3], colors[w], label=legnd)
 				axs[subCols, subRows].set_title(
-					'Class ' + cnst.trainingClasses[tClass + 1].__str__() +
-					', Frequency: ' + cnst.trainingClassesFrequencies[tClass + 1].__str__() +
-					', Max = ' + round(max(ps), 3).__str__() +
-					', Freq = ' + round(abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]), 3).__str__()
+					'Class ' + cnst.trainingClasses[tClass + 1].__str__()
+					+ ', Frequency: ' + cnst.trainingClassesFrequencies[tClass + 1].__str__()
+					# + ', Max = ' + round(max(ps), 3).__str__()
+					# + ', Freq = ' + round(abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]), 3).__str__()
 				)
 			axs[subCols, subRows].set_xlim(left=0, right=40)
 			axs[subCols, subRows].set_ylim(bottom=0)
-			axs[subCols, subRows].legend()
+			axs[subCols, subRows].legend(prop={"size": 9})
 			subRows += 1
-		for ax in axs.flat:
-			ax.set(ylabel='Amplitude', xlabel='Frequency (Hertz)')
+		for i, ax in enumerate(axs.flat):
+			if i == 0:
+				ax.set(ylabel='Amplitude')
+			elif i == 1:
+				continue
+			elif i == 2:
+				ax.set(xlabel='Frequency (Hertz)', ylabel='Amplitude')
+			elif i == 3:
+				ax.set(xlabel='Frequency (Hertz)')
 	plt.show()
 
 
 if __name__ == '__main__':
-	sName = 'Streaming17_09_2021__19_47_55'
-	fName = "../streamData/" + sName + ".hdf5"
+	sName = 'Training__29-09-2021__15-05-55'
+	fName = "C:/Users/ZN/Desktop/Diplo/streamData/29-09-2021/goodLDA/" + sName + ".hdf5"
 	fileList = [fName]
 	printFFT(fileList)
