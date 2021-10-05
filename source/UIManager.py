@@ -15,7 +15,7 @@ from utils.coloringPrint import printWarning
 from source.writeToFile import writing
 from source.cyton import OpenBCICyton
 from utils.constants import Constants as cnst
-from online import *
+from online import startOnline
 
 
 def printData(data, _newDataAvailable, _shutdownEvent):
