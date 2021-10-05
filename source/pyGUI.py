@@ -376,8 +376,6 @@ class GUI(QMainWindow):
 				# The CustomDialog.result() returns the index of the pressed button
 				# 1 and 2 used ny qDialog so we use 101 102 and we take the (qdialog.result mod 100)
 				btnIndex = dlg.result() % 100
-				print(btnIndex)
-				print("Success!")
 				if btns[btnIndex] == 'one':
 					fft_analysis.printUniqueFFT(fileNames)
 				elif btns[btnIndex] == 'four':
