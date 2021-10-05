@@ -200,7 +200,8 @@ class BoardEventHandler:
 					printInfo("Stopping streaming...")
 					try:
 						self.startStreamingEvent.clear()
-						self.writeDataEvent.set()
+						if self.board.isTrainingMode():
+							self.writeDataEvent.set()
 						self.board.stopStreaming()
 						self.board.setSynching(False)
 					except:
