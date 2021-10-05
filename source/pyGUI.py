@@ -111,7 +111,7 @@ class GUI(QMainWindow):
 		# QMainWindow settings
 		self.setWindowTitle("Cyton Board GUI")
 		self.setWindowIcon(QIcon('../media/openbci_large.png'))
-		self.font = QFont('sanserif', 13)
+		self.font = QFont('Roboto', 11)
 
 		# create main widget will be used as CentralWidget in QMainWindow
 		mainWidget = QWidget(parent=self)
@@ -166,8 +166,6 @@ class GUI(QMainWindow):
 		self.timer.timeout.connect(self.fftUpdater)
 		self.timer.setInterval(50)
 		self.timer.start()
-
-	#
 
 	def initMenuBar(self):
 		self.menubar.setFont(self.font)
