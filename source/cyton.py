@@ -319,7 +319,7 @@ class OpenBCICyton(object):
 	def disconnect(self):
 		if self.streaming:
 			self.stopStreaming()
-		if self.ser.isOpen():
+		if hasattr(self, 'ser') and self.ser.isOpen():
 			print("Closing Serial...")
 			self.ser.close()
 			logging.warning('serial closed')
