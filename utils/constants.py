@@ -205,6 +205,8 @@ class Constants:
 
 	""" Unity exe """
 	trainingUnityExePath = "C:/Users/ZN/Desktop/training/trainingOpenbci.exe"
+	onlineUnityExePath = "C:/Users/ZN/Desktop/online/onlineOpenbci.exe"
+	onlineUnitySentByte = 8
 	unknownClass = 200
 	trainingClasses = [0, 1, 2, 3, 4]
 	trainingClassesFrequencies = [0, 3, 3.75, 3.33, 4.28]
