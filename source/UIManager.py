@@ -149,7 +149,7 @@ def uiManager():
 		onlineProcess = Process(target=startOnline, name='online',
 								  args=(
 									  board, startOnlineEvent, boardApiCallEvents, shutdownEvent,
-									  trainingClassBuffer))
+									  windowedDataBuffer))
 		processesList.append(onlineProcess)
 
 		# start processes in the processList
