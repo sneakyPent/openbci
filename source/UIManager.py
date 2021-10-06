@@ -101,10 +101,11 @@ def uiManager():
 	windowingBuffer = Queue(maxsize=cnst.writeDataMaxQueueSize)
 	# add queues in the list
 	# dataBuffersList = [writingBuffer, windowingBuffer, printBuffer, guiBuffer]
-	dataBuffersList = [writingBuffer, windowingBuffer, guiBuffer]
+	# dataBuffersList = [writingBuffer, windowingBuffer, guiBuffer]
+	dataBuffersList = [windowingBuffer, guiBuffer]
 
 	# Create a BoardEventHandler Instance
-	boardEventHandler = BoardEventHandler(board, boardCytonSettings, newDataAvailable, dataBuffersList, writeDataEvent,
+	boardEventHandler = BoardEventHandler(board, boardCytonSettings, newDataAvailable, dataBuffersList, writingBuffer, writeDataEvent,
 	                                      trainingClassBuffer, shutdownEvent)
 	# events will be used to control board through any gui
 	boardApiCallEvents = boardEventHandler.getBoardHandlerEvents()

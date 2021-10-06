@@ -22,13 +22,14 @@ class BoardEventHandler:
 	:param _shutdownEvent: {Event} - Event used to know when to let every running process terminate
 	"""
 
-	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writeDataEvent, trainingClassBuffer,
+	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writingBuffer, writeDataEvent, trainingClassBuffer,
 	             _shutdownEvent):
 		self.board = board
 		self.newDataAvailable = newDataAvailable
 		self.boardSettings = boardSettings
 		self.dataBuffersList = dataBuffersList
 		self.shutdownEvent = _shutdownEvent
+		self.writingBuffer = writingBuffer
 		self.writeDataEvent = writeDataEvent
 		self.trainingClassBuffer = trainingClassBuffer
 		self.trainingClass = cnst.unknownClass
@@ -109,6 +110,12 @@ class BoardEventHandler:
 			if self.startStreamingEvent.is_set():
 				if self.board.isConnected():
 					printInfo("Starting streaming...")
+					# Empty writingBuffer 
+					try:
+						while not self.writingBuffer.qsize() == 0:
+							self.writingBuffer.get_nowait()
+					except Exception as ex :
+						printError(ex.__str__())
 					# Empty every buffer before start streaming
 					for buffer in self.dataBuffersList:
 						try:
@@ -143,6 +150,13 @@ class BoardEventHandler:
 									except queue.Full:
 										printWarning("Queue full")
 										printing = False
+								if self.board.isTrainingMode():
+									try:
+										self.writingBuffer.put_nowait(sample.channel_data)
+										self.newDataAvailable.set()
+									except queue.Full:
+										printWarning("Queue full")
+										printing = False
 								numofsamples += 1
 							# check for the synching zeros array sample ( [0, 0, 0, 0 ,0 , 0, 0, 0] )
 							elif sample.channel_data == cnst.synchingSignal:
@@ -162,6 +176,12 @@ class BoardEventHandler:
 			else:
 				self.newDataAvailable.clear()
 				if self.shutdownEvent.is_set():
+					# Empty writingBuffer 
+					try:
+						while not self.writingBuffer.qsize() == 0:
+							self.writingBuffer.get_nowait()
+					except Exception as ex :
+						printError(ex.__str__())
 					# empty queues before terminating to prevent zombie processes
 					for buffer in self.dataBuffersList:
 						if buffer.qsize() != 0:
@@ -171,7 +191,12 @@ class BoardEventHandler:
 				if printing:
 					print(numofsamples)
 					printing = False
-		# Empty every buffer before start streaming
+		# Empty every buffer before exiting 
+		try:
+			while not self.writingBuffer.qsize() == 0:
+				self.writingBuffer.get_nowait()
+		except Exception as ex :
+			printError(ex.__str__())
 		for buffer in self.dataBuffersList:
 			try:
 				while not buffer.qsize() == 0:
