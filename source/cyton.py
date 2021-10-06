@@ -93,7 +93,7 @@ class OpenBCICyton(object):
 		self.windowSize = windowSize
 		self.windowStepSize = windowStepSize
 		if enabledChannels is None:
-			enabledChannels = []
+			enabledChannels = [0, 1, 2, 3]
 		self.enabledChannels = enabledChannels
 
 		# number of channels per sample *from the board*
