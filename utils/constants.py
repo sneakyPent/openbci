@@ -173,6 +173,7 @@ class Constants:
 
 	""" Cyton board settings """
 	bandPassFreqList = ["1-50", "3-30", "4-40", "5-50"]
+	initBandPassFreqList = "4-40"
 	windowSizeList = [1, 2, 3, 4, 5]
 	initWindowSizeValue = 3
 	windowStepSizeList = [0.5, 1, 1.5, 0.99, 0.35]
@@ -210,3 +211,12 @@ class Constants:
 	unknownClass = 200
 	trainingClasses = [0, 1, 2, 3, 4]
 	trainingClassesFrequencies = [0, 3, 3.75, 3.33, 4.28]
+
+	""" classification """
+	classifierFilename = "../classification/classifier_LDA.sav"
+	frames_ch = [[0 for j in range(2)] for i in range(4)]  # The duration (in frames) of the first checkerboard pattern
+	frames_ch[0] = [10, 10]  # for frequency=3 Hz
+	frames_ch[1] = [8, 8]  # for frequency=3.75 Hz
+	frames_ch[2] = [9, 9]  # for frequency=3.33 Hz
+	frames_ch[3] = [7, 7]  # for frequency=4.28 Hz
+	harmonics_num = 2
