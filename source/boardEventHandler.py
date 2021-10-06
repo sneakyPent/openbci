@@ -106,17 +106,16 @@ class BoardEventHandler:
 		"minor flag, helps to print the number of samples read by the cyton board"
 		while not self.shutdownEvent.is_set():
 			self.startStreamingEvent.wait(1)
-			# Empty every buffer before start streaming
-			for buffer in self.dataBuffersList:
-				try:
-					while not buffer.qsize() == 0:
-						buffer.get_nowait()
-				except Exception as ex :
-					printError(ex)
 			if self.startStreamingEvent.is_set():
-
 				if self.board.isConnected():
 					printInfo("Starting streaming...")
+					# Empty every buffer before start streaming
+					for buffer in self.dataBuffersList:
+						try:
+							while not buffer.qsize() == 0:
+								buffer.get_nowait()
+						except Exception as ex :
+							printError(ex.__str__())
 					self.trainingClass = cnst.unknownClass
 					while self.startStreamingEvent.is_set():
 						try:
