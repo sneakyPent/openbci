@@ -6,17 +6,13 @@ from classification import calculate_cca_corrs_all_segments
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
+from utils.constants import Constants as cnst
 
 # parameters
 # ................................................................
 chan_ind = [0, 1, 2, 3]
 
-frames_ch = [[0 for j in range(2)] for i in range(4)]  # The duration (in frames) of the first checkerboard pattern
-frames_ch[0] = [10, 10]  # for frequency=3 Hz
-frames_ch[1] = [8, 8]  # for frequency=3.75 Hz
-frames_ch[2] = [9, 9]  # for frequency=3.33 Hz
-frames_ch[3] = [7, 7]  # for frequency=4.28 Hz
-
+frames_ch = cnst.frames_ch
 lowcut = 4
 highcut = 40
 harmonics_num = 2
@@ -44,7 +40,7 @@ def training(segment_buffer, chan_ind, fs, frames_ch, lowcut, highcut, harmonics
 	# training
 	clf_LDA.fit(r, np.ravel(ground_truth))  # np.ravel returns a contiguous flattened array
 
-	joblib.dump(clf_LDA, 'classifier_LDA.sav')
+	joblib.dump(clf_LDA, cnst.classifierFilename)
 
 
 def calculateAccuracy(segment_buffer, chan_ind, fs, frames_ch, lowcut, highcut, harmonics_num, _dataInFile):
@@ -52,7 +48,7 @@ def calculateAccuracy(segment_buffer, chan_ind, fs, frames_ch, lowcut, highcut, 
 	                                                   harmonics_num, _dataInFile)
 
 	# load classifier
-	clf_LDA = joblib.load('classifier_LDA.sav')
+	clf_LDA = joblib.load(cnst.classifierFilename)
 
 	# predict
 	predicted_labels_LDA = clf_LDA.predict(r)
