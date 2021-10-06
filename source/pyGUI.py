@@ -150,7 +150,7 @@ class GUI(QMainWindow):
 		self.initMenuBar()
 
 		# send board settings with current init choices
-		self.freqComboClick(self.freqComboChoices.currentText())
+		self.freqComboClick(self.freqComboChoices.currentIndex())
 		self.windowComboClick()
 		self.windowStepComboClick()
 		self.filteringDataFunction(self.filterDataCheckbox.checkState())
@@ -208,9 +208,12 @@ class GUI(QMainWindow):
 		self.freqComboChoices.setFont(self.font)
 		self.freqComboChoices.setToolTip('Select the Frequencies where data will be filtered.')
 		self.freqComboChoices.addItems(cnst.bandPassFreqList)
+        # Set the init value form the cnst.bandPassFreqList
+		initValueIndex = cnst.bandPassFreqList.index(cnst.initBandPassFreqList)
+		self.freqComboChoices.setCurrentIndex(initValueIndex)
 		freqCombo.addWidget(freqComboTitle)
 		freqCombo.addWidget(self.freqComboChoices)
-		self.freqComboChoices.activated[str].connect(self.freqComboClick)
+		self.freqComboChoices.currentIndexChanged.connect(self.freqComboClick)
 
 		# add frequency combo to boardSettingLayout
 		self.boardSettingLayout.addLayout(freqCombo)
@@ -401,15 +404,16 @@ class GUI(QMainWindow):
 		if fileNames:
 			classificationOpenBCI.classify(fileNames)
 
-	def freqComboClick(self, freq):
+	def freqComboClick(self, index):
 		try:
+			freq = cnst.bandPassFreqList[index]
 			lowerBound = int(freq.split("-")[0])
 			upperBound = int(freq.split("-")[1])
 			self.boardCytonSettings["lowerBand"] = lowerBound
 			self.boardCytonSettings["upperBand"] = upperBound
 			self.boardApiCallEvents["newBoardSettingsAvailable"].set()
-		except Exception:
-			print("freqComboClick ERROR!")
+		except Exception as ex:
+			print("freqComboClick ERROR!" + ex.traceback.format_exc() )
 
 	def windowComboClick(self):
 		try:
