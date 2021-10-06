@@ -121,16 +121,15 @@ def startTargetApp():
 
 def onlineProcessing(board, _shutdownEvent, windowedDataBuffer, predictBuffer, stopOnlineStreamingEvent):
 	# load the classifier
-	filename = 'classifier_LDA.sav'
+	filename = cnst.classifierFilename
 	clf = joblib.load(filename)
-	chan_ind = [0, 1, 2, 3]
-
-	frames_ch = [[0 for j in range(2)] for i in range(4)]  # The duration (in frames) of the first checkerboard pattern
-	frames_ch[0] = [10, 10]  # for frequency=3 Hz
-	frames_ch[1] = [8, 8]  # for frequency=3.75 Hz
-	frames_ch[2] = [9, 9]  # for frequency=3.33 Hz
-	frames_ch[3] = [7, 7]  # for frequency=4.28 Hz
-
+	chan_ind = board.getEnabledChannels()
+	frames_ch = cnst.frames_ch
+	lowcut = board.getLowerBoundFrequency()
+	highcut = board.getHigherBoundFrequency()
+	harmonics_num = cnst.harmonics_num
+	fs = board.getSampleRate()
+		
 	while not _shutdownEvent.is_set() and not stopOnlineStreamingEvent.is_set():
 		while not windowedDataBuffer.qsize() == 0 and not stopOnlineStreamingEvent.is_set():
 			segment_full = np.array(windowedDataBuffer.get())
