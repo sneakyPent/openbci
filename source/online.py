@@ -21,7 +21,7 @@ from utils.filters import *
 from classification.train_processing_cca_3 import calculate_cca_correlations
 
 
-def socketConnect(boardApiCallEvents, socketConnection):
+def socketConnect(boardApiCallEvents, socketConnection, stopOnlineStreamingEvent):
 	"""
 	* Responsible
 
@@ -72,6 +72,7 @@ def socketConnect(boardApiCallEvents, socketConnection):
 					boardApiCallEvents["startStreaming"].set()
 			except:
 				c.shutdown(socket.SHUT_RDWR)
+				stopOnlineStreamingEvent.set()
 				c.close()
 				continue
 
@@ -85,6 +86,7 @@ def socketConnect(boardApiCallEvents, socketConnection):
 					c.sendall('2'.encode())
 					if bytes_received == "E" or bytes_received == "":
 						boardApiCallEvents["stopStreaming"].set()
+						stopOnlineStreamingEvent.set()
 						break
 					else:
 						if bytes_received != bytes_received_old:
@@ -94,6 +96,7 @@ def socketConnect(boardApiCallEvents, socketConnection):
 							except:
 								c.shutdown(socket.SHUT_RDWR)
 								c.close()
+								stopOnlineStreamingEvent.set()
 								continue
 							bytes_received_old = bytes_received
 			c.shutdown(socket.SHUT_RDWR)
@@ -116,7 +119,7 @@ def startTargetApp():
 		subprocess.check_call([cnst.onlineUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
 
 
-def onlineProcessing(board, _shutdownEvent, windowedDataBuffer, predictBuffer):
+def onlineProcessing(board, _shutdownEvent, windowedDataBuffer, predictBuffer, stopOnlineStreamingEvent):
 	# load the classifier
 	filename = 'classifier_LDA.sav'
 	clf = joblib.load(filename)
@@ -128,13 +131,8 @@ def onlineProcessing(board, _shutdownEvent, windowedDataBuffer, predictBuffer):
 	frames_ch[2] = [9, 9]  # for frequency=3.33 Hz
 	frames_ch[3] = [7, 7]  # for frequency=4.28 Hz
 
-	lowcut = 4
-	highcut = 40
-	harmonics_num = 2
-	fs = 250
-		
-	while not _shutdownEvent.is_set():
-		while not windowedDataBuffer.qsize() == 0:
+	while not _shutdownEvent.is_set() and not stopOnlineStreamingEvent.is_set():
+		while not windowedDataBuffer.qsize() == 0 and not stopOnlineStreamingEvent.is_set():
 			segment_full = np.array(windowedDataBuffer.get())
 
 			frames_np = np.sum(np.array(frames_ch),1)   # I sum the frames along axis 1 (i.e. I sum all the elements of each row)
@@ -155,9 +153,9 @@ def onlineProcessing(board, _shutdownEvent, windowedDataBuffer, predictBuffer):
 			predictBuffer.put(command_predicted)
 
 
-def managePredict(_shutdownEvent, predictBuffer):
-	while not _shutdownEvent.is_set():
-		while not predictBuffer.qsize() == 0:
+def managePredict(_shutdownEvent, predictBuffer, stopOnlineStreamingEvent):
+	while not _shutdownEvent.is_set() and not stopOnlineStreamingEvent.is_set():
+		while not predictBuffer.qsize() == 0 and not stopOnlineStreamingEvent.is_set():
 			dt = predictBuffer.get()
 			print(dt)
 
@@ -180,13 +178,15 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	:param Queue trainingClassBuffer: Buffer will be used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
 	"""
 	socketConnection = Event()
+	stopOnlineStreamingEvent = Event() 
 	socketConnection.clear()
+	stopOnlineStreamingEvent.clear()
 	predictBuffer = Queue(maxsize=100)
 
-	socketProcess = Process(target=socketConnect, args=(boardApiCallEvents, socketConnection,))
+	socketProcess = Process(target=socketConnect, args=(boardApiCallEvents, socketConnection, stopOnlineStreamingEvent,))
 	applicationProcess = Process(target=startTargetApp)
-	onlineProcessingProcess = Process(target=onlineProcessing, args=(board, _shutdownEvent, windowedDataBuffer, predictBuffer,))
-	managePredictProcess = Process(target=managePredict, args=(_shutdownEvent, predictBuffer,))
+	onlineProcessingProcess = Process(target=onlineProcessing, args=(board, _shutdownEvent, windowedDataBuffer, predictBuffer, stopOnlineStreamingEvent,))
+	managePredictProcess = Process(target=managePredict, args=(_shutdownEvent, predictBuffer, stopOnlineStreamingEvent,))
 	while not _shutdownEvent.is_set():
 		startOnlineEvent.wait(1)
 		if startOnlineEvent.is_set():
@@ -210,8 +210,9 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 				managePredictProcess.join()
 				startOnlineEvent.clear()
 				socketConnection.clear()
+				stopOnlineStreamingEvent.clear()
 				# recreating process because eve after Process Termination cannot start a process twice
-				socketProcess = Process(target=socketConnect, args=(boardApiCallEvents, socketConnection,))
+				socketProcess = Process(target=socketConnect, args=(boardApiCallEvents, socketConnection, stopOnlineStreamingEvent,))
 				applicationProcess = Process(target=startTargetApp)
-				onlineProcessingProcess = Process(target=onlineProcessing, args=(board, _shutdownEvent, windowedDataBuffer, predictBuffer,))
-				managePredictProcess = Process(target=managePredict, args=(_shutdownEvent, predictBuffer,))
+				onlineProcessingProcess = Process(target=onlineProcessing, args=(board, _shutdownEvent, windowedDataBuffer, predictBuffer, stopOnlineStreamingEvent,))
+				managePredictProcess = Process(target=managePredict, args=(_shutdownEvent, predictBuffer, stopOnlineStreamingEvent,))
