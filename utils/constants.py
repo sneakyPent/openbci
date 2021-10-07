@@ -5,11 +5,13 @@ from matplotlib import colors as mcolors
 colrs = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
 
 
-def getSessionFilename(training=False, openbciGUI=False):
+def getSessionFilename(training=False, openbciGUI=False, online=False):
 	if training:
 		return Constants.destinationFolder + 'Training__' + time.strftime("%d-%m-%Y__%H-%M-%S")
 	elif openbciGUI:
 		return 'openBCI_GUI_Training__' + time.strftime("%d-%m-%Y__%H-%M-%S")
+	elif online:
+		return 'online' + time.strftime("%d-%m-%Y__%H-%M-%S") + '.txt'
 	else:
 		return Constants.destinationFolder + 'Streaming__' + time.strftime("%d-%m-%Y__%H-%M-%S")
 
