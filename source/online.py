@@ -392,6 +392,7 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	applicationProcess = Process(target=startTargetApp)
 	onlineProcessingProcess = Process(target=onlineProcessing, args=(board, _shutdownEvent, windowedDataBuffer, predictBuffer, stopOnlineStreamingEvent,))
 	managePredictProcess = Process(target=managePredict, args=(_shutdownEvent, predictBuffer, stopOnlineStreamingEvent,))
+	wheelProcess = Process(target=wheel_serial, args=(_shutdownEvent, stopOnlineStreamingEvent, predictBuffer, 'COM4', None, None))
 	while not _shutdownEvent.is_set():
 		startOnlineEvent.wait(1)
 		if startOnlineEvent.is_set():
@@ -409,14 +410,18 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 					onlineProcessingProcess.start()
 				if not managePredictProcess.is_alive():
 					managePredictProcess.start()
+				if not wheelProcess.is_alive():
+					wheelProcess.start()
 				socketProcess.join()
 				applicationProcess.join()
 				onlineProcessingProcess.join()
 				managePredictProcess.join()
+				wheelProcess.join()
 				startOnlineEvent.clear()
 				socketConnection.clear()
 				stopOnlineStreamingEvent.clear()
 				# recreating process because eve after Process Termination cannot start a process twice
+				wheelProcess = Process(target=wheel_serial, args=(_shutdownEvent, stopOnlineStreamingEvent, predictBuffer, 'COM4', None, None))
 				socketProcess = Process(target=socketConnect, args=(boardApiCallEvents, socketConnection, stopOnlineStreamingEvent,))
 				applicationProcess = Process(target=startTargetApp)
 				onlineProcessingProcess = Process(target=onlineProcessing, args=(board, _shutdownEvent, windowedDataBuffer, predictBuffer, stopOnlineStreamingEvent,))
