@@ -15,8 +15,11 @@ import time
 from multiprocessing import Process, Event, Queue
 
 import joblib
+import json
+from time import sleep
+import serial 
 from utils.coloringPrint import printError
-from utils.constants import Constants as cnst
+from utils.constants import Constants as cnst, getSessionFilename
 from utils.filters import *
 from classification.train_processing_cca_3 import calculate_cca_correlations
 
@@ -153,6 +156,16 @@ def onlineProcessing(board, _shutdownEvent, windowedDataBuffer, predictBuffer, s
 
 
 def managePredict(_shutdownEvent, predictBuffer, stopOnlineStreamingEvent):
+	pass
+	# fileName = getSessionFilename(online=True)
+	# myfile = open(fileName, 'w')
+	# while not _shutdownEvent.is_set() and not stopOnlineStreamingEvent.is_set():
+	# 	while not predictBuffer.qsize() == 0 and not stopOnlineStreamingEvent.is_set():
+	# 		dt = predictBuffer.get()[0]
+	# 		print(int(dt).__str__())
+	# 		myfile.write(int(dt).__str__() + '\n')
+	# myfile.close()
+
 
 forward = '{"c":"xy","x":0,"y":45}\r\n'
 back = '{"c":"xy","x":0,"y":-45}\r\n'
