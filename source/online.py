@@ -153,10 +153,216 @@ def onlineProcessing(board, _shutdownEvent, windowedDataBuffer, predictBuffer, s
 
 
 def managePredict(_shutdownEvent, predictBuffer, stopOnlineStreamingEvent):
-	while not _shutdownEvent.is_set() and not stopOnlineStreamingEvent.is_set():
-		while not predictBuffer.qsize() == 0 and not stopOnlineStreamingEvent.is_set():
-			dt = predictBuffer.get()
-			print(dt)
+
+forward = '{"c":"xy","x":0,"y":45}\r\n'
+back = '{"c":"xy","x":0,"y":-45}\r\n'
+right = '{"c":"xy","x":40,"y":0}\r\n'
+left = '{"c":"xy","x":-40,"y":0}\r\n'
+stop = '{"c":"xy","x":0,"y":0}\r\n'
+connection_serial = '{"c":"input","d":"usb"}\r\n'
+info_usb = '"input":"usb"'
+info_wifi = '"input":"wifi"'
+connection_wifi = '{"c":"input","d":"wifi"}\r\n'
+info =  '{"c":"info"}\r\n'
+x =  '{"c":"ping"}\r\n'
+speed = '{"c":"speed_s", "d":"-"}\r\n'
+power_off = '{"c":"power_off"}\r\n'
+
+
+def wheel_serial(_shutdownEvent, stopOnlineStreamingEvent, command_buffer, usb_port_, emergency_arduino, target3_=False):
+	# wait = 0
+	# while socketConnection.is_set():
+	# 	wait = 1
+	debugMode = 0
+	target3_ = False
+	command = '{"c":"xy","x":0,"y":0}\r\n'
+	fileName = getSessionFilename(online=True)
+	try:
+		ser = serial.Serial(port= usb_port_, baudrate = 115200, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
+		command_buffer.cancel_join_thread()  
+		ser.write(connection_serial.encode())   # connect to port 
+		ser.readline().decode()
+
+		
+		ser.write(info.encode())
+		info_list = ser.readline().decode().split(",",6)
+		myfile = open(fileName, 'w')
+		print(info_list)
+ 
+		# define the number of targets to send the right commands
+		if target3_ == True:
+			mode = 5
+		else:
+			mode = 6
+
+		cmd_old = 0
+		while not _shutdownEvent.is_set() and not stopOnlineStreamingEvent.is_set():
+			if not command_buffer.empty():
+				data = command_buffer.get_nowait() # get the command and translate into move
+				
+				if ser.isOpen():
+					# if not emergency_arduino.is_set():
+					if True:
+						if not cmd_old == 0 and data == 0: # sut the "stop" between commands
+							temp = data
+							data = cmd_old
+							cmd_old = temp
+						else:
+							cmd_old = data
+
+						if data == 0:
+
+							if command == '{"c":"xy","x":0,"y":45}\r\n': # if previous_command == forward
+								print("I reduce once my speed")
+								temp_command ='{"c":"xy","x":0,"y":20}\r\n' # reduce the speed                              
+								if debugMode == 1:
+									myfile.write("I reduce once my speed" + '\n')
+								elif debugMode == 0:
+									ser.write(temp_command.encode())  # stop
+								command = temp_command
+
+							elif command == '{"c":"xy","x":0,"y":20}\r\n':
+								print("I reduce twice my speed")
+								temp_command ='{"c":"xy","x":0,"y":10}\r\n' # reduce the speed 
+								if debugMode == 1:
+									myfile.write("I reduce twice my speed" + '\n')
+								elif debugMode == 0:
+									ser.write(temp_command.encode())  # stop
+								command = temp_command
+							else:
+								if debugMode == 1:
+									print("Stop: " + stop)
+									myfile.write("Stop: " + stop)
+								elif debugMode == 0:
+									ser.write(stop.encode())  # stop
+								command = stop
+
+							sleep(0.08) # delay before the next command
+						elif data == 1:
+							# ......if interface is a square.........
+							if debugMode == 1:
+								print("Left: " + left)
+								myfile.write("Left: " + left)
+							elif debugMode == 0:
+								ser.write(left.encode())  # left
+							# print("left")
+							command = left
+						elif data == 2:
+							if mode == 6:
+								# ......if interface is a cross or a square.........
+								if debugMode == 1:
+									print("Right: " + right)
+									myfile.write("Right: " + right)
+								elif debugMode == 0:
+									ser.write(right.encode())  # right
+								# print("right")
+								command = right
+							else:
+								if debugMode == 1:
+									print("Forward: " + forward)
+									myfile.write("Forward: " + forward)
+								elif debugMode == 0:
+									ser.write(forward.encode())  # back
+								# print("back")
+								command = forward
+						elif data == 3:
+							if mode == 6:
+								# ......if interface is a square.........
+								if debugMode == 1:
+									print("Back: " + back)
+									myfile.write("Back: " + back)
+								elif debugMode == 0:
+									ser.write(back.encode())  # back
+								# print("back")
+								command = back
+							else:
+								if debugMode == 1:
+									print("Left: " + left)
+									myfile.write("Left: " + left)
+								elif debugMode == 0:
+									ser.write(left.encode())  # left
+								# print("left")
+								command = left
+						elif data == 4:
+							if mode == 6:
+								#  ...... if interface is a square ......
+								if debugMode == 1:
+									print("Forward: " + forward)
+									myfile.write("Forward: " + forward)
+								elif debugMode == 0:
+									ser.write(forward.encode())  # forward
+								command = forward
+							else:
+								if debugMode == 1:
+									print("Right: " + right)
+									myfile.write("Right: " + right)
+								elif debugMode == 0:
+									ser.write(right.encode())  # right
+								command = right
+						else:
+							if debugMode == 1:
+								print("Stop: " + stop)
+								myfile.write("Stop: " + stop)
+							elif debugMode == 0:
+								ser.write(stop.encode())  # stop
+							command = stop
+
+							sleep(0.08) # delay before the next command
+					# else:
+					#     print("keyboard")
+					#     if not emergency_buffer.empty():
+					#         data = emergency_buffer.get()
+					#         if data == 55:
+					#             ser.write(stop.encode())
+					#             command = '{"c":"xy","x":0,"y":0}\r\n'
+
+					#         elif data == 1:
+					#             ser.write(forward.encode())
+					#             command = '{"c":"xy","x":0,"y":45}\r\n'
+
+					#         elif data == 2:
+					#             ser.write(right.encode())
+					#             command = '{"c":"xy","x":40,"y":0}\r\n'
+								
+					#         elif data == 3:
+					#             ser.write(back.encode())
+					#             command = '{"c":"xy","x":0,"y":-45}\r\n'
+								
+					#         elif data == 4:
+					#             ser.write(left.encode())
+					#             command = '{"c":"xy","x":-40,"y":0}\r\n'
+								
+					#         sleep(0.08)
+					#     else:
+					#         ser.write(command.encode())
+					#         sleep(0.08)
+					#         ser.write(info.encode())
+					#         info_list = ser.readline().decode().split(",",6)
+
+			else:
+				if debugMode == 1:
+					# myfile.write("command: " + command + '\n')
+					pass
+				elif debugMode == 0:
+					ser.write(command.encode())
+				sleep(0.08)
+		if debugMode == 1:
+			print("Stop: " + stop)
+			myfile.write("Stop: " + stop)
+		elif debugMode == 0:
+			ser.write(stop.encode())
+		while not command_buffer.empty():
+			command_buffer.get_nowait()
+
+		print("End wheel")
+		myfile.close()
+	except serial.SerialException:
+		print("Problem connecting to serial device.")
+		while not command_buffer.empty():
+			command_buffer.get_nowait()
+		myfile.close()
+
+		# ser.write(power_off.encode())
 
 
 def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer):
