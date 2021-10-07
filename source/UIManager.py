@@ -63,11 +63,11 @@ def uiManager():
 	# register the OpenBCICyton class; make its functions accessible via proxy
 	SyncManager.register('OpenBCICyton', OpenBCICyton)
 
-	parser = argparse.ArgumentParser(prog='UIManager',
-	                                 description='Python scripts that determines which UI will be used for the cyton board ')
-	parser.add_argument('-m', '--mode', nargs=1, choices=('pygui', 'online'), help='Choose the preferred mode',
-	                    required=True)
-	args = parser.parse_args()
+	# parser = argparse.ArgumentParser(prog='UIManager',
+	#                                  description='Python scripts that determines which UI will be used for the cyton board ')
+	# parser.add_argument('-m', '--mode', nargs=1, choices=('pygui', 'online'), help='Choose the preferred mode',
+	#                     required=True)
+	# args = parser.parse_args()
 
 	# process list in queue
 	processesList = []
@@ -110,7 +110,8 @@ def uiManager():
 	# events will be used to control board through any gui
 	boardApiCallEvents = boardEventHandler.getBoardHandlerEvents()
 
-	mode = args.mode[0]
+	mode = 'pygui'
+	# mode = args.mode[0]
 	if mode == 'pygui':
 
 		# create Process for printing Data
