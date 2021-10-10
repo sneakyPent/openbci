@@ -22,8 +22,8 @@ class BoardEventHandler:
 	:param _shutdownEvent: {Event} - Event used to know when to let every running process terminate
 	"""
 
-	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writingBuffer, writeDataEvent, trainingClassBuffer,
-	             _shutdownEvent):
+	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writingBuffer, writeDataEvent,
+	             trainingClassBuffer, _shutdownEvent):
 		self.board = board
 		self.newDataAvailable = newDataAvailable
 		self.boardSettings = boardSettings
@@ -114,14 +114,14 @@ class BoardEventHandler:
 					try:
 						while not self.writingBuffer.qsize() == 0:
 							self.writingBuffer.get_nowait()
-					except Exception as ex :
+					except Exception as ex:
 						printError(ex.__str__())
 					# Empty every buffer before start streaming
 					for buffer in self.dataBuffersList:
 						try:
 							while not buffer.qsize() == 0:
 								buffer.get_nowait()
-						except Exception as ex :
+						except Exception as ex:
 							printError(ex.__str__())
 					self.trainingClass = cnst.unknownClass
 					while self.startStreamingEvent.is_set():
@@ -180,7 +180,7 @@ class BoardEventHandler:
 					try:
 						while not self.writingBuffer.qsize() == 0:
 							self.writingBuffer.get_nowait()
-					except Exception as ex :
+					except Exception as ex:
 						printError(ex.__str__())
 					# empty queues before terminating to prevent zombie processes
 					for buffer in self.dataBuffersList:
@@ -195,15 +195,15 @@ class BoardEventHandler:
 		try:
 			while not self.writingBuffer.qsize() == 0:
 				self.writingBuffer.get_nowait()
-		except Exception as ex :
+		except Exception as ex:
 			printError(ex.__str__())
 		for buffer in self.dataBuffersList:
 			try:
 				while not buffer.qsize() == 0:
 					buffer.get_nowait()
-			except Exception as ex :
+			except Exception as ex:
 				printError(ex)
-	
+
 	def stopStreaming(self):
 		"""
 		Method runs via stopStreamingProcess:
