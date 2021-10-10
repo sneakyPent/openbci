@@ -2,8 +2,8 @@ import sys
 from threading import Thread
 import queue
 import numpy as np
-from PyQt5.QtCore import QTimer, Qt
-from PyQt5.QtGui import QFont, QIcon
+from PyQt5.QtCore import QTimer, Qt, QRect
+from PyQt5.QtGui import QFont, QTextCursor, QIcon, QPalette
 from PyQt5.QtWidgets import *
 import pyqtgraph as pg
 from classification import *
@@ -11,40 +11,86 @@ from utils import filters
 from utils.constants import Constants as cnst
 from utils import fft_analysis
 
-#
-# class CheckableComboBox(QComboBox):
-# 	def __init__(self):
-# 		super().__init__()
-# 		self._changed = False
-#
-# 		self.view().pressed.connect(self.handleItemPressed)
-#
-# 	def setItemChecked(self, index, checked=False):
-# 		item = self.model().item(index, self.modelColumn())  # QStandardItem object
-#
-# 		if checked:
-# 			item.setCheckState(Qt.Checked)
-# 		else:
-# 			item.setCheckState(Qt.Unchecked)
-#
-# 	def handleItemPressed(self, index):
-# 		item = self.model().itemFromIndex(index)
-#
-# 		if item.checkState() == Qt.Checked:
-# 			item.setCheckState(Qt.Unchecked)
-# 		else:
-# 			item.setCheckState(Qt.Checked)
-# 		self._changed = True
-#
-# 	def hidePopup(self):
-# 		if not self._changed:
-# 			super().hidePopup()
-# 		self._changed = False
-#
-# 	def itemChecked(self, index):
-# 		item = self.model().item(index, self.modelColumn())
-# 		return item.checkState() == Qt.Checked
-#
+
+class ComboBox(QComboBox):
+	# https://code.qt.io/cgit/qt/qtbase.git/tree/src/widgets/widgets/qcombobox.cpp?h=5.15.2#n3173
+	def paintEvent(self, event):
+
+		painter = QStylePainter(self)
+		painter.setPen(self.palette().color(QPalette.Text))
+
+		# draw the combobox frame, focusrect and selected etc.
+		opt = QStyleOptionComboBox()
+		self.initStyleOption(opt)
+		painter.drawComplexControl(QStyle.CC_ComboBox, opt)
+
+		if self.currentIndex() < 0:
+			opt.palette.setBrush(
+				QPalette.ButtonText,
+				opt.palette.brush(QPalette.ButtonText).color().lighter(),
+			)
+			if self.placeholderText():
+				opt.currentText = self.placeholderText()
+
+		# draw the icon and text
+		painter.drawControl(QStyle.CE_ComboBoxLabel, opt)
+
+
+class CheckableComboBox(ComboBox):
+	def __init__(self):
+		super().__init__()
+		self.selectedItemsList = []
+		self._changed = False
+		self.currentIndexChanged.connect(self.getSelectedItems)
+		self.view().pressed.connect(self.handleItemPressed)
+		self.setPlaceholderText("None")
+		self.setCurrentIndex(-1)
+
+	def updatePlaceHolder(self):
+		enabledChannels = self.getSelectedItems()
+		if len(enabledChannels) > 0:
+			self.setPlaceholderText([i + 1 for i in enabledChannels].__str__())
+		elif len(enabledChannels) == 0:
+			self.setPlaceholderText("None")
+		self.setCurrentIndex(-1)
+		self.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+
+	def setItemChecked(self, index, checked=False):
+		item = self.model().item(index, self.modelColumn())  # QStandardItem object
+
+		if checked:
+			item.setCheckState(Qt.Checked)
+		else:
+			item.setCheckState(Qt.Unchecked)
+
+	def handleItemPressed(self, index):
+		item = self.model().itemFromIndex(index)
+
+		if item.checkState() == Qt.Checked:
+			# self.selectedItemsList.remove(index)
+			item.setCheckState(Qt.Unchecked)
+		else:
+			item.setCheckState(Qt.Checked)
+		# self.selectedItemsList.append(index)
+		self._changed = True
+
+	def hidePopup(self):
+		if not self._changed:
+			super().hidePopup()
+		self._changed = False
+
+	def itemChecked(self, index):
+		item = self.model().item(index, self.modelColumn())
+		return item.checkState() == Qt.Checked
+
+	def getSelectedItems(self):
+		lst = []
+		for index in range(self.model().rowCount()):
+			item = self.model().item(index)
+			if item.checkState() == Qt.Checked:
+				lst.append(item.row())
+		return lst
+
 
 class MyQComboBox(QComboBox):
 	def addItems(self, Iterable, p_str=None):
@@ -121,7 +167,7 @@ class GUI(QMainWindow):
 		self.menubar = self.menuBar()
 		# add horizontal layout for the settings of the cyton board
 		self.mainLayout = QGridLayout(mainWidget)
-		self.boardSettingLayout = QHBoxLayout()
+		self.boardSettingLayout = QVBoxLayout()
 		self.mainLayout.addLayout(self.boardSettingLayout, 0, 0)
 
 		# # add message viewer in the gui
@@ -199,6 +245,8 @@ class GUI(QMainWindow):
 		self.resize(1000, 100)
 
 	def initBoardSettingsBar(self):
+		self.horizontalGroupBox = QGroupBox()
+		layout = QHBoxLayout()
 		boardSettingsSpacing = 30
 		# create a combo menu for the frequencies bands
 		freqCombo = QHBoxLayout()
@@ -208,7 +256,7 @@ class GUI(QMainWindow):
 		self.freqComboChoices.setFont(self.font)
 		self.freqComboChoices.setToolTip('Select the Frequencies where data will be filtered.')
 		self.freqComboChoices.addItems(cnst.bandPassFreqList)
-        # Set the init value form the cnst.bandPassFreqList
+		# Set the init value form the cnst.bandPassFreqList
 		initValueIndex = cnst.bandPassFreqList.index(cnst.initBandPassFreqList)
 		self.freqComboChoices.setCurrentIndex(initValueIndex)
 		freqCombo.addWidget(freqComboTitle)
@@ -216,30 +264,31 @@ class GUI(QMainWindow):
 		self.freqComboChoices.currentIndexChanged.connect(self.freqComboClick)
 
 		# add frequency combo to boardSettingLayout
-		self.boardSettingLayout.addLayout(freqCombo)
-		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+		layout.addLayout(freqCombo)
+		layout.addSpacing(boardSettingsSpacing)
 
-		# # create a combo menu for the channels
-		# channelsCombo = QHBoxLayout()
-		# channelsComboTitle = QLabel('channels: ')
-		# self.channelsComboChoices = CheckableComboBox()
-		# self.channelsComboChoices.adjustSize()
-		# self.channelsComboChoices.setFont(self.font)
-		# self.channelsComboChoices.setSizeAdjustPolicy(QComboBox.AdjustToContents)
-		# for i in range(6):
-		# 	self.channelsComboChoices.addItem('Item {0}'.format(str(i)))
-		# 	self.channelsComboChoices.setItemChecked(i, False)
-		# channelsComboTitle.setFont(self.font)
-		#
-		# # Set the init value form the cnst.windowSizeList
-		# initValueIndex = cnst.windowSizeList.index(cnst.initWindowSizeValue)
-		#
-		# channelsCombo.addWidget(channelsComboTitle)
-		# channelsCombo.addWidget(self.channelsComboChoices)
-		#
-		# # add timeWindow combo to boardSettingLayout
-		# self.boardSettingLayout.addLayout(channelsCombo)
-		# self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+		# create a combo menu for the channels
+		channelsCombo = QHBoxLayout()
+		channelsComboTitle = QLabel('channels: ')
+		self.channelsComboChoices = CheckableComboBox()
+		self.channelsComboChoices.setFont(self.font)
+		for idx, val in enumerate(cnst.channelsList):
+			self.channelsComboChoices.addItem(val)
+			if idx in cnst.initEnabledChannels:
+				self.channelsComboChoices.setItemChecked(idx, True)
+			else:
+				self.channelsComboChoices.setItemChecked(idx, False)
+		self.channelsComboChoices.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+		self.channelsComboChoices.adjustSize()
+		channelsComboTitle.setFont(self.font)
+		self.channelsComboChoices.currentIndexChanged.connect(self.channelComboClick)
+		channelsCombo.addWidget(channelsComboTitle)
+		channelsCombo.addWidget(self.channelsComboChoices)
+		self.channelsComboChoices.updatePlaceHolder()
+
+		# add timeWindow combo to boardSettingLayout
+		layout.addLayout(channelsCombo)
+		layout.addSpacing(boardSettingsSpacing)
 
 		# create a combo menu for the Window choices
 		timeWindowCombo = QHBoxLayout()
@@ -258,8 +307,8 @@ class GUI(QMainWindow):
 		self.timeWindowComboChoices.currentIndexChanged.connect(self.windowComboClick)
 
 		# add timeWindow combo to boardSettingLayout
-		self.boardSettingLayout.addLayout(timeWindowCombo)
-		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+		layout.addLayout(timeWindowCombo)
+		layout.addSpacing(boardSettingsSpacing)
 
 		# create a combo menu for the stepWindowSize choices
 		stepWindowSizeCombo = QHBoxLayout()
@@ -278,67 +327,56 @@ class GUI(QMainWindow):
 		self.stepWindowSizeComboChoices.currentIndexChanged.connect(self.windowStepComboClick)
 
 		# add stepWindowSizeCombo combo to boardSettingLayout
-		self.boardSettingLayout.addLayout(stepWindowSizeCombo)
-		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+		layout.addLayout(stepWindowSizeCombo)
+		layout.addSpacing(boardSettingsSpacing)
 
 		# add checkbox for enabling filtering Data
 		self.filterDataCheckbox = QCheckBox("Filter Data")
 		self.filterDataCheckbox.setChecked(False)
 		self.filterDataCheckbox.setFont(self.font)
 		self.filterDataCheckbox.stateChanged.connect(self.filteringDataFunction)
-		self.boardSettingLayout.addWidget(self.filterDataCheckbox)
-		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+		layout.addWidget(self.filterDataCheckbox)
+		layout.addSpacing(boardSettingsSpacing)
 
 		# add checkbox for enabling scaling Data
 		self.scalingDataCheckbox = QCheckBox("Scaling Data")
 		self.scalingDataCheckbox.setChecked(True)
 		self.scalingDataCheckbox.setFont(self.font)
 		self.scalingDataCheckbox.stateChanged.connect(self.scalingDataFunction)
-		self.boardSettingLayout.addWidget(self.scalingDataCheckbox)
-		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+		layout.addWidget(self.scalingDataCheckbox)
+		layout.addSpacing(boardSettingsSpacing)
 
 		# add a push button to plot FFT from specific file
 		self.plotFftButton = QPushButton("Plot stream FFT")
 		self.plotFftButton.setFont(self.font)
 		self.plotFftButton.clicked.connect(self.plotFftButtonClick)
-		self.boardSettingLayout.addWidget(self.plotFftButton)
-		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+		layout.addWidget(self.plotFftButton)
+		layout.addSpacing(boardSettingsSpacing)
 
 		# add a push button to start Training mode
 		self.classificationButton = QPushButton("Classification")
 		self.classificationButton.setFont(self.font)
 		self.classificationButton.clicked.connect(self.classificationButtonClick)
-		self.boardSettingLayout.addWidget(self.classificationButton)
-		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+		layout.addWidget(self.classificationButton)
+		layout.addSpacing(boardSettingsSpacing)
 
 		# add a push button to start Training mode
 		self.trainingButton = QPushButton("Training")
 		self.trainingButton.setFont(self.font)
 		self.trainingButton.clicked.connect(self.trainingButtonClick)
-		self.boardSettingLayout.addWidget(self.trainingButton)
-		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+		layout.addWidget(self.trainingButton)
+		layout.addSpacing(boardSettingsSpacing)
 
 		# add a push button to start Training mode
 		self.onlineButton = QPushButton("Online")
 		self.onlineButton.setFont(self.font)
 		self.onlineButton.clicked.connect(self.onlineButtonClick)
-		self.boardSettingLayout.addWidget(self.onlineButton)
-		self.boardSettingLayout.addSpacing(boardSettingsSpacing)
+		layout.addWidget(self.onlineButton)
+		layout.addSpacing(boardSettingsSpacing)
 
-		# channelsList = ['channel 1', 'channel 2', 'channel 3', 'channel 4', 'channel 5', 'channel 6', 'channel 7',
-		#            'channel 8']
-		# channelsCombo = CheckComboBox(placeholderText='Enable Channels')
-		# model = channelsCombo.model()
-		# for i in range(len(channelsList)):
-		#     channelsCombo.addItem(channelsList[i])
-		#     model.item(i).setCheckable(True)
-		#
-		# channelsCombo.setFont(self.font)
-		# channelsCombo.activated[str].connect(lambda: channelsComboChange("doklimi"))
-		# self.boardSettingLayout.addWidget(channelsCombo)
-		# self.boardSettingLayout.addSpacing(boardSettingsSpacing)
-
-		self.boardSettingLayout.addStretch()
+		layout.addStretch()
+		self.horizontalGroupBox.setLayout(layout)
+		self.boardSettingLayout.addWidget(self.horizontalGroupBox)
 
 	def startStreaming(self):
 		self.boardApiCallEvents["startStreaming"].set()
@@ -369,7 +407,7 @@ class GUI(QMainWindow):
 
 	def trainingButtonClick(self):
 		self.startTrainingEvent.set()
-	
+
 	def onlineButtonClick(self):
 		self.startOnlineEvent.set()
 
@@ -413,7 +451,14 @@ class GUI(QMainWindow):
 			self.boardCytonSettings["upperBand"] = upperBound
 			self.boardApiCallEvents["newBoardSettingsAvailable"].set()
 		except Exception as ex:
-			print("freqComboClick ERROR!" + ex.traceback.format_exc() )
+			print("freqComboClick ERROR!" + ex.traceback.format_exc())
+
+	def channelComboClick(self):
+		enabledChannels = self.channelsComboChoices.getSelectedItems()
+
+		self.boardCytonSettings["enabledChannels"] = enabledChannels
+		self.boardApiCallEvents["newBoardSettingsAvailable"].set()
+		self.channelsComboChoices.updatePlaceHolder()
 
 	def windowComboClick(self):
 		try:

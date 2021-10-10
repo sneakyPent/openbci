@@ -92,8 +92,6 @@ class OpenBCICyton(object):
 		self.higherBoundFrequency = higherBoundFrequency
 		self.windowSize = windowSize
 		self.windowStepSize = windowStepSize
-		if enabledChannels is None:
-			enabledChannels = [0, 1, 2, 3]
 		self.enabledChannels = enabledChannels
 
 		# number of channels per sample *from the board*
@@ -144,19 +142,18 @@ class OpenBCICyton(object):
 		Enable channels:
 			* Values must be in the range of the board type available channels
 
-				* daisy = 1-16
-				* cyton = 1-8
+				* daisy = 8-15
+				* cyton = 0-7
 
 		:param [] channelsList: List of the channels want to enable.
 
-		E.G. ch = [5,6,7,8] enables the channels 5-8 and disables 1-4
+		E.G. ch = [4,5,6,7] enables the channels 5-8 and disables 1-4
 		"""
 		self.enabledChannels = []
 		for channel in channelsList:
-			if 0 < channel <= self.number_of_channels:
-				self.set_channel(channel, 1)
-				self.number_of_channels.append(channel)
-			#           TODO: remove that after check
+			if 0 <= channel < self.number_of_channels:
+				self.enabledChannels.append(channel)
+				# self.set_channel(channel, 1)
 			else:
 				print("Not available channel")
 
@@ -183,6 +180,8 @@ class OpenBCICyton(object):
 			self.setWindowStepSize(settings["windowStepSize"])
 		if settings["scaling_output"] != self.isScalingOutput():
 			self.setScaledOutput(settings["scaling_output"])
+		if settings["enabledChannels"] != self.getEnabledChannels():
+			self.setEnabledChannels(settings["enabledChannels"])
 
 	def setWindowStepSize(self, size):
 		self.windowStepSize = size
