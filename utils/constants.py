@@ -181,6 +181,7 @@ class Constants:
 	windowStepSizeList = [0.5, 1, 1.5, 0.99, 0.35]
 	initStepSizeValue = 0.5
 	synchingSignal = [0, 0, 0, 0, 0, 0, 0, 0]
+	initEnabledChannels = [0, 1, 2, 3]
 
 	""" printng massages colors"""
 	FAIL = '\033[91m'
@@ -203,8 +204,11 @@ class Constants:
 
 	""" GUI """
 	# the order of the channels' color  is the same order as the wires' colors in the equivalent pin
-	GUIChannelColors = [colrs['red'], colrs['orange'], colrs['yellow'], colrs['green'], colrs['blue'], colrs['purple'],
-	                    colrs['white'], colrs['gray']]
+	GUIChannelColors = [colrs['red'], colrs['orange'], colrs['yellow'], colrs['green'],
+	                    colrs['blue'], colrs['purple'], colrs['white'], colrs['gray']]
+
+	channelsList = ['channel 1', 'channel 2', 'channel 3', 'channel 4',
+	                'channel 5', 'channel 6', 'channel 7', 'channel 8']
 
 	""" Unity exe """
 	trainingUnityExePath = "C:/Users/ZN/Desktop/training/trainingOpenbci.exe"
