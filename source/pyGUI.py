@@ -170,16 +170,6 @@ class GUI(QMainWindow):
 		self.boardSettingLayout = QVBoxLayout()
 		self.mainLayout.addLayout(self.boardSettingLayout, 0, 0)
 
-		# # add message viewer in the gui
-		# TODO: Make general printer with a pattern so as to choose where to send the output
-		# self.messageViewerLayout = QHBoxLayout()
-		# self.mainLayout.addLayout(self.messageViewerLayout, 1, 0)
-		# self.messageViewer = QTextBrowser()
-		# self.messageViewer.resize(5, 5)
-		# self.messageViewerLayout.addWidget(self.messageViewer)
-		# self.messageViewerLayout.addStretch(0)
-		# self.mainLayout.addStretch(1)
-
 		# add a layout for the graphs
 		self.graphLayout = QVBoxLayout()
 		self.mainLayout.addLayout(self.graphLayout, 2, 0, -1, 2)
