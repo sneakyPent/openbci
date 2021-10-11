@@ -23,6 +23,20 @@ from utils.constants import Constants as cnst, getSessionFilename
 from utils.filters import *
 from classification.train_processing_cca_3 import calculate_cca_correlations
 
+forward = '{"c":"xy","x":0,"y":45}\r\n'
+back = '{"c":"xy","x":0,"y":-45}\r\n'
+right = '{"c":"xy","x":40,"y":0}\r\n'
+left = '{"c":"xy","x":-40,"y":0}\r\n'
+stop = '{"c":"xy","x":0,"y":0}\r\n'
+connection_serial = '{"c":"input","d":"usb"}\r\n'
+info_usb = '"input":"usb"'
+info_wifi = '"input":"wifi"'
+connection_wifi = '{"c":"input","d":"wifi"}\r\n'
+info = '{"c":"info"}\r\n'
+x = '{"c":"ping"}\r\n'
+speed = '{"c":"speed_s", "d":"-"}\r\n'
+power_off = '{"c":"power_off"}\r\n'
+
 
 class Error(Exception):
 	"""Base class for other exceptions"""
@@ -142,49 +156,55 @@ def startTargetApp(_shutdownEvent, socketConnection):
 				subprocess.check_call([cnst.onlineUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
 
 
-def onlineProcessing(board, _shutdownEvent, windowedDataBuffer, predictBuffer, stopOnlineStreamingEvent):
-	# load the classifier
-	filename = cnst.classifierFilename
-	clf = joblib.load(filename)
-	chan_ind = board.getEnabledChannels()
-	frames_ch = cnst.frames_ch
-	lowcut = board.getLowerBoundFrequency()
-	highcut = board.getHigherBoundFrequency()
-	harmonics_num = cnst.harmonics_num
-	fs = board.getSampleRate()
-		
-	while not _shutdownEvent.is_set() and not stopOnlineStreamingEvent.is_set():
-		while not windowedDataBuffer.qsize() == 0 and not stopOnlineStreamingEvent.is_set():
-			segment_full = np.array(windowedDataBuffer.get())
+def onlineProcessing(board, _shutdownEvent, windowedDataBuffer, predictBuffer, stopOnlineStreamingEvent,
+                     socketConnection):
+	while not _shutdownEvent.is_set():
+		socketConnection.wait(1)
+		if socketConnection.is_set():
+			filename = cnst.classifierFilename
+			clf = joblib.load(filename)
+			chan_ind = board.getEnabledChannels()
+			frames_ch = cnst.frames_ch
+			lowcut = board.getLowerBoundFrequency()
+			highcut = board.getHigherBoundFrequency()
+			harmonics_num = cnst.harmonics_num
+			fs = board.getSampleRate()
+			while not windowedDataBuffer.qsize() == 0 and socketConnection.is_set():
+				segment_full = np.array(windowedDataBuffer.get())
 
-			frames_np = np.sum(np.array(frames_ch),1)   # I sum the frames along axis 1 (i.e. I sum all the elements of each row)
-			stimulus_freqs = np.divide(np.full(frames_np.shape[0],60.) , frames_np)     # I divide the screen refresh rate by the frames_np for each stimulus frequency
+				# I sum the frames along axis 1 (i.e. I sum all the elements of each row)
+				frames_np = np.sum(np.array(frames_ch), 1)
+				# I divide the screen refresh rate by the frames_np for each stimulus frequency
+				stimulus_freqs = np.divide(np.full(frames_np.shape[0], 60.), frames_np)
+
+				stimulus_freqs = 2 * stimulus_freqs  # checkerboard invokes double of the stimuli freqs!!!!!!!!!!!!
+
+				segment = segment_full[:, np.asarray(chan_ind)]
+				# choose channels (last column = label, it doesn't apply in online mode)
+
+				segment_filt = butter_bandpass_filter(segment, lowcut, highcut, fs, order=10)  # filter the data
+				r_segment = calculate_cca_correlations(segment_filt, fs, frames_ch,
+				                                       harmonics_num)  # calculate cca correlations
+				command_predicted = clf.predict(r_segment)  # predict
+				# print("Processing", command_buffer.qsize())
+
+				predictBuffer.put(command_predicted)
 
 
-
-			stimulus_freqs = 2*stimulus_freqs   #checkerboard invokes double of the stimuli freqs!!!!!!!!!!!!
-
-			segment = segment_full[:,np.asarray(chan_ind)] # choose channels (last column = label, it doesn't apply in online mode) 
-
-
-			segment_filt = butter_bandpass_filter(segment, lowcut, highcut, fs, order=10)   # filter the data
-			r_segment = calculate_cca_correlations(segment_filt, fs, frames_ch, harmonics_num)  # calculate cca correlations
-			command_predicted = clf.predict(r_segment)  # predict
-			# print("Processing", command_buffer.qsize())
-
-			predictBuffer.put(command_predicted)
-
-
-def managePredict(_shutdownEvent, predictBuffer, stopOnlineStreamingEvent):
-	pass
-	# fileName = getSessionFilename(online=True)
-	# myfile = open(fileName, 'w')
-	# while not _shutdownEvent.is_set() and not stopOnlineStreamingEvent.is_set():
-	# 	while not predictBuffer.qsize() == 0 and not stopOnlineStreamingEvent.is_set():
-	# 		dt = predictBuffer.get()[0]
-	# 		print(int(dt).__str__())
-	# 		myfile.write(int(dt).__str__() + '\n')
-	# myfile.close()
+def managePredict(_shutdownEvent, predictBuffer, socketConnection):
+	while not _shutdownEvent.is_set():
+		socketConnection.wait(1)
+		if socketConnection.is_set():
+			while not predictBuffer.qsize() == 0:
+				dt = predictBuffer.get()[0]
+				print(int(dt).__str__())
+		# fileName = getSessionFilename(online=True)
+		# myfile = open(fileName, 'w')
+		# 	while not predictBuffer.qsize() == 0 and not stopOnlineStreamingEvent.is_set():
+		# 		dt = predictBuffer.get()[0]
+		# 		print(int(dt).__str__())
+		# 		myfile.write(int(dt).__str__() + '\n')
+		# myfile.close()
 
 
 forward = '{"c":"xy","x":0,"y":45}\r\n'
@@ -395,8 +415,6 @@ def wheel_serial(_shutdownEvent, stopOnlineStreamingEvent, command_buffer, usb_p
 			command_buffer.get_nowait()
 		myfile.close()
 
-		# ser.write(power_off.encode())
-
 
 def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer):
 	"""
@@ -407,55 +425,41 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 		* Starts the socketConnect process.
 		* Starts the startTargetApp process.
 		* Starts streaming from existing connection.
-	
 
 	:param OpenBCICyton board: Represents the OpenBCICyton class
 	:param Event startOnlineEvent: Event which this process will be waiting for, before starting the connectTraining, startTrainingApp processes. This Event is set only by the :py:meth:`source.pyGUI.GUI.trainingButtonClick`
 	:param [Event] boardApiCallEvents:  Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
 	:param Event _shutdownEvent: Event used to know when to let every running process terminate
-	:param Queue trainingClassBuffer: Buffer will be used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
+	:param Queue windowedDataBuffer: Buffer will be used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
 	"""
+	procList = []
 	socketConnection = Event()
-	stopOnlineStreamingEvent = Event() 
+	stopOnlineStreamingEvent = Event()
 	socketConnection.clear()
 	stopOnlineStreamingEvent.clear()
 	predictBuffer = Queue(maxsize=100)
 
-	socketProcess = Process(target=socketConnect, args=(boardApiCallEvents, socketConnection, stopOnlineStreamingEvent,))
-	applicationProcess = Process(target=startTargetApp)
-	onlineProcessingProcess = Process(target=onlineProcessing, args=(board, _shutdownEvent, windowedDataBuffer, predictBuffer, stopOnlineStreamingEvent,))
-	managePredictProcess = Process(target=managePredict, args=(_shutdownEvent, predictBuffer, stopOnlineStreamingEvent,))
-	wheelProcess = Process(target=wheel_serial, args=(_shutdownEvent, stopOnlineStreamingEvent, predictBuffer, 'COM4', None, None))
-	while not _shutdownEvent.is_set():
-		startOnlineEvent.wait(1)
-		if startOnlineEvent.is_set():
-			if not board.isConnected():
-				printError('Could not start straining without connected Board.')
-				startOnlineEvent.clear()
-				continue
-			if not socketProcess.is_alive():
-				socketProcess.start()
-			socketConnection.wait(1)
-			if socketConnection.is_set():
-				if not applicationProcess.is_alive():
-					applicationProcess.start()
-				if not onlineProcessingProcess.is_alive():
-					onlineProcessingProcess.start()
-				if not managePredictProcess.is_alive():
-					managePredictProcess.start()
-				if not wheelProcess.is_alive():
-					wheelProcess.start()
-				socketProcess.join()
-				applicationProcess.join()
-				onlineProcessingProcess.join()
-				managePredictProcess.join()
-				wheelProcess.join()
-				startOnlineEvent.clear()
-				socketConnection.clear()
-				stopOnlineStreamingEvent.clear()
-				# recreating process because eve after Process Termination cannot start a process twice
-				wheelProcess = Process(target=wheel_serial, args=(_shutdownEvent, stopOnlineStreamingEvent, predictBuffer, 'COM4', None, None))
-				socketProcess = Process(target=socketConnect, args=(boardApiCallEvents, socketConnection, stopOnlineStreamingEvent,))
-				applicationProcess = Process(target=startTargetApp)
-				onlineProcessingProcess = Process(target=onlineProcessing, args=(board, _shutdownEvent, windowedDataBuffer, predictBuffer, stopOnlineStreamingEvent,))
-				managePredictProcess = Process(target=managePredict, args=(_shutdownEvent, predictBuffer, stopOnlineStreamingEvent,))
+	# Create the process needed
+	socketProcess = Process(target=socketConnect,
+	                        args=(board, boardApiCallEvents, socketConnection, startOnlineEvent, _shutdownEvent,))
+	applicationProcess = Process(target=startTargetApp, args=(_shutdownEvent, socketConnection,))
+	onlineProcessingProcess = Process(target=onlineProcessing,
+	                                  args=(board, _shutdownEvent, windowedDataBuffer,
+	                                        predictBuffer, stopOnlineStreamingEvent, socketConnection,))
+	managePredictProcess = Process(target=managePredict,
+	                               args=(_shutdownEvent, predictBuffer, socketConnection,))
+	wheelProcess = Process(target=wheel_serial,
+	                       args=(_shutdownEvent, stopOnlineStreamingEvent, predictBuffer, 'COM4', None, None))
+
+	procList.append(socketProcess)
+	procList.append(applicationProcess)
+	procList.append(onlineProcessingProcess)
+	procList.append(managePredictProcess)
+	# procList.append(wheelProcess)
+
+	for proc in procList:
+		proc.start()
+
+	# join processes
+	for proc in procList:
+		proc.join()
