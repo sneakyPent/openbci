@@ -61,3 +61,11 @@ source\.writeToFile module
     :undoc-members:
     :show-inheritance:
 
+source\.online module
+--------------------------
+
+.. automodule:: source.online
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
