@@ -105,8 +105,8 @@ def uiManager():
 	dataBuffersList = [windowingBuffer, guiBuffer]
 
 	# Create a BoardEventHandler Instance
-	boardEventHandler = BoardEventHandler(board, boardCytonSettings, newDataAvailable, dataBuffersList, writingBuffer, writeDataEvent,
-	                                      trainingClassBuffer, shutdownEvent)
+	boardEventHandler = BoardEventHandler(board, boardCytonSettings, newDataAvailable, dataBuffersList,
+	                                      writingBuffer,writeDataEvent,trainingClassBuffer, shutdownEvent)
 	# events will be used to control board through any gui
 	boardApiCallEvents = boardEventHandler.getBoardHandlerEvents()
 
@@ -125,9 +125,8 @@ def uiManager():
 
 		# create Process for the gui
 		guiProcess = Process(target=startGUI, name='startGUI',
-		                     args=(guiBuffer, newDataAvailable, board, boardApiCallEvents,
-		                           boardCytonSettings, shutdownEvent, writeDataEvent, startTrainingEvent,
-								   startOnlineEvent))
+		                     args=(guiBuffer, newDataAvailable, board, boardApiCallEvents, boardCytonSettings,
+		                           shutdownEvent, writeDataEvent, startTrainingEvent, startOnlineEvent))
 		processesList.append(guiProcess)
 
 		# create Process to write data from board to file
@@ -149,9 +148,7 @@ def uiManager():
 
 		# create Process for connecting to unity program socket fro online session
 		onlineProcess = Process(target=startOnline, name='online',
-								  args=(
-									  board, startOnlineEvent, boardApiCallEvents, shutdownEvent,
-									  windowedDataBuffer))
+		                        args=(board, startOnlineEvent, boardApiCallEvents, shutdownEvent, windowedDataBuffer))
 		processesList.append(onlineProcess)
 
 		# start processes in the processList
