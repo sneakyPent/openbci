@@ -429,9 +429,17 @@ class GUI(QMainWindow):
 				# 1 and 2 used ny qDialog so we use 101 102 and we take the (qdialog.result mod 100)
 				btnIndex = dlg.result() % 100
 				if btns[btnIndex] == 'one':
-					fft_analysis.printUniqueFFT(fileNames)
+					fft_analysis.printUniqueFFT(fileNames,
+					                            lowCut=self.board.getLowerBoundFrequency(),
+					                            highCut=self.board.getHigherBoundFrequency(),
+					                            fs=self.board.getSampleRate(),
+					                            enabledChannel=self.board.getEnabledChannels())
 				elif btns[btnIndex] == 'four':
-					fft_analysis.printFFT(fileNames)
+					fft_analysis.printFFT(fileNames,
+					                      lowCut=self.board.getLowerBoundFrequency(),
+					                      highCut=self.board.getHigherBoundFrequency(),
+					                      fs=self.board.getSampleRate(),
+					                      enabledChannel=self.board.getEnabledChannels())
 
 	def classificationButtonClick(self):
 		options = QFileDialog.Options()
