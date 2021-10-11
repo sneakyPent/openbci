@@ -211,8 +211,10 @@ class Constants:
 	                'channel 5', 'channel 6', 'channel 7', 'channel 8']
 
 	""" Unity exe """
-	trainingUnityExePath = "C:/Users/ZN/Desktop/training/trainingOpenbci.exe"
-	onlineUnityExePath = "C:/Users/ZN/Desktop/online/onlineOpenbci.exe"
+	# trainingUnityExePath = "C:/Users/ZN/Desktop/training/trainingOpenbci.exe"
+	trainingUnityExePath = "/home/zn/Desktop/Diplo/unityScreens/training/trainingOpenbci.exe"
+	# onlineUnityExePath = "C:/Users/ZN/Desktop/online/onlineOpenbci.exe"
+	onlineUnityExePath = "/home/zn/Desktop/Diplo/unityScreens/online/onlineOpenbci.exe"
 	onlineUnitySentByte = 8
 	unknownClass = 200
 	trainingClasses = [0, 1, 2, 3, 4]
