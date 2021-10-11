@@ -31,6 +31,10 @@ def printUniqueFFT(fileNames, lowCut=5, highCut=50, fs=250, enabledChannel=None)
 	Method used to plot a training fft without classification. Mainly used to test for unique target training.
 
 	:param [str] fileNames: List of the full paths of the Hdf5 filenames contains the training dataset
+	:param [int] enabledChannel: The EEG enabled channels' data will be retrieved from the dataset.
+	:param int fs: The fs will be used for the bandpass filtering.
+	:param int highCut: The high cut frequency will be used for the bandpass filtering.
+	:param int lowCut: The low cut frequency will be used for the bandpass filtering.
 	:return: None
 	"""
 	if enabledChannel is None:
@@ -103,6 +107,10 @@ def printFFT(fileNames, lowCut=4, highCut=40, fs=250, enabledChannel=None):
 	Creates a subplot of 4 plots, one for every class in the 'signal' dataset of the current hdf5 file.
 
 	:param [str] fileNames: List of the full paths of the Hdf5 filenames contains the training dataset
+	:param [int] enabledChannel: The EEG enabled channels' data will be retrieved from the dataset.
+	:param int fs: The fs will be used for the bandpass filtering.
+	:param int highCut: The high cut frequency will be used for the bandpass filtering.
+	:param int lowCut: The low cut frequency will be used for the bandpass filtering.
 	:return: None
 	"""
 	if enabledChannel is None:
