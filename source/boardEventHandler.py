@@ -119,7 +119,7 @@ class BoardEventHandler:
 					# Empty every buffer before start streaming
 					for buffer in self.dataBuffersList:
 						try:
-							while not buffer.qsize() == 0:
+							while not buffer.empty():
 								buffer.get_nowait()
 						except Exception as ex:
 							printError(ex.__str__())
@@ -184,22 +184,22 @@ class BoardEventHandler:
 						printError(ex.__str__())
 					# empty queues before terminating to prevent zombie processes
 					for buffer in self.dataBuffersList:
-						if buffer.qsize() != 0:
+						if buffer.empty():
 							printInfo("Empty the queues")
-						while not buffer.qsize() == 0:
+						while not buffer.empty():
 							buffer.get_nowait()
 				if printing:
 					print('Total Samples received: ', numofsamples)
 					printing = False
 		# Empty every buffer before exiting 
 		try:
-			while not self.writingBuffer.qsize() == 0:
+			while not self.writingBuffer.empty():
 				self.writingBuffer.get_nowait()
 		except Exception as ex:
 			printError(ex.__str__())
 		for buffer in self.dataBuffersList:
 			try:
-				while not buffer.qsize() == 0:
+				while not buffer.empty():
 					buffer.get_nowait()
 			except Exception as ex:
 				printError(ex)
