@@ -25,21 +25,26 @@ def calculateSNR(data):
 	return snr
 
 
-def printUniqueFFT(fileNames):
+def printUniqueFFT(fileNames, lowCut=5, highCut=50, fs=250, enabledChannel=None):
 	"""
 	Method used to plot a training fft without classification. Mainly used to test for unique target training.
 
 	:param [str] fileNames: List of the full paths of the Hdf5 filenames contains the training dataset
 	:return: None
 	"""
+	if enabledChannel is None:
+		enabledChannel = [0, 1, 2, 3]
+
 	for fileName in fileNames:
 		fig = plt.figure(num=os.path.basename(fileName))
 		with h5py.File(fileName, 'r') as f:
-			d1 = f['signal'][:, 0:4]
+			d1 = None
+			for channel in enabledChannel:
+				if d1 is None:
+					d1 = f['signal'][:, channel]
+				else:
+					d1 = np.column_stack((d1, f['signal'][:, channel]))
 		fig.suptitle(os.path.basename(fileName))
-		lowcut = 4
-		highcut = 40
-		fs = 250
 		freq_6 = d1
 		mm = np.array(freq_6)
 		tt = mm[1:]
@@ -50,7 +55,7 @@ def printUniqueFFT(fileNames):
 
 		while i < freq_6.shape[1]:
 			# bandpass filtering            !! ATTENTION: how many channels you want<
-			data_filt = filters.butter_bandpass_filter(freq_6[:, i], lowcut, highcut, fs, order=10)
+			data_filt = filters.butter_bandpass_filter(freq_6[:, i], lowCut, highCut, fs, order=10)
 			# hamming window
 			data_fft = np.abs(np.fft.fft(data_filt)) ** 2
 			# # fft
@@ -94,22 +99,19 @@ def printUniqueFFT(fileNames):
 	plt.show()
 
 
-def printFFT(fileNames):
+def printFFT(fileNames, lowCut=4, highCut=40, fs=250, enabledChannel=None):
 	"""
 	Creates a subplot of 4 plots, one for every class in the 'signal' dataset of the current hdf5 file.
 
 	:param [str] fileNames: List of the full paths of the Hdf5 filenames contains the training dataset
 	:return: None
 	"""
-	# signalData = None
-	fig = 0
+	if enabledChannel is None:
+		enabledChannel = [0, 1, 2, 3]
+
 	for fileName in fileNames:
 		with h5py.File(fileName, 'r') as f:
 			signalData = f['signal'][:]
-
-		lowcut = 5
-		highcut = 50
-		fs = 250
 
 		signalDataInClassPackages = []
 		for trClass in cnst.trainingClasses:
@@ -126,7 +128,12 @@ def printFFT(fileNames):
 				subCols += 1
 				subRows = 0
 			d1 = np.array(signalDataInClassPackages[tClass])
-			freq_6 = d1[:, 0:4]
+			freq_6 = None
+			for channel in enabledChannel:
+				if freq_6 is None:
+					freq_6 = d1[:, channel]
+				else:
+					freq_6 = np.column_stack((freq_6, d1[:, channel]))
 			mm = np.array(freq_6)
 			tt = mm[1:]
 			print('Class: ' + int(
@@ -137,7 +144,7 @@ def printFFT(fileNames):
 
 			while i < freq_6.shape[1]:
 				# bandpass filtering            !! ATTENTION: how many channels you want<
-				data_filt = filters.butter_bandpass_filter(freq_6[:, i], lowcut, highcut, fs, order=10)
+				data_filt = filters.butter_bandpass_filter(freq_6[:, i], lowCut, highCut, fs, order=10)
 				# hamming window
 				data_fft = np.abs(np.fft.fft(data_filt)) ** 2
 				# # fft
