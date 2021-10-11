@@ -766,10 +766,8 @@ class OpenBCICyton(object):
 		# Commands to set toggle to on position
 		if channel == 0:
 			if toggle_position == 1:
-				print('enable channel 1')
 				self.ser.write(cnts.channel_1_on)
 			elif toggle_position == 0:
-				print('disable channel 1')
 				self.ser.write(cnts.channel_1_off)
 		if channel == 1:
 			if toggle_position == 1:
