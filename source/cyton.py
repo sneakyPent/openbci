@@ -81,8 +81,6 @@ class OpenBCICyton(object):
 		self.streaming = False
 		self.connected = False
 		self.trainingMode = False
-		# if not port:
-		#     port = self.find_port()
 		self.port = port
 		self.filtering_data = filter_data
 		self.scaling_output = scaled_output
@@ -117,7 +115,6 @@ class OpenBCICyton(object):
 		self.reconnect_freq = 5
 		self.packets_dropped = 0
 		self.synched = False
-
 		# Disconnects from board when terminated
 		atexit.register(self.disconnect)
 
@@ -150,12 +147,9 @@ class OpenBCICyton(object):
 		E.G. ch = [4,5,6,7] enables the channels 5-8 and disables 1-4
 		"""
 		self.enabledChannels = []
-		for channel in channelsList:
-			if 0 <= channel < self.number_of_channels:
+		for channel in range(self.number_of_channels):
+			if channel in channelsList:
 				self.enabledChannels.append(channel)
-				# self.set_channel(channel, 1)
-			else:
-				print("Not available channel")
 
 	def setFilteringData(self, enable):
 		self.filtering_data = enable
@@ -314,6 +308,11 @@ class OpenBCICyton(object):
 		self.ser.write(cnts.stopStreamingData)
 		self.connected = True
 		time.sleep(1)
+		for channel in range(self.number_of_channels):
+			if channel in self.enabledChannels:
+				self.set_channel(channel, 1)
+			else:
+				self.set_channel(channel, 0)
 
 	def disconnect(self):
 		if self.streaming:
@@ -765,87 +764,88 @@ class OpenBCICyton(object):
 	def set_channel(self, channel, toggle_position):
 		""" Enable / disable channels """
 		# Commands to set toggle to on position
-		if toggle_position == 1:
-			if channel == 1:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_1_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_1_off)
-			if channel == 2:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_2_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_2_off)
-			if channel == 3:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_3_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_3_off)
-			if channel == 4:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_4_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_4_off)
-			if channel == 5:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_5_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_5_off)
-			if channel == 6:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_6_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_6_off)
-			if channel == 7:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_7_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_7_off)
-			if channel == 8:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_8_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_8_off)
-			if channel == 9 and self.daisy:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_9_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_9_off)
-			if channel == 10 and self.daisy:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_10_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_10_off)
-			if channel == 11 and self.daisy:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_11_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_11_off)
-			if channel == 12 and self.daisy:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_12_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_12_off)
-			if channel == 13 and self.daisy:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_13_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_13_off)
-			if channel == 14 and self.daisy:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_14_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_14_off)
-			if channel == 15 and self.daisy:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_15_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_15_off)
-			if channel == 16 and self.daisy:
-				if toggle_position == 1:
-					self.ser.write(cnts.channel_16_on)
-				elif toggle_position == 0:
-					self.ser.write(cnts.channel_16_off)
+		if channel == 0:
+			if toggle_position == 1:
+				print('enable channel 1')
+				self.ser.write(cnts.channel_1_on)
+			elif toggle_position == 0:
+				print('disable channel 1')
+				self.ser.write(cnts.channel_1_off)
+		if channel == 1:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_2_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_2_off)
+		if channel == 2:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_3_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_3_off)
+		if channel == 3:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_4_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_4_off)
+		if channel == 4:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_5_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_5_off)
+		if channel == 5:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_6_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_6_off)
+		if channel == 6:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_7_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_7_off)
+		if channel == 7:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_8_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_8_off)
+		if channel == 8 and self.daisy:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_9_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_9_off)
+		if channel == 9 and self.daisy:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_10_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_10_off)
+		if channel == 10 and self.daisy:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_11_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_11_off)
+		if channel == 11 and self.daisy:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_12_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_12_off)
+		if channel == 12 and self.daisy:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_13_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_13_off)
+		if channel == 13 and self.daisy:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_14_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_14_off)
+		if channel == 14 and self.daisy:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_15_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_15_off)
+		if channel == 15 and self.daisy:
+			if toggle_position == 1:
+				self.ser.write(cnts.channel_16_on)
+			elif toggle_position == 0:
+				self.ser.write(cnts.channel_16_off)
 
 	def find_port(self):
 		# Finds the serial port names
