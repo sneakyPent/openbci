@@ -196,11 +196,8 @@ class GUI(QMainWindow):
 		self.initMenuBar()
 
 		# send board settings with current init choices
-		self.freqComboClick(self.freqComboChoices.currentIndex())
-		self.windowComboClick()
-		self.windowStepComboClick()
-		self.filteringDataFunction(self.filterDataCheckbox.checkState())
-		self.scalingDataFunction(self.scalingDataCheckbox.checkState())
+		self.initBoardSettings()
+
 		# set central widget
 		self.setCentralWidget(mainWidget)
 		#
@@ -279,11 +276,10 @@ class GUI(QMainWindow):
 			else:
 				self.channelsComboChoices.setItemChecked(idx, False)
 		self.channelsComboChoices.setSizeAdjustPolicy(QComboBox.AdjustToContents)
-		self.channelsComboChoices.adjustSize()
 		channelsComboTitle.setFont(self.font)
-		self.channelsComboChoices.currentIndexChanged.connect(self.channelComboClick)
 		channelsCombo.addWidget(channelsComboTitle)
 		channelsCombo.addWidget(self.channelsComboChoices)
+		self.channelsComboChoices.currentIndexChanged.connect(self.channelComboClick)
 		self.channelsComboChoices.updatePlaceHolder()
 
 		# add timeWindow combo to boardSettingLayout
@@ -378,6 +374,15 @@ class GUI(QMainWindow):
 		self.horizontalGroupBox.setLayout(layout)
 		self.boardSettingLayout.addWidget(self.horizontalGroupBox)
 
+	# send board settings with current init choices
+	def initBoardSettings(self):
+		self.freqComboClick(self.freqComboChoices.currentIndex())
+		self.channelComboClick()
+		self.windowComboClick()
+		self.windowStepComboClick()
+		self.filteringDataFunction(self.filterDataCheckbox.checkState())
+		self.scalingDataFunction(self.scalingDataCheckbox.checkState())
+
 	def startStreaming(self):
 		self.boardApiCallEvents["startStreaming"].set()
 
@@ -400,10 +405,6 @@ class GUI(QMainWindow):
 		QApplication.instance().quit()
 
 	#  calling functions
-
-	def channelsComboChange(self, choices):
-		print("test")
-		print(choices)
 
 	def trainingButtonClick(self):
 		self.startTrainingEvent.set()
