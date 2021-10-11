@@ -1,3 +1,5 @@
+import traceback
+
 import numpy as np
 
 from utils.coloringPrint import printInfo, printWarning, printError
@@ -35,3 +37,11 @@ def windowing(board, windowingBuf, windowedData, newDataAvailable, _shutdownEven
 					windowCounter += 1
 					windowedData.put(np.copy(currentWindowList).tolist())
 					del currentWindowList[0:step]
+	# empty buffers
+	try:
+		while not windowingBuf.empty():
+			windowingBuf.get_nowait()
+		while not windowedData.empty():
+			windowedData.get_nowait()
+	except Exception as ex:
+		traceback.print_exc()

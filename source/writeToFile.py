@@ -1,3 +1,5 @@
+import traceback
+
 import h5py
 import numpy as np
 
@@ -53,3 +55,11 @@ def writing(board, writeBuf, windowedData, writeDataEvent, _shutdownEvent):
 			writeDataEvent.clear()
 		if _shutdownEvent.is_set():
 			break
+	# empty buffers
+	try:
+		while not writeBuf.empty():
+			writeBuf.get_nowait()
+		while not windowedData.empty():
+			windowedData.get_nowait()
+	except Exception as ex:
+		traceback.print_exc()
