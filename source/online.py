@@ -24,7 +24,17 @@ from utils.filters import *
 from classification.train_processing_cca_3 import calculate_cca_correlations
 
 
-def socketConnect(boardApiCallEvents, socketConnection, stopOnlineStreamingEvent):
+class Error(Exception):
+	"""Base class for other exceptions"""
+	pass
+
+
+class SocketConnectionError(Error):
+	"""Raised when the input value is too large"""
+	pass
+
+
+def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent, _shutdownEvent):
 	"""
 	* Responsible
 
@@ -35,91 +45,101 @@ def socketConnect(boardApiCallEvents, socketConnection, stopOnlineStreamingEvent
 
 	* When the connection could not be established then wait for 10 sec and then retrying.
 
-	:param Queue(maxsize=1) trainingClassBuffer: Buffer used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`.
-	:param Event socketConnection: Used as flag so the main process :py:meth:`source.training.startTraining` can proceed to start the streaming and the training application.
+	:param OpenBCICyton board: Represents the OpenBCICyton class
+	:param [Event] boardApiCallEvents:
+	:param Event socketConnection:
+	:param Event startOnlineEvent:
+	:param Event _shutdownEvent:
 
 	"""
-	# create socket
-	s = socket.socket()
-	socket.setdefaulttimeout(None)
-	print('socket created ')
-
-	# IP and PORT connection
-	port = 8080
-	while not socketConnection.is_set():
-		try:
-			# s.bind(('139.91.190.32', port)) #local host
-			s.bind(('127.0.0.1', port))  # local host
-			s.listen(30)  # listening for connection for 30 sec?
-			print('socket listensing ... ')
-			# try:
-			socketConnection.set()
-			c, addr = s.accept()  # when port connected
-			print("\ngot connection from ", addr)
-
-			# 1st communication with Quest
-			bytes_received = c.recv(1024)  # received bytes
-			print(bytes_received.decode("utf-8"))
-		
-
-			# Send "True" string to start the Quest app
-			nn_output = "True"
-			arr2 = bytes(nn_output, 'utf-8')
-			c.sendall(arr2)  # sending back
-
-			# Quest sends the arrow number
-			bytes_received = c.recv(1).decode("utf-8")  # received bytes
-			c.sendall('2'.encode())
-			try:
-				if int(bytes_received) == cnst.onlineUnitySentByte:
-					boardApiCallEvents["startStreaming"].set()
-			except:
-				c.shutdown(socket.SHUT_RDWR)
-				stopOnlineStreamingEvent.set()
-				c.close()
+	while not _shutdownEvent.is_set():
+		startOnlineEvent.wait(1)
+		if startOnlineEvent.is_set():
+			if not board.isConnected():
+				printError('Could not start straining without connected Board.')
+				startOnlineEvent.clear()
 				continue
+			# create socket
+			s = socket.socket()
+			socket.setdefaulttimeout(None)
+			printInfo('socket created')
+			# IP and PORT connection
+			port = 8080
+			while not socketConnection.is_set():
+				try:
+					# s.bind(('139.91.190.32', port)) #local host
+					s.bind(('127.0.0.1', port))  # local host
+					s.listen(30)  # listening for connection for 30 sec?
+					printInfo('Socket listening ... ')
+					# try:
+					socketConnection.set()
+					c, addr = s.accept()  # when port connected
+					printWarning('Got connection from ' + addr.__str__())
 
-			if bytes_received != "E" and bytes_received != "":
+					# 1st communication with Quest
+					bytes_received = c.recv(1024)  # received bytes
+					print(bytes_received.decode("utf-8"))
 
-				# q_label.put(int(bytes_received))
-				bytes_received_old = bytes_received
-				while True:  # bytes_received != "E": # "E" means end of the action
+					# Send "True" string to start the Quest app
+					nn_output = "True"
+					arr2 = bytes(nn_output, 'utf-8')
+					c.sendall(arr2)  # sending back
 
+					# Quest sends the arrow number
 					bytes_received = c.recv(1).decode("utf-8")  # received bytes
 					c.sendall('2'.encode())
-					if bytes_received == "E" or bytes_received == "":
-						boardApiCallEvents["stopStreaming"].set()
-						stopOnlineStreamingEvent.set()
-						break
-					else:
-						if bytes_received != bytes_received_old:
-							try:
-								if int(bytes_received) == cnst.onlineUnitySentByte:
-									boardApiCallEvents["startStreaming"].set()
-							except:
-								c.shutdown(socket.SHUT_RDWR)
-								c.close()
-								stopOnlineStreamingEvent.set()
-								continue
-							bytes_received_old = bytes_received
-			c.shutdown(socket.SHUT_RDWR)
-			c.close()
-		except socket.error as error:
-			print(error.__str__() + '. Wait for 10 seconds before trying again')
-			time.sleep(10)
-			pass
-	socketConnection.clear()
+					try:
+						if int(bytes_received) == cnst.onlineUnitySentByte:
+							boardApiCallEvents["startStreaming"].set()
+					except:
+						raise SocketConnectionError
+
+					if bytes_received != "E" and bytes_received != "":
+
+						# q_label.put(int(bytes_received))
+						bytes_received_old = bytes_received
+						while True:  # bytes_received != "E": # "E" means end of the action
+							bytes_received = c.recv(1).decode("utf-8")  # received bytes
+							c.sendall('2'.encode())
+							if bytes_received == "E" or bytes_received == "":
+								boardApiCallEvents["stopStreaming"].set()
+								socketConnection.clear()
+								break
+							else:
+								if bytes_received != bytes_received_old:
+									try:
+										if int(bytes_received) == cnst.onlineUnitySentByte:
+											boardApiCallEvents["startStreaming"].set()
+									except:
+										raise SocketConnectionError
+									bytes_received_old = bytes_received
+					c.shutdown(socket.SHUT_RDWR)
+					c.close()
+					break
+				except socket.error as error:
+					print(error.__str__() + '. Wait for 10 seconds before trying again')
+					time.sleep(10)
+					pass
+				except SocketConnectionError:
+					printError('SocketConnection problem')
+					c.shutdown(socket.SHUT_RDWR)
+					socketConnection.clear()
+					c.close()
+			socketConnection.clear()
+			startOnlineEvent.clear()
 
 
-def startTargetApp():
+def startTargetApp(_shutdownEvent, socketConnection):
 	"""
 	Simple method, that only executes the unity target executable given in :data:`utils.constants.Constants.unityExePath`
 
-	:param boardApiCallEvents: Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
-
 	"""
-	with open(os.devnull, 'wb') as devnull:
-		subprocess.check_call([cnst.onlineUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
+	print(os.getpid())
+	while not _shutdownEvent.is_set():
+		socketConnection.wait(1)
+		if socketConnection.is_set():
+			with open(os.devnull, 'wb') as devnull:
+				subprocess.check_call([cnst.onlineUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
 
 
 def onlineProcessing(board, _shutdownEvent, windowedDataBuffer, predictBuffer, stopOnlineStreamingEvent):
