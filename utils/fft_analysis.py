@@ -74,9 +74,9 @@ def printUniqueFFT(fileNames, lowCut=5, highCut=50, fs=250, enabledChannel=None)
 		for w in range(len(data_processed_freq_6)):
 			ps = data_processed_freq_6[w]
 			print('Channel ' + w.__str__() + ':' +
-				  ' \t SNR = ' + calculateSNR(ps).__str__() +
-				  ',\t Max = ' + max(ps).__str__() +
-				  ',\t FREQ = ' + abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]).__str__())
+			      ' \t SNR = ' + calculateSNR(ps).__str__() +
+			      ',\t Max = ' + max(ps).__str__() +
+			      ',\t FREQ = ' + abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]).__str__())
 			lgSNR = ', SNR=' + "{:.5f}".format(calculateSNR(ps))
 			lgMAX = ', Max=' + "{:.2e}".format(max(ps))
 			lgFREQ = ' FREQ=' + "{:.4f}".format(abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]))
@@ -93,9 +93,7 @@ def printUniqueFFT(fileNames, lowCut=5, highCut=50, fs=250, enabledChannel=None)
 		plt.legend(prop={"size": 9})
 		# ----------- Saving figures ---------------
 		figureName = os.path.splitext(os.path.basename(fileName))[0]
-		plt.savefig('C:/Users/ZN/Desktop/images/'+figureName+'.png', transparent=False)
-
-		# -------
+	# plt.savefig('C:/Users/ZN/Desktop/images/' + figureName + '.png', transparent=False)
 	plt.show()
 
 
@@ -163,9 +161,9 @@ def printFFT(fileNames, lowCut=4, highCut=40, fs=250, enabledChannel=None):
 			for w in range(len(data_processed_freq_6)):
 				ps = data_processed_freq_6[w]
 				print('Channel ' + w.__str__() + ':' +
-					  ' \t SNR = ' + calculateSNR(ps).__str__() +
-					  ',\t Max = ' + max(ps).__str__() +
-					  ',\t FREQ = ' + abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]).__str__())
+				      ' \t SNR = ' + calculateSNR(ps).__str__() +
+				      ',\t Max = ' + max(ps).__str__() +
+				      ',\t FREQ = ' + abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]).__str__())
 				lgSNR = ', SNR=' + "{:.5f}".format(calculateSNR(ps))
 				lgMAX = ', Max=' + "{:.2e}".format(max(ps))
 				lgFREQ = ' FREQ=' + "{:.4f}".format(abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]))
