@@ -189,7 +189,7 @@ class BoardEventHandler:
 						while not buffer.qsize() == 0:
 							buffer.get_nowait()
 				if printing:
-					print(numofsamples)
+					print('Total Samples received: ', numofsamples)
 					printing = False
 		# Empty every buffer before exiting 
 		try:
