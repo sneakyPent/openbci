@@ -137,7 +137,7 @@ class BoardEventHandler:
 									self.writingBuffer.put_nowait(sample.channel_data)
 									self.newDataAvailable.set()
 								numOfSamples += 1
-								# self.newDataAvailable.clear()
+								self.newDataAvailable.clear()
 							# check for the synching zeros array sample ( [0, 0, 0, 0 ,0 , 0, 0, 0] )
 							elif sample.channel_data == cnst.synchingSignal:
 								printSuccess('Synching completed')
