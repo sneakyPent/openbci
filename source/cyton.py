@@ -321,11 +321,12 @@ class OpenBCICyton(object):
 			print("Closing Serial...")
 			self.ser.close()
 			logging.warning('serial closed')
+			printInfo('Disconnected')
 			self.connected = False
 
 	def stream_one_sample(self):
 		"""
-				This method read one sample per calling and return it to parent method
+		This method read one sample per calling and return it to parent method
 
 		"""
 		if not self.streaming:
