@@ -15,7 +15,7 @@ def printWarning(string):
 
 
 def printHeader(string):
-	print(cnst.HEADER + string + cnst.ENDC)
+	print(cnst.BOLD + cnst.UNDERLINE + 'HEADER' + cnst.ENDC + ': ' + cnst.HEADER + string + cnst.ENDC)
 
 
 def printInfo(string):
