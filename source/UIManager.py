@@ -133,7 +133,8 @@ def uiManager():
 
 		# create Process for the windowing data
 		windowingProcess = Process(target=windowing, name='windowing',
-		                           args=(board, windowingBuffer, windowedDataBuffer, newDataAvailable, shutdownEvent))
+		                           args=(board, windowingBuffer, windowedDataBuffer, newDataAvailable, shutdownEvent,
+		                                 writeDataEvent))
 		processesList.append(windowingProcess)
 
 		# create Process for connecting to unity program socket

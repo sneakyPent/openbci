@@ -6,7 +6,7 @@ from utils.general import emptyQueue
 from utils.coloringPrint import printInfo, printWarning, printError
 
 
-def windowing(board, windowingBuf, windowedData, newDataAvailable, _shutdownEvent):
+def windowing(board, windowingBuf, windowedData, newDataAvailable, _shutdownEvent, writeDataEvent):
 	"""
 	* Runs simultaneously with the boardEventHandler process and waits for the newDataAvailable event.
 	* Creates windows according to :py:data:`board` object's windowSize and stepSize.
@@ -23,6 +23,9 @@ def windowing(board, windowingBuf, windowedData, newDataAvailable, _shutdownEven
 	windowCounter = 0
 	currentWindowList = []
 	while not _shutdownEvent.is_set():
+		if not board.isStreaming() and not writeDataEvent.is_set():
+			emptyQueue(windowedData)
+			currentWindowList = []
 		newDataAvailable.wait(1)
 		# the desired package-window size (windowSize*sampleRate) EG: 1*250
 		window = board.getWindow()
