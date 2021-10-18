@@ -31,7 +31,6 @@ def writing(board, writeBuf, windowedData, writeDataEvent, _shutdownEvent):
 			signal = []
 			windowedSignal = []
 			filename = getSessionFilename(training=board.isTrainingMode())
-			print(filename)
 			hf = h5py.File(filename + '.hdf5', 'w')
 			printWarning('signal buffer size: ' + writeBuf.qsize().__str__())
 			while not writeBuf.qsize() == 0:
@@ -53,13 +52,6 @@ def writing(board, writeBuf, windowedData, writeDataEvent, _shutdownEvent):
 			printInfo("Finish with settings")
 			hf.close()
 			writeDataEvent.clear()
+			printInfo('Data save in ' + filename)
 		if _shutdownEvent.is_set():
 			break
-	# empty buffers
-	try:
-		while not writeBuf.empty():
-			writeBuf.get_nowait()
-		while not windowedData.empty():
-			windowedData.get_nowait()
-	except Exception as ex:
-		traceback.print_exc()
