@@ -22,6 +22,7 @@ from utils.coloringPrint import printError, printInfo, printWarning
 from utils.constants import Constants as cnst, getSessionFilename
 from utils.filters import *
 from classification.train_processing_cca_3 import calculate_cca_correlations
+from utils.general import emptyQueue
 
 forward = '{"c":"xy","x":0,"y":45}\r\n'
 back = '{"c":"xy","x":0,"y":-45}\r\n'
@@ -188,6 +189,7 @@ def onlineProcessing(board, _shutdownEvent, windowedDataBuffer, predictBuffer, s
 				# print("Processing", command_buffer.qsize())
 
 				predictBuffer.put(command_predicted)
+	emptyQueue(predictBuffer)
 
 
 def managePredict(_shutdownEvent, predictBuffer, socketConnection):
