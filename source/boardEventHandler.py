@@ -2,6 +2,7 @@ import queue
 import sys
 from multiprocessing import Process, Event
 from utils import *
+from utils.general import emptyQueue
 
 
 class BoardEventHandler:
@@ -160,18 +161,7 @@ class BoardEventHandler:
 				if printing:
 					print('Total streamed samples received: ', numOfSamples)
 					printing = False
-		# Empty every buffer before exiting 
-		try:
-			while not self.writingBuffer.empty():
-				self.writingBuffer.get_nowait()
-		except Exception as ex:
-			printError(ex.__str__())
-		for buffer in self.dataBuffersList:
-			try:
-				while not buffer.empty():
-					buffer.get_nowait()
-			except Exception as ex:
-				printError(ex)
+		emptyQueue(streamingQueues)
 
 	def stopStreaming(self):
 		"""
