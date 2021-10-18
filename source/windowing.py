@@ -27,6 +27,8 @@ def windowing(board, windowingBuf, windowedData, newDataAvailable, _shutdownEven
 		window = board.getWindow()
 		# the desired step size for each package
 		step = board.getWindowStep()
+		if not board.isStreaming():
+			currentWindowList = []
 		if newDataAvailable.is_set():
 			while not windowingBuf.empty():
 				dt = windowingBuf.get()
@@ -35,7 +37,7 @@ def windowing(board, windowingBuf, windowedData, newDataAvailable, _shutdownEven
 				if len(currentWindowList) == window:
 					# printWarning("created window No." + windowCounter.__str__())
 					windowCounter += 1
-					windowedData.put(np.copy(currentWindowList).tolist())
+					windowedData.put(np.copy(currentWindowList))
 					del currentWindowList[0:step]
 	# empty buffers
 	try:
