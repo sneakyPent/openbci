@@ -6,7 +6,7 @@ import sys
 
 sys.path.append('..')
 from multiprocessing.managers import SyncManager
-from multiprocessing import Process, Queue, Lock, Event, current_process
+from multiprocessing import Process, Event, current_process
 from source.boardEventHandler import BoardEventHandler
 from source.pyGUI import startGUI
 from source.training import startTraining
@@ -74,14 +74,9 @@ def uiManager():
 
 	# main events
 	writeDataEvent = Event()
-
 	newDataAvailable = Event()
 	startTrainingEvent = Event()
 	startOnlineEvent = Event()
-
-	windowedDataBuffer = Queue(maxsize=cnst.writeDataMaxQueueSize)
-	# Queue for the communication between socket and boardEventHandler
-	trainingClassBuffer = Queue(maxsize=1)
 
 	# catch keyboardinterupt exception and just set shutdownEvent
 	signal.signal(signal.SIGINT, signal_handler)
@@ -95,10 +90,13 @@ def uiManager():
 	boardCytonSettings = manager.dict(board.getBoardSettingAttributes())
 
 	# main queue that will read data from board
-	guiBuffer = Queue(maxsize=cnst.maxQueueSize)
-	printBuffer = Queue(maxsize=cnst.maxQueueSize)
-	writingBuffer = Queue(maxsize=cnst.writeDataMaxQueueSize)
-	windowingBuffer = Queue(maxsize=cnst.writeDataMaxQueueSize)
+	guiBuffer = manager.Queue(maxsize=cnst.maxQueueSize)
+	printBuffer = manager.Queue(maxsize=cnst.maxQueueSize)
+	writingBuffer = manager.Queue(maxsize=cnst.writeDataMaxQueueSize)
+	windowingBuffer = manager.Queue(maxsize=cnst.writeDataMaxQueueSize)
+	windowedDataBuffer = manager.Queue(maxsize=cnst.writeDataMaxQueueSize)
+	trainingClassBuffer = manager.Queue(maxsize=1)
+	# Queue for the communication between socket and boardEventHandler
 	# add queues in the list
 	# dataBuffersList = [windowingBuffer, printBuffer, guiBuffer]
 	dataBuffersList = [windowingBuffer, guiBuffer]
