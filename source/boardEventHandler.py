@@ -101,7 +101,9 @@ class BoardEventHandler:
 			    4. Inform other processes to get tha sample from the buffer, via the newDataAvailable Event
 
 		"""
-		numofsamples = 0
+		streamingQueues = [self.writingBuffer, self.trainingClassBuffer]
+		streamingQueues.extend(self.dataBuffersList)
+		numOfSamples = 0
 		"minor counter, helps to count the number of samples read by the cyton board"
 		printing = False
 		"minor flag, helps to print the number of samples read by the cyton board"
@@ -109,87 +111,54 @@ class BoardEventHandler:
 			self.startStreamingEvent.wait(1)
 			if self.startStreamingEvent.is_set():
 				if self.board.isConnected():
+					emptyQueue(streamingQueues)
 					printInfo("Starting streaming...")
-					# Empty writingBuffer 
-					try:
-						while not self.writingBuffer.qsize() == 0:
-							self.writingBuffer.get_nowait()
-					except Exception as ex:
-						printError(ex.__str__())
-					# Empty every buffer before start streaming
-					for buffer in self.dataBuffersList:
-						try:
-							while not buffer.empty():
-								buffer.get_nowait()
-						except Exception as ex:
-							printError(ex.__str__())
 					self.trainingClass = cnst.unknownClass
+					numOfSamples = 0
+					printing = True
 					while self.startStreamingEvent.is_set():
 						try:
-							printing = True
 							# get sample from board
 							sample = self.board.stream_one_sample()
 							# append training class in the channel data before put in the buffer
 							if self.board.isSynched():
-								try:
-									# check if training class has been changed, if so then replace
-									if self.trainingClassBuffer.qsize() != 0:
-										self.trainingClass = self.trainingClassBuffer.get()
-								except Exception:
-									printing = False
-									printWarning("Something Went Wrong in boardEventHandler line 83")
+								# check if training class has been changed, if so then replace
+								if not self.trainingClassBuffer.empty():
+									self.trainingClass = self.trainingClassBuffer.get()
 								# append training class in the channel data before put in the buffer
-								# TODO: append training class only while training
-								sample.channel_data.append(self.trainingClass)
-								# Put the read sample in every buffer contained in the dataBuffersList and then inform
-								# other processes via newDataAvailable event
-								for buffer in self.dataBuffersList:
-									try:
-										buffer.put_nowait(sample.channel_data)
-										self.newDataAvailable.set()
-									except queue.Full:
-										printWarning("Queue full")
-										printing = False
 								if self.board.isTrainingMode():
-									try:
-										self.writingBuffer.put_nowait(sample.channel_data)
-										self.newDataAvailable.set()
-									except queue.Full:
-										printWarning("Queue full")
-										printing = False
-								numofsamples += 1
+									sample.channel_data.append(self.trainingClass)
+								# sample.channel_data.append(self.trainingClass)
+								# Put the read sample in every buffer contained in the dataBuffersList and then inform other processes via newDataAvailable event
+								for buffer in self.dataBuffersList:
+									buffer.put_nowait(sample.channel_data)
+									self.newDataAvailable.set()
+								if self.board.isTrainingMode():
+									self.writingBuffer.put_nowait(sample.channel_data)
+									self.newDataAvailable.set()
+								numOfSamples += 1
+								# self.newDataAvailable.clear()
 							# check for the synching zeros array sample ( [0, 0, 0, 0 ,0 , 0, 0, 0] )
 							elif sample.channel_data == cnst.synchingSignal:
+								printSuccess('Synching completed')
 								self.board.setSynching(True)
-						except Exception as e:
+						except queue.Full:
+							printError("Queue full, stop streaming...")
+							self.stopStreamingEvent.set()
 							printing = False
-							self.startStreamingEvent.clear()
-							exc_type, exc_obj, exc_tb = sys.exc_info()
-							fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-							printError("There was a problem on starting streaming in: " + fname.__str__() +
-							           ' line: ' + exc_tb.tb_lineno.__str__() + "\nError Message: " + repr(e))
+							break
+						except Exception as e:
+							traceback.print_exc()
+							self.stopStreamingEvent.set()
+							printing = False
 				else:
-					if not self.board.isConnected():
-						printing = False
-						printInfo("No connection to start streaming from.")
+					printing = False
+					printInfo("No connection to start streaming from.")
 				self.startStreamingEvent.clear()
 			else:
 				self.newDataAvailable.clear()
-				if self.shutdownEvent.is_set():
-					# Empty writingBuffer 
-					try:
-						while not self.writingBuffer.qsize() == 0:
-							self.writingBuffer.get_nowait()
-					except Exception as ex:
-						printError(ex.__str__())
-					# empty queues before terminating to prevent zombie processes
-					for buffer in self.dataBuffersList:
-						if buffer.empty():
-							printInfo("Empty the queues")
-						while not buffer.empty():
-							buffer.get_nowait()
 				if printing:
-					print('Total Samples received: ', numofsamples)
+					print('Total streamed samples received: ', numOfSamples)
 					printing = False
 		# Empty every buffer before exiting 
 		try:
@@ -277,7 +246,6 @@ class BoardEventHandler:
 		*   The above methods are completely controlled by their corresponding events when they are triggered (set)
 		"""
 		procList = []
-		printInfo("Starting eventHandler")
 		connectProcess = Process(target=self.connect)
 		disconnectProcess = Process(target=self.disconnect)
 		startStreamingProcess = Process(target=self.startStreaming)
