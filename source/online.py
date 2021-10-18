@@ -168,7 +168,7 @@ def onlineProcessing(board, _shutdownEvent, windowedDataBuffer, predictBuffer, s
 			highcut = board.getHigherBoundFrequency()
 			harmonics_num = cnst.harmonics_num
 			fs = board.getSampleRate()
-			while not windowedDataBuffer.qsize() == 0 and socketConnection.is_set():
+			while not windowedDataBuffer.empty() and socketConnection.is_set():
 				segment_full = np.array(windowedDataBuffer.get())
 
 				# I sum the frames along axis 1 (i.e. I sum all the elements of each row)
