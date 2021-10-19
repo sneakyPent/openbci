@@ -14,13 +14,22 @@ class BoardEventHandler:
 		* stopStreamingEvent -> stopStreaming()
 		* newBoardSettingsAvailableEvent -> newBoardSettingsAvailable()
 
-	:param board: {} - Represents the OpenBCICyton class in BoardEventHandler class
-	:param boardSettings: {Dotted dict} - Contains all board settings set by the GUI and used in cyton.py
-	:param newDataAvailable: {Event} - Event which processes' owners of queues contained in dataBuffersList are waiting for to get the new sample read from board
-	:param dataBuffersList: {[]} - list with every buffer we want to add streaming data into, and pass to other processes
-	:param writeDataEvent: {Event} - Event to inform the writeProcess of UImanager.py to start writing the data into an hdf5 file
-	:param trainingClassBuffer: {Queue} - Buffer letting this process to get sample's class, that the training program showing every frame via socket.py
-	:param _shutdownEvent: {Event} - Event used to know when to let every running process terminate
+	:param OpenBCICyton board: Represents the OpenBCICyton class in BoardEventHandler class
+	:param dict boardSettings: Contains all board settings set by the GUI and used in cyton.py
+	:param Event newDataAvailable:  Event which other process are waiting for to get the new sample read from board
+	:param dataBuffersList: List with every buffer we want to add streaming data into, and pass to other processes
+	:type dataBuffersList: list(Queue)
+	:param Queue writingBuffer:  Buffer to pass the stream data to :py:meth:`source.writeToFile.writing`.
+	:param Event writeDataEvent:  Event to inform the writeProcess of UImanager.py to start writing the data into an hdf5 file
+	:param Queue trainingClassBuffer:  Buffer lets this process to get sample's class, that the training program showing every frame via :py:mod:`source.training`
+	:param Event _shutdownEvent:  Event used to know when to allow every running process terminate
+
+	:var int trainingClass: The current training class value read by trainingClassBuffer, initialized in :data:`utils.constants.Constants.unknownClass` value
+	:var Event connectEvent: When this one get set the :py:meth:`source.boardEventHandler.BoardEventHandler.connect` method is allowed to continue to main process
+	:var Event disconnectEvent:  When this one get set the :py:meth:`source.boardEventHandler.BoardEventHandler.disconnect` method is allowed to continue to main process
+	:var Event startStreamingEvent:  When this one get set the :py:meth:`source.boardEventHandler.BoardEventHandler.startStreaming` method is allowed to continue to main process
+	:var Event stopStreamingEvent:  When this one get set the :py:meth:`source.boardEventHandler.BoardEventHandler.stopStreaming` method is allowed to continue to main process
+	:var Event newBoardSettingsAvailableEvent:  When this one get set the :py:meth:`source.boardEventHandler.BoardEventHandler.newBoardSettingsAvailable` method is allowed to continue to main process
 	"""
 
 	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writingBuffer, writeDataEvent,
