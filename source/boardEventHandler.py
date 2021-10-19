@@ -35,17 +35,15 @@ class BoardEventHandler:
 	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writingBuffer, writeDataEvent,
 	             trainingClassBuffer, _shutdownEvent):
 		self.board = board
-		self.newDataAvailable = newDataAvailable
 		self.boardSettings = boardSettings
+		self.newDataAvailable = newDataAvailable
 		self.dataBuffersList = dataBuffersList
-		self.shutdownEvent = _shutdownEvent
 		self.writingBuffer = writingBuffer
 		self.writeDataEvent = writeDataEvent
 		self.trainingClassBuffer = trainingClassBuffer
-		self.trainingClass = cnst.unknownClass
-		""" The current training class value read by trainingClassBuffer, initialized in :data:`utils.constants.Constants.unknownClass` value"""
+		self.shutdownEvent = _shutdownEvent
 
-		# events used to start and stop the BoardEventHandler functions
+		self.trainingClass = cnst.unknownClass
 		self.connectEvent = Event()
 		self.disconnectEvent = Event()
 		self.startStreamingEvent = Event()
@@ -138,7 +136,6 @@ class BoardEventHandler:
 								# append training class in the channel data before put in the buffer
 								if self.board.isTrainingMode():
 									sample.channel_data.append(self.trainingClass)
-								# sample.channel_data.append(self.trainingClass)
 								# Put the read sample in every buffer contained in the dataBuffersList and then inform other processes via newDataAvailable event
 								for buffer in self.dataBuffersList:
 									buffer.put_nowait(sample.channel_data)
