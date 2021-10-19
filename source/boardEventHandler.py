@@ -1,5 +1,5 @@
 import queue
-import sys
+import traceback
 from multiprocessing import Process, Event
 from utils import *
 from utils.general import emptyQueue
