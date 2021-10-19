@@ -59,6 +59,17 @@ def uiManager():
 		4. writeProcess
 		5. windowingProcess
 		6. trainingProcess
+
+	:var Event writeDataEvent: Event for allowing :py:meth:`source.writeToFile.writing`, to write data into file
+	:var Event newDataAvailable: Event will be use in :py:meth:`source.boardEventHandler.BoardEventHandler.startStreaming` to inform other process for new streamed data
+	:var Event startTrainingEvent: Event use to start the training procedure when it is set.
+	:var Event startOnlineEvent: Event use to start the online procedure when it is set.
+	:var SyncManager.Queue guiBuffer: Contains the streamed Data for guiProcess
+	:var SyncManager.Queue printBuffer: Contains the streamed Data for guiProcess
+	:var SyncManager.Queue writingBuffer: Contains the streamed Data for writeProcess
+	:var SyncManager.Queue windowingBuffer: Contains the streamed Data for windowingProcess
+	:var SyncManager.Queue windowedDataBuffer: Contains the windowed streamed Data, got from windowingProcess for the writeProcess
+	:var SyncManager.Queue trainingClassBuffer: Contains the training class, the training program showing every frame via :py:mod:`source.training`
 	"""
 	# register the OpenBCICyton class; make its functions accessible via proxy
 	SyncManager.register('OpenBCICyton', OpenBCICyton)
