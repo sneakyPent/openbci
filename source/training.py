@@ -13,11 +13,13 @@ import subprocess
 import os
 import time
 from multiprocessing import Process, Event
-from utils.coloringPrint import printError
+from utils.coloringPrint import printError, printInfo
 from utils.constants import Constants as cnst
+from utils.general import emptyQueue
 
 
-def connectTraining(trainingClassBuffer, socketConnection):
+def connectTraining(board, boardApiCallEvents, startTrainingEvent, trainingClassBuffer, socketConnection,
+                    _shutdownEvent):
 	"""
 	* Wait for startTrainingEvent to get set.
 	* Responsible
@@ -37,76 +39,78 @@ def connectTraining(trainingClassBuffer, socketConnection):
 	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
 	"""
-	# create socket
-	s = socket.socket()
-	socket.setdefaulttimeout(None)
-	print('socket created ')
-
-	# IP and PORT connection
-	port = 8080
-	while not socketConnection.is_set():
-		try:
-			# s.bind(('139.91.190.32', port)) #local host
-			s.bind(('127.0.0.1', port))  # local host
-			s.listen(30)  # listening for connection for 30 sec?
-			print('socket listensing ... ')
-			socketConnection.set()
-			# try:
-			c, addr = s.accept()  # when port connected
-			print("\ngot connection from ", addr)
-
-			# 1st communication with Quest
-			bytes_received = c.recv(1024)  # received bytes
-			print(bytes_received.decode("utf-8"))
-
-			# Send "True" string to start the Quest app
-			nn_output = "True"
-			arr2 = bytes(nn_output, 'utf-8')
-			c.sendall(arr2)  # sending back
-
-			# Quest sends the arrow number
-			bytes_received = c.recv(1).decode("utf-8")  # received bytes
-			# print(bytes_received)
-			try:
-				trainingClassBuffer.put_nowait(bytes_received)
-			except queue.Full as error:
-				print(error)
-				c.shutdown(socket.SHUT_RDWR)
-				c.close()
+	while not _shutdownEvent.is_set():
+		startTrainingEvent.wait(1)
+		if startTrainingEvent.is_set():
+			if not board.isConnected():
+				printError('Could not start training without connected Board.')
+				startTrainingEvent.clear()
 				continue
+			emptyQueue(trainingClassBuffer)
+			# create socket
+			s = socket.socket()
+			socket.setdefaulttimeout(None)
+			printInfo('socket created ')
 
-			if bytes_received != "E" and bytes_received != "":
+			# IP and PORT connection
+			port = 8080
+			while not socketConnection.is_set():
+				try:
+					# s.bind(('139.91.190.32', port)) #local host
+					s.bind(('127.0.0.1', port))  # local host
+					s.listen(30)  # listening for connection for 30 sec?
+					printInfo('socket listening ... ')
+					socketConnection.set()
+					# try:
+					c, addr = s.accept()  # when port connected
+					printInfo("\ngot connection from " + addr.__str__())
 
-				# q_label.put(int(bytes_received))
-				bytes_received_old = bytes_received
+					# 1st communication with Quest
+					bytes_received = c.recv(1024)  # received bytes
+					print(bytes_received.decode("utf-8"))
 
-				while True:  # bytes_received != "E": # "E" means end of the action
+					# Send "True" string to start the Quest app
+					nn_output = "True"
+					arr2 = bytes(nn_output, 'utf-8')
+					c.sendall(arr2)  # sending back
 
+					board.setTrainingMode(True)
+					boardApiCallEvents["startStreaming"].set()
+
+					# Quest sends the arrow number
 					bytes_received = c.recv(1).decode("utf-8")  # received bytes
+					# print(bytes_received)
+					trainingClassBuffer.put_nowait(bytes_received)
 
-					if bytes_received == "E" or bytes_received == "":
-						break
-					else:
-						if bytes_received != bytes_received_old:
-							# print(bytes_received)
-							try:
-								trainingClassBuffer.put_nowait(bytes_received)
-							except queue.Full:
-								c.shutdown(socket.SHUT_RDWR)
-								c.close()
-								continue
-							bytes_received_old = bytes_received
+					if bytes_received != "E" and bytes_received != "":
+						# q_label.put(int(bytes_received))
+						bytes_received_old = bytes_received
+						while True:  # bytes_received != "E": # "E" means end of the action
+							bytes_received = c.recv(1).decode("utf-8")  # received bytes
+							if bytes_received == "E" or bytes_received == "":
+								break
+							else:
+								if bytes_received != bytes_received_old:
+									# print(bytes_received)
+									trainingClassBuffer.put_nowait(bytes_received)
+									bytes_received_old = bytes_received
 
-			c.shutdown(socket.SHUT_RDWR)
-			c.close()
-		except socket.error as error:
-			print(error.__str__() + '. Wait for 10 seconds before trying again')
-			time.sleep(10)
-			pass
-	socketConnection.clear()
+					c.shutdown(socket.SHUT_RDWR)
+					c.close()
+				except queue.Full as error:
+					print(error)
+					c.shutdown(socket.SHUT_RDWR)
+					c.close()
+					continue
+				except socket.error as error:
+					print(error.__str__() + '. Wait for 10 seconds before trying again')
+					time.sleep(10)
+					pass
+			socketConnection.clear()
+			startTrainingEvent.clear()
 
 
-def startTrainingApp(boardApiCallEvents):
+def startTrainingApp(boardApiCallEvents, socketConnection, _shutdownEvent):
 	"""
 	* waits until socketConnection get set by :py:meth:`source.training.connectTraining`
 	* Executes the unity target executable given in :data:`utils.constants.Constants.unityExePath`
@@ -117,9 +121,12 @@ def startTrainingApp(boardApiCallEvents):
 	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
 	"""
-	with open(os.devnull, 'wb') as devnull:
-		subprocess.check_call([cnst.trainingUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
-	boardApiCallEvents["stopStreaming"].set()
+	while not _shutdownEvent.is_set():
+		socketConnection.wait(1)
+		if socketConnection.is_set():
+			with open(os.devnull, 'wb') as devnull:
+				subprocess.check_call([cnst.trainingUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
+			boardApiCallEvents["stopStreaming"].set()
 
 
 def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent, trainingClassBuffer):
@@ -137,33 +144,21 @@ def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
 	:param Event _shutdownEvent: Event used to know when to let every running process terminate
 	:param Queue trainingClassBuffer: Buffer will be used to pass the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
 	"""
+	procList = []
 	socketConnection = Event()
 	socketConnection.clear()
 
-	socketProcess = Process(target=connectTraining, args=(trainingClassBuffer, socketConnection,))
-	applicationProcess = Process(target=startTrainingApp, args=(boardApiCallEvents,))
-	while not _shutdownEvent.is_set():
-		startTrainingEvent.wait(1)
-		if startTrainingEvent.is_set():
-			if not board.isConnected():
-				printError('Could not start straining without connected Board.')
-				startTrainingEvent.clear()
-				continue
-			while not trainingClassBuffer.qsize() == 0:
-				trainingClassBuffer.get_nowait()
-			if not socketProcess.is_alive():
-				socketProcess.start()
-			socketConnection.wait(1)
-			if socketConnection.is_set():
-				board.setTrainingMode(True)
-				boardApiCallEvents["startStreaming"].set()
-				if not applicationProcess.is_alive():
-					applicationProcess.start()
-				socketProcess.join()
-				applicationProcess.join()
-				startTrainingEvent.clear()
-				socketConnection.clear()
-				board.setTrainingMode(False)
-				# recreating process because eve after Process Termination cannot start a process twice
-				socketProcess = Process(target=connectTraining, args=(trainingClassBuffer, socketConnection,))
-				applicationProcess = Process(target=startTrainingApp, args=(boardApiCallEvents,))
+	socketProcess = Process(target=connectTraining,
+	                        args=(board, boardApiCallEvents, startTrainingEvent,
+	                              trainingClassBuffer, socketConnection, _shutdownEvent,))
+	applicationProcess = Process(target=startTrainingApp, args=(boardApiCallEvents, socketConnection, _shutdownEvent,))
+
+	procList.append(socketProcess)
+	procList.append(applicationProcess)
+
+	for proc in procList:
+		proc.start()
+
+	# join processes
+	for proc in procList:
+		proc.join()
