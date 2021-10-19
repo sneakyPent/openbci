@@ -19,6 +19,7 @@ from utils.constants import Constants as cnst
 
 def connectTraining(trainingClassBuffer, socketConnection):
 	"""
+	* Wait for startTrainingEvent to get set.
 	* Responsible
 
 		* to create a socket communication with the target executable.
@@ -28,8 +29,12 @@ def connectTraining(trainingClassBuffer, socketConnection):
 
 	* When the connection could not be established then wait for 10 sec and then retrying.
 
-	:param Queue(maxsize=1) trainingClassBuffer: Buffer used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`.
+	:param OpenBCICyton board: Represents the OpenBCICyton object created from :py:class:`source.UIManager`.
+	:param boardApiCallEvents: Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
+	:param startTrainingEvent: Event for which this method will be waiting. This Event is set only by the :py:meth:`source.pyGUI.GUI.trainingButtonClick`
+	:param trainingClassBuffer: Buffer used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`.
 	:param Event socketConnection: Used as flag so the main process :py:meth:`source.training.startTraining` can proceed to start the streaming and the training application.
+	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
 	"""
 	# create socket
@@ -103,9 +108,13 @@ def connectTraining(trainingClassBuffer, socketConnection):
 
 def startTrainingApp(boardApiCallEvents):
 	"""
-	Simple method, that only executes the unity target executable given in :data:`utils.constants.Constants.unityExePath`
+	* waits until socketConnection get set by :py:meth:`source.training.connectTraining`
+	* Executes the unity target executable given in :data:`utils.constants.Constants.unityExePath`
+	* Stop streaming after exiting unity target, via boardApiCallEvents
 
 	:param boardApiCallEvents: Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
+	:param Event socketConnection: Used as flag so the main process :py:meth:`source.training.startTraining` can proceed to start the streaming and the training application.
+	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
 	"""
 	with open(os.devnull, 'wb') as devnull:
@@ -116,19 +125,17 @@ def startTrainingApp(boardApiCallEvents):
 def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent, trainingClassBuffer):
 	"""
 	* Method runs via trainingProcess in :py:mod:`source.UIManager`
-	* Runs simultaneously with the boardEventHandler process and waits for the startTrainingEvent, which is set only by the boardEventHandler.
-	* When the startTrainingEvent is set:
+	* Runs simultaneously with the boardEventHandler process.
+	* Starts to subprocesses
 
-		* Starts streaming from existing connection.
-		* Starts the connectTraining process.
-		* Starts the startTrainingApp process.
-
+		1. socketProcess runs :py:meth:`source.training.connectTraining`
+		2. startTRainingApp :py:meth:`source.training.startTrainingApp`
 
 	:param OpenBCICyton board: Represents the OpenBCICyton class
-	:param Event startTrainingEvent: Event which this process will be waiting for, before starting the connectTraining, startTrainingApp processes. This Event is set only by the :py:meth:`source.pyGUI.GUI.trainingButtonClick`
+	:param Event startTrainingEvent: Event for which socketProcess will be waiting, This Event is set only by the :py:meth:`source.pyGUI.GUI.trainingButtonClick`
 	:param [Event] boardApiCallEvents:  Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
 	:param Event _shutdownEvent: Event used to know when to let every running process terminate
-	:param Queue trainingClassBuffer: Buffer will be used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
+	:param Queue trainingClassBuffer: Buffer will be used to pass the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
 	"""
 	socketConnection = Event()
 	socketConnection.clear()
