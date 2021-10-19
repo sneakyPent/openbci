@@ -191,6 +191,7 @@ class BoardEventHandler:
 						self.startStreamingEvent.clear()
 						if self.board.isTrainingMode():
 							self.writeDataEvent.set()
+							self.board.setTrainingMode(False)
 						self.board.stopStreaming()
 						self.board.setSynching(False)
 					except:
