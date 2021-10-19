@@ -9,7 +9,7 @@ def windowing(board, windowingBuf, windowedData, newDataAvailable, _shutdownEven
 	* Puts every created window into the :py:data:`windowedData` buffer.
 	* Every created window is a 3d numpy array as [number of windows][window size][sample size].
 
-	:param board: :py:class:`source.cyton.OpenBCICyton` object created from :py:class:`source.UIManager`.
+	:param OpenBCICyton board: Represents the OpenBCICyton object created from :py:class:`source.UIManager`.
 	:param Queue windowingBuf: Buffer used for communicating and getting the transmitted data from :py:meth:`source.boardEventHandler.BoardEventHandler.startStreaming`.
 	:param Queue windowedData: Buffer used for communicating and passing the windowed data to :py:meth:`source.writeToFile.writing`.
 	:param Event newDataAvailable: The event the method is waiting for, before proceeding to the next step (windowing).
