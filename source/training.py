@@ -7,13 +7,13 @@ Consist of 3 method
 used only for the training and in order to run it needs the unity target executable.
 
 """
+import logging
 import queue
 import socket
 import subprocess
 import os
 import time
 from multiprocessing import Process, Event
-from utils.coloringPrint import printError, printInfo
 from utils.constants import Constants as cnst
 from utils.general import emptyQueue
 
@@ -39,18 +39,19 @@ def connectTraining(board, boardApiCallEvents, startTrainingEvent, trainingClass
 	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
 	"""
+	logger = logging.getLogger(cnst.loggerName)
 	while not _shutdownEvent.is_set():
 		startTrainingEvent.wait(1)
 		if startTrainingEvent.is_set():
 			if not board.isConnected():
-				printError('Could not start training without connected Board.')
+				logger.warning('Could not start training without connected Board.')
 				startTrainingEvent.clear()
 				continue
 			emptyQueue(trainingClassBuffer)
 			# create socket
 			s = socket.socket()
 			socket.setdefaulttimeout(None)
-			printInfo('socket created ')
+			logger.info('socket created ')
 
 			# IP and PORT connection
 			port = 8080
@@ -59,11 +60,11 @@ def connectTraining(board, boardApiCallEvents, startTrainingEvent, trainingClass
 					# s.bind(('139.91.190.32', port)) #local host
 					s.bind(('127.0.0.1', port))  # local host
 					s.listen(30)  # listening for connection for 30 sec?
-					printInfo('socket listening ... ')
+					logger.info('socket listening ... ')
 					socketConnection.set()
 					# try:
 					c, addr = s.accept()  # when port connected
-					printInfo("\ngot connection from " + addr.__str__())
+					logger.info("Got connection from " + addr.__str__())
 
 					# 1st communication with Quest
 					bytes_received = c.recv(1024)  # received bytes
@@ -81,29 +82,28 @@ def connectTraining(board, boardApiCallEvents, startTrainingEvent, trainingClass
 					bytes_received = c.recv(1).decode("utf-8")  # received bytes
 					# print(bytes_received)
 					trainingClassBuffer.put_nowait(bytes_received)
-
 					if bytes_received != "E" and bytes_received != "":
 						# q_label.put(int(bytes_received))
 						bytes_received_old = bytes_received
 						while True:  # bytes_received != "E": # "E" means end of the action
 							bytes_received = c.recv(1).decode("utf-8")  # received bytes
 							if bytes_received == "E" or bytes_received == "":
+								logger.info('Received termination byte from application.Stop training...')
 								break
 							else:
 								if bytes_received != bytes_received_old:
-									# print(bytes_received)
 									trainingClassBuffer.put_nowait(bytes_received)
 									bytes_received_old = bytes_received
 
 					c.shutdown(socket.SHUT_RDWR)
 					c.close()
-				except queue.Full as error:
-					print(error)
+				except queue.Full:
+					logger.error(exc_info=True, msg='Full queue.Stop training...')
 					c.shutdown(socket.SHUT_RDWR)
 					c.close()
 					continue
 				except socket.error as error:
-					print(error.__str__() + '. Wait for 10 seconds before trying again')
+					logger.warning(error.__str__() + '. Wait for 10 seconds before trying again')
 					time.sleep(10)
 					pass
 			socketConnection.clear()
