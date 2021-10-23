@@ -133,7 +133,7 @@ def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
 	"""
 	* Method runs via trainingProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process.
-	* Starts to subprocesses
+	* Starts two subprocesses
 
 		1. socketProcess runs :py:meth:`source.training.connectTraining`
 		2. startTRainingApp :py:meth:`source.training.startTrainingApp`
