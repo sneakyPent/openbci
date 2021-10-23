@@ -77,6 +77,7 @@ class OpenBCICyton(object):
 	             windowStepSize=0):
 		self.baudRate = baudRate
 		self.timeout = timeout
+		self.logger = logging.getLogger(cnst.loggerName)
 		self.log = log  # print_incoming_text needs log
 		self.streaming = False
 		self.connected = False
@@ -281,17 +282,17 @@ class OpenBCICyton(object):
 	# API CALLS
 	def connect(self):
 		if not self.port:
-			printInfo("Searching for connection port...")
+			self.logger.info("Searching for connection port...")
 			self.port = self.find_port()
 
-		printInfo("Connecting to V3 at port %s" % self.port)
+		self.logger.info("Connecting to V3 at port %s" % self.port)
 		if self.port == "loop://":
 			# For testing purposes
 			self.ser = serial.serial_for_url(self.port, baudrate=self.baudRate, timeout=self.timeout)
 		else:
 			self.ser = serial.Serial(port=self.port, baudrate=self.baudRate, timeout=self.timeout)
 
-		printSuccess("Serial established...")
+		self.logger.info("Serial established...")
 
 		time.sleep(1)
 		# Initialize 32-bit board, doesn't affect 8bit board
@@ -318,10 +319,9 @@ class OpenBCICyton(object):
 		if self.streaming:
 			self.stopStreaming()
 		if hasattr(self, 'ser') and self.ser.isOpen():
-			print("Closing Serial...")
+			self.logger.info("Closing Serial...")
 			self.ser.close()
-			logging.warning('serial closed')
-			printInfo('Disconnected')
+			self.logger.info('Disconnected')
 			self.connected = False
 
 	def stream_one_sample(self):
@@ -415,19 +415,14 @@ class OpenBCICyton(object):
 					self.stopStreaming()
 				if self.log:
 					self.log_packet_count = self.log_packet_count + 1
-		except Exception as e:
-			exc_type, exc_obj, exc_tb = sys.exc_info()
-			fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-			print(exc_type, fname, exc_tb.tb_lineno)
-			printError("There was a problem on starting streaming in: " + fname.__str__() +
-			           ' line: ' + exc_tb.tb_lineno.__str__() + "\nError Message: " + repr(e))
+		except Exception:
+			self.logger.error("There was a problem on starting streaming", exc_info=True)
 
 	def stopStreaming(self):
-		print("Stopping streaming...\nWait for buffer to flush...")
+		self.logger.info("Wait for buffer to flush...")
 		self.streaming = False
 		self.ser.write(cnts.stopStreamingData)
-		if self.log:
-			logging.warning('sent <s>: stopped streaming')
+		self.logger.warning('Stopped streaming')
 
 	# SETTINGS AND HELPERS
 
@@ -484,7 +479,7 @@ class OpenBCICyton(object):
 				return sample
 			else:
 				self.packets_dropped = self.packets_dropped + 1
-				print("Error: " + cnts.ERROR_INVALID_BYTE_STOP)
+				self.logger.error(cnts.ERROR_INVALID_BYTE_STOP)
 
 	def _read_serial_binary(self, max_bytes_to_skip=3000):
 		def read(n):
@@ -574,18 +569,17 @@ class OpenBCICyton(object):
 				else:
 					self.warn("ID:<%d> <Unexpected END_BYTE found <%s> instead of <%s>"
 					          % (packet_id, val, cnts.RAW_BYTE_STOP))
-					logging.debug(log_bytes_in)
+					self.logger.debug(log_bytes_in)
 					self.packets_dropped = self.packets_dropped + 1
 
 	def warn(self, text):
 		if self.log:
 			# log how many packets where sent successfully in between warnings
 			if self.log_packet_count:
-				logging.info('Data packets received:' +
-				             str(self.log_packet_count))
+				self.logger.info('Data packets received:' +
+				                 str(self.log_packet_count))
 				self.log_packet_count = 0
-			logging.warning(text)
-		print("Warning: %s" % text)
+			self.logger.warning(text)
 
 	def print_incoming_text(self):
 		"""
@@ -656,7 +650,7 @@ class OpenBCICyton(object):
 			if b == cnts.RAW_BYTE_START:
 				self.attempt_reconnect = False
 				if skipped_str:
-					logging.debug('SKIPPED\n' + skipped_str + '\nSKIPPED')
+					self.logger.debug('SKIPPED\n' + skipped_str + '\nSKIPPED')
 					skipped_str = ''
 
 				packet_str = "%03d" % b + '|'
@@ -686,7 +680,7 @@ class OpenBCICyton(object):
 				if b == cnts.RAW_BYTE_STOP:
 					packet_str = packet_str + '.' + "%03d" % b + '|VAL'
 					print(packet_str)
-				# logging.debug(packet_str)
+				# self.logger.debug(packet_str)
 
 				# Invalid Packet
 				else:
@@ -855,7 +849,7 @@ class OpenBCICyton(object):
 		elif sys.platform.startswith('darwin'):
 			ports = glob.glob('/dev/tty.usbserial*')
 		else:
-			raise EnvironmentError('Error finding ports on your operating system')
+			raise EnvironmentError('Error finding ports on your operating system. ')
 		openbci_port = ''
 		for port in ports:
 			try:
@@ -868,7 +862,7 @@ class OpenBCICyton(object):
 			except (OSError, serial.SerialException):
 				pass
 		if openbci_port == '':
-			raise OSError('Cannot find OpenBCI port')
+			raise OSError('Cannot find OpenBCI port. ')
 		else:
 			return openbci_port
 
