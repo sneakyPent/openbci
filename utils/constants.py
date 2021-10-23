@@ -228,3 +228,11 @@ class Constants:
 	frames_ch[2] = [9, 9]  # for frequency=3.33 Hz
 	frames_ch[3] = [7, 7]  # for frequency=4.28 Hz
 	harmonics_num = 2
+
+	""" Logging """
+	padding = ' '
+	loggerName = 'cytonLogger'
+	logsDirectory = '../logs/'
+	logFilename = logsDirectory + 'cytonBoard__' + time.strftime("%d-%m-%Y__%H-%M-%S") + '.log'
+	logFileHandlerFormat = "[%(asctime)s] [%(levelname)-8s] (%(filename)s:%(lineno)s) -- %(message)s"
+	logStreamHandlerFormat = "[%(levelname)-8s]  %(message)s"
