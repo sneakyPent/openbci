@@ -204,6 +204,7 @@ class GUI(QMainWindow):
 	def initMenuBar(self):
 		self.menubar.setFont(self.font)
 		# Menu Bar options
+		boardInfo = QAction('&Board Info', self)
 		startStreamAction = QAction('&Start streaming', self)
 		stopStreamAction = QAction('Sto&p streaming', self)
 		connectAction = QAction('&Connect', self)
@@ -215,9 +216,19 @@ class GUI(QMainWindow):
 		fftPlotAction = QAction('FFT', self)
 		linearPlotAction = QAction('Linear', self)
 		graphs.addActions([timeSeriesPlotAction, fftPlotAction, linearPlotAction])
+		tests = self.menubar.addMenu('Tests')
+		connectToInternalGND = QAction("Connecting all pins to ground", self)
+		connectToDCSignal = QAction("Connecting all pins to Vcc", self)
+		connectingPinsToLowFrequency1xAmpSignal = QAction("Connecting pins to low frequency 1x amp signal", self)
+		connectingPinsToHighFrequency1xAmpSignal = QAction("Connecting pins to high frequency 1x amp signal", self)
+		connectingPinsToLowFrequency2xAmpSignal = QAction("Connecting pins to low frequency 2x amp signal", self)
+		connectingPinsToHighFrequency2xAmpSignal = QAction("Connecting pins to high frequency 2x amp signal", self)
+		tests.addActions([connectToInternalGND, connectToDCSignal, connectingPinsToLowFrequency1xAmpSignal,
+		                  connectingPinsToHighFrequency1xAmpSignal, connectingPinsToLowFrequency2xAmpSignal,
+		                  connectingPinsToHighFrequency2xAmpSignal])
 		self.menubar.addActions(
-			[startStreamAction, stopStreamAction, connectAction, disconnectAction, quitting])
-
+			[boardInfo, startStreamAction, stopStreamAction, connectAction, disconnectAction, quitting])
+		boardInfo.triggered.connect(self.printBoardInfo)
 		startStreamAction.triggered.connect(self.startStreaming)
 		stopStreamAction.triggered.connect(self.stopStreaming)
 		connectAction.triggered.connect(self.connectBoard)
@@ -227,6 +238,13 @@ class GUI(QMainWindow):
 		timeSeriesPlotAction.triggered.connect(self.addTimeSeriesPlot)
 		fftPlotAction.triggered.connect(self.addFFTPlot)
 		linearPlotAction.triggered.connect(self.addLinearPlot)
+
+		connectToInternalGND.triggered.connect(lambda: self.startTest(0))
+		connectToDCSignal.triggered.connect(lambda: self.startTest(1))
+		connectingPinsToLowFrequency1xAmpSignal.triggered.connect(lambda: self.startTest(2))
+		connectingPinsToHighFrequency1xAmpSignal.triggered.connect(lambda: self.startTest(3))
+		connectingPinsToLowFrequency2xAmpSignal.triggered.connect(lambda: self.startTest(4))
+		connectingPinsToHighFrequency2xAmpSignal.triggered.connect(lambda: self.startTest(5))
 
 		# self.resize(1500, 800)
 		self.resize(1000, 100)
@@ -583,6 +601,13 @@ class GUI(QMainWindow):
 					ps = data_processed_freq_6[w]
 					self.channelFftWidget.clear()
 					self.channelFftWidget.plot(pen=colors[w], label=lb[w]).setData(freqs3[idx3], ps[idx3])
+
+	def startTest(self, signal):
+		print(signal)
+		self.board.test_signal(signal)
+
+	def printBoardInfo(self):
+		self.board.print_register_settings()
 
 
 def startGUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
