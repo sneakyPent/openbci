@@ -17,19 +17,16 @@ def windowing(board, windowingBuf, windowedData, newDataAvailable, _shutdownEven
 	:param Event writeDataEvent: Event that it is set only when streaming data written into a file.
 	:return: None
 	"""
-	windowCounter = 0
-	currentWindowList = []
 	while not _shutdownEvent.is_set():
 		if not board.isStreaming() and not writeDataEvent.is_set():
 			emptyQueue(windowedData)
+			windowCounter = 0
 			currentWindowList = []
-		newDataAvailable.wait(1)
 		# the desired package-window size (windowSize*sampleRate) EG: 1*250
 		window = board.getWindow()
 		# the desired step size for each package
 		step = board.getWindowStep()
-		if not board.isStreaming():
-			currentWindowList = []
+		newDataAvailable.wait(1)
 		if newDataAvailable.is_set():
 			while not windowingBuf.empty():
 				dt = windowingBuf.get()
