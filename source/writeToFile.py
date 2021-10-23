@@ -1,10 +1,7 @@
-import traceback
-
+import logging
 import h5py
 import numpy as np
-
-from utils.coloringPrint import printInfo, printError, printWarning
-from utils.constants import getSessionFilename
+from utils.constants import Constants as cnst, getSessionFilename
 
 
 def writing(board, writeBuf, windowedData, writeDataEvent, _shutdownEvent):
@@ -24,34 +21,35 @@ def writing(board, writeBuf, windowedData, writeDataEvent, _shutdownEvent):
 
 	:return: None
 	"""
+	logger = logging.getLogger(cnst.loggerName)
 	while not _shutdownEvent.is_set():
 		writeDataEvent.wait(1)
 		if writeDataEvent.is_set():
-			printInfo('Start writing data into file...')
+			logger.info('Start writing data into file...')
 			signal = []
 			windowedSignal = []
 			filename = getSessionFilename(training=board.isTrainingMode())
 			hf = h5py.File(filename + '.hdf5', 'w')
-			printWarning('signal buffer size: ' + writeBuf.qsize().__str__())
+			logger.info('signal buffer size: ' + writeBuf.qsize().__str__())
 			while not writeBuf.qsize() == 0:
 				dt = writeBuf.get()
 				signal.append(dt)
 			signal = np.array(signal).astype(float)
 			hf.create_dataset("signal", data=signal)
-			printInfo("Finish with signal")
-			printWarning('windowData buffer size: ' + windowedData.qsize().__str__())
+			logger.info("Finish with signal")
+			logger.info('windowData buffer size: ' + windowedData.qsize().__str__())
 			while not windowedData.qsize() == 0:
 				dt = windowedData.get()
 				windowedSignal.append(dt)
 			windowedSignal = np.array(windowedSignal).astype(float)
 			hf.create_dataset("packages", data=windowedSignal)
-			printInfo("Finish with windowed signal")
+			logger.info("Finish with windowed signal")
 			utf8_type = h5py.string_dtype('utf-8', 100)
 			boardSettings = np.array(list(board.getBoardSettings().items()), dtype=utf8_type)
-			hf.create_dataset("settings", data=boardSettings)
-			printInfo("Finish with settings")
+			hf.create_dataset("StreamSettings", data=boardSettings)
+			logger.info("Finish with settings")
 			hf.close()
 			writeDataEvent.clear()
-			printInfo('Data save in ' + filename)
+			logger.info('Data save in ' + filename)
 		if _shutdownEvent.is_set():
 			break
