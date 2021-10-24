@@ -9,3 +9,4 @@ openbci
 
    source
    utils
+   classification
