@@ -32,9 +32,9 @@ def connectTraining(board, boardApiCallEvents, startTrainingEvent, trainingClass
 	* When the connection could not be established then wait for 10 sec and then retrying.
 
 	:param OpenBCICyton board: Represents the OpenBCICyton object created from :py:class:`source.UIManager`.
-	:param boardApiCallEvents: Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
-	:param startTrainingEvent: Event for which this method will be waiting. This Event is set only by the :py:meth:`source.pyGUI.GUI.trainingButtonClick`
-	:param trainingClassBuffer: Buffer used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`.
+	:param [Event] boardApiCallEvents: Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
+	:param Event startTrainingEvent: Event for which this method will be waiting. This Event is set only by the :py:meth:`source.pyGUI.GUI.trainingButtonClick`
+	:param Queue trainingClassBuffer: Buffer used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`.
 	:param Event socketConnection: Used as flag so the main process :py:meth:`source.training.startTraining` can proceed to start the streaming and the training application.
 	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
@@ -68,7 +68,7 @@ def connectTraining(board, boardApiCallEvents, startTrainingEvent, trainingClass
 
 					# 1st communication with Quest
 					bytes_received = c.recv(1024)  # received bytes
-					print(bytes_received.decode("utf-8"))
+					logger.info(bytes_received.decode("utf-8"))
 
 					# Send "True" string to start the Quest app
 					nn_output = "True"
@@ -113,11 +113,11 @@ def connectTraining(board, boardApiCallEvents, startTrainingEvent, trainingClass
 def startTrainingApp(boardApiCallEvents, socketConnection, _shutdownEvent):
 	"""
 	* waits until socketConnection get set by :py:meth:`source.training.connectTraining`
-	* Executes the unity target executable given in :data:`utils.constants.Constants.unityExePath`
+	* Executes the unity target executable given in :data:`utils.constants.Constants.trainingUnityExePath`
 	* Stop streaming after exiting unity target, via boardApiCallEvents
 
 	:param boardApiCallEvents: Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
-	:param Event socketConnection: Used as flag so the main process :py:meth:`source.training.startTraining` can proceed to start the streaming and the training application.
+	:param Event socketConnection: Used as flag so the method can proceed to start the training application.
 	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
 	"""
@@ -138,7 +138,7 @@ def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
 		1. socketProcess runs :py:meth:`source.training.connectTraining`
 		2. startTRainingApp :py:meth:`source.training.startTrainingApp`
 
-	:param OpenBCICyton board: Represents the OpenBCICyton class
+	:param OpenBCICyton board: Represents the OpenBCICyton object created from :py:class:`source.UIManager`.
 	:param Event startTrainingEvent: Event for which socketProcess will be waiting, This Event is set only by the :py:meth:`source.pyGUI.GUI.trainingButtonClick`
 	:param [Event] boardApiCallEvents:  Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
 	:param Event _shutdownEvent: Event used to know when to let every running process terminate
