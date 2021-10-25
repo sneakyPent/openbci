@@ -198,9 +198,10 @@ def onlineProcessing(board, windowedDataBuffer, predictBuffer, socketConnection,
 				segment_filt = butter_bandpass_filter(segment, lowcut, highcut, fs, order=10)  # filter the data
 				r_segment = calculate_cca_correlations(segment_filt, fs, frames_ch,
 				                                       harmonics_num)  # calculate cca correlations
-				command_predicted = clf.predict(r_segment)  # predict
+				tmp_command_predicted = clf.predict(r_segment)  # predict
 				# print("Processing", command_buffer.qsize())
-
+				command_predicted = int(tmp_command_predicted[0])
+				logger.critical(command_predicted)
 				predictBuffer.put(command_predicted)
 	emptyQueue(predictBuffer)
 
