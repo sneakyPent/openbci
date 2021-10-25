@@ -241,6 +241,12 @@ class Constants:
 	target3Class_FORWARD = 2
 	target3Class_LEFT = 3
 	target3Class_RIGHT = 4
+	# keyBoardCommands
+	keyboardKey_STOP = 'space'
+	keyboardKey_FORWARD = 'w'
+	keyboardKey_BACK = 's'
+	keyboardKey_RIGHT = 'a'
+	keyboardKey_LEFT = 'd'
 	#  Commands
 	onlineStreamingCommands_STOP = '{"c":"xy","x":0,"y":0}\r\n'
 	onlineStreamingCommands_REDUCE_SPEED_1 = '{"c":"xy","x":0,"y":20}\r\n'
@@ -263,6 +269,22 @@ class Constants:
 		target3Class_RIGHT: onlineStreamingCommands_RIGHT,
 		target3Class_FORWARD: onlineStreamingCommands_FORWARD
 
+	}
+	keyBoardCommands = {
+		keyboardKey_STOP: onlineStreamingCommands_STOP,
+		keyboardKey_FORWARD: onlineStreamingCommands_FORWARD,
+		keyboardKey_BACK: onlineStreamingCommands_BACK,
+		keyboardKey_RIGHT: onlineStreamingCommands_RIGHT,
+		keyboardKey_LEFT: onlineStreamingCommands_LEFT
+	}
+	commandsTranslationForDebug = {
+		onlineStreamingCommands_STOP: 'STOP',
+		onlineStreamingCommands_REDUCE_SPEED_1: 'REDUCE_SPEED_1',
+		onlineStreamingCommands_REDUCE_SPEED_2: 'REDUCE_SPEED_2',
+		onlineStreamingCommands_LEFT: 'LEFT',
+		onlineStreamingCommands_RIGHT: 'RIGHT',
+		onlineStreamingCommands_BACK: 'BACK',
+		onlineStreamingCommands_FORWARD: 'FORWARD'
 	}
 	online_connection_serial = '{"c":"input","d":"usb"}\r\n'
 	online_info_usb = '"input":"usb"'
