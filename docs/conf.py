@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.abspath('../'))
 # -- Project information -----------------------------------------------------
 
 project = 'OpenBCI'
-copyright = '2021, nikolas zacharioudakis'
-author = 'nikolas zacharioudakis'
+copyright = '2021, Nikolas Zacharioudakis'
+author = 'Nikolas Zacharioudakis'
 
 
 # -- General configuration ---------------------------------------------------
