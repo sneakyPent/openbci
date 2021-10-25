@@ -9,7 +9,8 @@ This module used only for the online session and in order to run it needs the un
 		* :py:meth:`source.online.startOnline`
 
 """
-import queue
+
+import logging
 import socket
 import subprocess
 import os
@@ -58,17 +59,18 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
 	"""
+	logger = logging.getLogger(cnst.loggerName)
 	while not _shutdownEvent.is_set():
 		startOnlineEvent.wait(1)
 		if startOnlineEvent.is_set():
 			if not board.isConnected():
-				printError('Could not start straining without connected Board.')
+				logger.warning('Could not start online session without connected Board.')
 				startOnlineEvent.clear()
 				continue
 			# create socket
 			s = socket.socket()
 			socket.setdefaulttimeout(None)
-			printInfo('socket created')
+			logger.info('Socket created')
 			# IP and PORT connection
 			port = 8080
 			while not socketConnection.is_set():
@@ -76,15 +78,15 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 					# s.bind(('139.91.190.32', port)) #local host
 					s.bind(('127.0.0.1', port))  # local host
 					s.listen(30)  # listening for connection for 30 sec?
-					printInfo('Socket listening ... ')
+					logger.info('Socket listening ... ')
 					# try:
 					socketConnection.set()
 					c, addr = s.accept()  # when port connected
-					printWarning('Got connection from ' + addr.__str__())
+					logger.info('Got connection from ' + addr.__str__())
 
 					# 1st communication with Quest
 					bytes_received = c.recv(1024)  # received bytes
-					print(bytes_received.decode("utf-8"))
+					logger.info(bytes_received.decode("utf-8"))
 
 					# Send "True" string to start the Quest app
 					nn_output = "True"
@@ -123,11 +125,11 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 					c.close()
 					break
 				except socket.error as error:
-					print(error.__str__() + '. Wait for 10 seconds before trying again')
+					logger.warning(error.__str__() + '. Wait for 10 seconds before trying again')
 					time.sleep(10)
 					pass
 				except SocketConnectionError:
-					printError('SocketConnection problem')
+					logger.error('SocketConnection problem')
 					c.shutdown(socket.SHUT_RDWR)
 					socketConnection.clear()
 					c.close()
@@ -315,11 +317,20 @@ def managePredict(_shutdownEvent, predictBuffer, socketConnection):
 				print(int(dt).__str__())
 
 
-def wheel_serial(_shutdownEvent, socketConnection, command_buffer, usb_port_, emergency_arduino,
-                 target3_=False):
-	# wait = 0
-	# while socketConnection.is_set():
-	# 	wait = 1
+def wheelSerialPredict(_shutdownEvent, socketConnection, command_buffer, usb_port_, emergency_arduino,
+                       target3_=False):
+	"""
+	Connects with the wheelchair and send the commands through the given serial port = :py:attr:`usb_port_`.
+
+	:param Event socketConnection: Used as flag so the method can proceed to start the online application.
+	:param Queue command_buffer: Buffer used for communicating and getting the predicted data to :py:meth:`source.online.onlineProcessing`.
+	:param str usb_port_: Name of the port, the wheelchair use for connection. (Windows: COMx, linux: /dev/ttyUSBx)
+	:param emergency_arduino:
+	:param bool target3_: When True, means that it will be used the unity with 3 targets for the session.
+	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
+
+	"""
+	logger = logging.getLogger(cnst.loggerName)
 	while not _shutdownEvent.is_set():
 		socketConnection.wait(1)
 		if socketConnection.is_set():
@@ -346,6 +357,7 @@ def wheel_serial(_shutdownEvent, socketConnection, command_buffer, usb_port_, em
 					mode = 6
 
 				cmd_old = 0
+				logger.info("Start wheel")
 				while not _shutdownEvent.is_set() and socketConnection.is_set():
 					if not command_buffer.empty():
 						data = command_buffer.get_nowait()  # get the command and translate into move
@@ -507,7 +519,7 @@ def wheel_serial(_shutdownEvent, socketConnection, command_buffer, usb_port_, em
 				print("End wheel")
 				myfile.close()
 			except serial.SerialException:
-				print("Problem connecting to serial device.")
+				logger.warning("Problem connecting to serial device.")
 				while not command_buffer.empty():
 					command_buffer.get_nowait()
 				myfile.close()
