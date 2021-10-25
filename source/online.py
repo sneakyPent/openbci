@@ -14,6 +14,7 @@ import logging
 import socket
 import subprocess
 import os
+from multiprocessing.managers import SyncManager
 from threading import Event
 import time
 from multiprocessing import Process, Event, Queue
@@ -567,7 +568,9 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	procList = []
 	socketConnection = Event()
 	socketConnection.clear()
-	predictBuffer = Queue(maxsize=100)
+	mngr = SyncManager()
+	mngr.start()
+	predictBuffer = mngr.Queue(maxsize=100)
 
 	# Create the process needed
 	socketProcess = Process(target=socketConnect,
@@ -595,3 +598,4 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	# join processes
 	for proc in procList:
 		proc.join()
+	emptyQueue(predictBuffer)
