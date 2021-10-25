@@ -35,7 +35,7 @@ class Error(Exception):
 
 
 class SocketConnectionError(Error):
-	"""Raised when the input value is too large"""
+	"""Raised when there is a problem with the socket connection"""
 	pass
 
 
