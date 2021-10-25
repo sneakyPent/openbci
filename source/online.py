@@ -226,111 +226,58 @@ def debugPredict(predictBuffer, socketConnection, _shutdownEvent, predictionAvai
 	while not _shutdownEvent.is_set():
 		socketConnection.wait(1)
 		if socketConnection.is_set():
-			command = '{"c":"xy","x":0,"y":0}\r\n'
+			command = cnst.onlineStreamingCommands_STOP
 			fileName = getSessionFilename(online=True)
 			try:
-				# why using cancel join thread ???????????
-				predictBuffer.cancel_join_thread()
 				myfile = open(fileName, 'w')
-				# define the number of targets to send the right commands
-				if target3_:
-					mode = 5
-				else:
-					mode = 6
-
 				cmd_old = 0
 				while not _shutdownEvent.is_set() and socketConnection.is_set():
-					if not predictBuffer.empty():
+					predictionAvailableEvent.wait(0.5)
+					if predictionAvailableEvent.is_set():
 						data = predictBuffer.get_nowait()  # get the command and translate into move
 						# sut the "stop" between commands
-						if not cmd_old == 0 and data == 0:
+						if not cmd_old == cnst.target4Class_STOP and data == cnst.target4Class_STOP:
 							temp = data
 							data = cmd_old
 							cmd_old = temp
 						else:
 							cmd_old = data
 
-						if data == 0:
-
-							if command == '{"c":"xy","x":0,"y":45}\r\n':  # if previous_command == forward
+						if data == cnst.target4Class_STOP:
+							if command == cnst.onlineStreamingCommands_FORWARD:  # if previous_command == forward
+								temp_command = cnst.onlineStreamingCommands_REDUCE_SPEED_1  # reduce the speed
+								command = temp_command
 								print("I reduce once my speed")
-								temp_command = '{"c":"xy","x":0,"y":20}\r\n'  # reduce the speed
 								myfile.write("I reduce once my speed" + '\n')
-								command = temp_command
 
-							elif command == '{"c":"xy","x":0,"y":20}\r\n':
+							elif command == cnst.onlineStreamingCommands_REDUCE_SPEED_1:
+								temp_command = cnst.onlineStreamingCommands_REDUCE_SPEED_2  # reduce the speed
+								command = temp_command
 								print("I reduce twice my speed")
-								temp_command = '{"c":"xy","x":0,"y":10}\r\n'  # reduce the speed
 								myfile.write("I reduce twice my speed" + '\n')
-								command = temp_command
 							else:
-								print("Stop: " + stop)
-								myfile.write("Stop: " + stop)
-								command = stop
+								command = cnst.onlineStreamingCommands_STOP
+								print("Stop: " + command)
+								myfile.write("Stop: " + command)
 
 							sleep(0.08)  # delay before the next command
-						elif data == 1:
-							# ......if interface is a square.........
-							print("Left: " + left)
-							myfile.write("Left: " + left)
-							# print("left")
-							command = left
-						elif data == 2:
-							if mode == 6:
-								# ......if interface is a cross or a square.........
-								print("Right: " + right)
-								myfile.write("Right: " + right)
-								# print("right")
-								command = right
-							else:
-								print("Forward: " + forward)
-								myfile.write("Forward: " + forward)
-								# print("back")
-								command = forward
-						elif data == 3:
-							if mode == 6:
-								# ......if interface is a square.........
-								print("Back: " + back)
-								myfile.write("Back: " + back)
-								# print("back")
-								command = back
-							else:
-								print("Left: " + left)
-								myfile.write("Left: " + left)
-								# print("left")
-								command = left
-						elif data == 4:
-							if mode == 6:
-								#  ...... if interface is a square ......
-								print("Forward: " + forward)
-								myfile.write("Forward: " + forward)
-								command = forward
-							else:
-								print("Right: " + right)
-								myfile.write("Right: " + right)
-								command = right
 						else:
-							print("Stop: " + stop)
-							myfile.write("Stop: " + stop)
-							command = stop
-
+							command = getClassCommand(data, target3_)
+							print(command)
+							myfile.write(data.__str__() + '. ->' + command.__str__())
 							sleep(0.08)  # delay before the next command
-
-				print("Stop: " + stop)
-				myfile.write("Stop: " + stop)
-				while not predictBuffer.empty():
-					predictBuffer.get_nowait()
+					else:
+						print(command)
+						myfile.write(data.__str__() + '. ->' + command.__str__())
+						sleep(0.08)  # delay before the next command
+				print("Stop: " + cnst.onlineStreamingCommands_STOP)
 				print("End wheel")
-				myfile.write("End wheel")
+				myfile.write("Stop: " + cnst.onlineStreamingCommands_STOP + "\nEnd wheel")
 				myfile.close()
+				emptyQueue(predictBuffer)
 			except serial.SerialException:
-				print("Problem connecting to serial device.")
-				while not predictBuffer.empty():
-					predictBuffer.get_nowait()
-				myfile.close()
-			while not predictBuffer.qsize() == 0:
-				dt = predictBuffer.get()[0]
-				print(int(dt).__str__())
+				logger.warning("Problem connecting to serial device.")
+				emptyQueue(predictBuffer)
 
 
 def getClassCommand(commandClass, target3_):
