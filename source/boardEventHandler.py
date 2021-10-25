@@ -66,7 +66,7 @@ class BoardEventHandler:
 					try:
 						self.board.connect()
 					except OSError as er:
-						self.logger.error(msg=er.__str__() + "Make sure board is properly connected and enabled.")
+						self.logger.warning(msg=er.__str__() + "Make sure board is properly connected and enabled.")
 				else:
 					self.logger.warning("Already have a connection!")
 				self.connectEvent.clear()
