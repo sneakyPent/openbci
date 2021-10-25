@@ -317,6 +317,19 @@ def managePredict(_shutdownEvent, predictBuffer, socketConnection):
 				print(int(dt).__str__())
 
 
+def getClassCommand(commandClass, target3_):
+	"""
+	For given class, returns the command using either :py:const:`utils.constants.Constants.class4Switcher` or :py:const:`utils.constants.Constants.class3Switcher`
+
+	:param int commandClass: The unity class, to get the wheel command.
+	:param bool target3_: True, only if the 3 target unity application will be used, defaults to False.
+
+	:return str: The command for the wheel depends on the :py:attr:`target3_` and :py:attr:`commandClass`
+	"""
+	return cnst.class4Switcher.get(commandClass, cnst.onlineStreamingCommands_STOP) \
+		if not target3_ else cnst.class3Switcher.get(commandClass, cnst.onlineStreamingCommands_STOP)
+
+
 def wheelSerialPredict(_shutdownEvent, socketConnection, command_buffer, usb_port_, emergency_arduino,
                        target3_=False):
 	"""
