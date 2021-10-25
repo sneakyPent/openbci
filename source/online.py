@@ -227,9 +227,9 @@ def debugPredict(predictBuffer, socketConnection, _shutdownEvent, predictionAvai
 		socketConnection.wait(1)
 		if socketConnection.is_set():
 			command = cnst.onlineStreamingCommands_STOP
-			fileName = getSessionFilename(online=True)
+			data = cnst.target4Class_STOP
 			try:
-				myfile = open(fileName, 'w')
+				myfile = open(getSessionFilename(online=True), 'w')
 				cmd_old = 0
 				while not _shutdownEvent.is_set() and socketConnection.is_set():
 					predictionAvailableEvent.wait(0.5)
@@ -245,14 +245,12 @@ def debugPredict(predictBuffer, socketConnection, _shutdownEvent, predictionAvai
 
 						if data == cnst.target4Class_STOP:
 							if command == cnst.onlineStreamingCommands_FORWARD:  # if previous_command == forward
-								temp_command = cnst.onlineStreamingCommands_REDUCE_SPEED_1  # reduce the speed
-								command = temp_command
+								command = cnst.onlineStreamingCommands_REDUCE_SPEED_1  # reduce the speed
 								print("I reduce once my speed")
 								myfile.write("I reduce once my speed" + '\n')
 
 							elif command == cnst.onlineStreamingCommands_REDUCE_SPEED_1:
-								temp_command = cnst.onlineStreamingCommands_REDUCE_SPEED_2  # reduce the speed
-								command = temp_command
+								command = cnst.onlineStreamingCommands_REDUCE_SPEED_2  # reduce the speed
 								print("I reduce twice my speed")
 								myfile.write("I reduce twice my speed" + '\n')
 							else:
