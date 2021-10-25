@@ -229,6 +229,50 @@ class Constants:
 	frames_ch[3] = [7, 7]  # for frequency=4.28 Hz
 	harmonics_num = 2
 
+	""" online Streaming Commands """
+	# 4 target classes
+	target4Class_STOP = 0
+	target4Class_LEFT = 1
+	target4Class_RIGHT = 2
+	target4Class_BACK = 3
+	target4Class_FORWARD = 4
+	# 3 target classes
+	target3Class_STOP = 0
+	target3Class_FORWARD = 2
+	target3Class_LEFT = 3
+	target3Class_RIGHT = 4
+	#  Commands
+	onlineStreamingCommands_STOP = '{"c":"xy","x":0,"y":0}\r\n'
+	onlineStreamingCommands_REDUCE_SPEED_1 = '{"c":"xy","x":0,"y":20}\r\n'
+	onlineStreamingCommands_REDUCE_SPEED_2 = '{"c":"xy","x":0,"y":10}\r\n'
+	onlineStreamingCommands_LEFT = '{"c":"xy","x":-40,"y":0}\r\n'
+	onlineStreamingCommands_RIGHT = '{"c":"xy","x":40,"y":0}\r\n'
+	onlineStreamingCommands_BACK = '{"c":"xy","x":0,"y":-45}\r\n'
+	onlineStreamingCommands_FORWARD = '{"c":"xy","x":0,"y":45}\r\n'
+	#  commands Dictionary
+	class4Switcher = {
+		target4Class_STOP: onlineStreamingCommands_STOP,
+		target4Class_LEFT: onlineStreamingCommands_LEFT,
+		target4Class_RIGHT: onlineStreamingCommands_RIGHT,
+		target4Class_BACK: onlineStreamingCommands_BACK,
+		target4Class_FORWARD: onlineStreamingCommands_FORWARD
+	}
+	class3Switcher = {
+		target3Class_STOP: onlineStreamingCommands_STOP,
+		target3Class_LEFT: onlineStreamingCommands_LEFT,
+		target3Class_RIGHT: onlineStreamingCommands_RIGHT,
+		target3Class_FORWARD: onlineStreamingCommands_FORWARD
+
+	}
+	online_connection_serial = '{"c":"input","d":"usb"}\r\n'
+	online_info_usb = '"input":"usb"'
+	online_info_wifi = '"input":"wifi"'
+	online_connection_wifi = '{"c":"input","d":"wifi"}\r\n'
+	online_info = '{"c":"info"}\r\n'
+	online_x = '{"c":"ping"}\r\n'
+	online_speed = '{"c":"speed_s", "d":"-"}\r\n'
+	online_power_off = '{"c":"power_off"}\r\n'
+
 	""" Logging """
 	padding = ' '
 	loggerName = 'cytonLogger'

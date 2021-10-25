@@ -27,20 +27,6 @@ from utils.filters import *
 from classification.train_processing_cca_3 import calculate_cca_correlations
 from utils.general import emptyQueue
 
-forward = '{"c":"xy","x":0,"y":45}\r\n'
-back = '{"c":"xy","x":0,"y":-45}\r\n'
-right = '{"c":"xy","x":40,"y":0}\r\n'
-left = '{"c":"xy","x":-40,"y":0}\r\n'
-stop = '{"c":"xy","x":0,"y":0}\r\n'
-connection_serial = '{"c":"input","d":"usb"}\r\n'
-info_usb = '"input":"usb"'
-info_wifi = '"input":"wifi"'
-connection_wifi = '{"c":"input","d":"wifi"}\r\n'
-info = '{"c":"info"}\r\n'
-x = '{"c":"ping"}\r\n'
-speed = '{"c":"speed_s", "d":"-"}\r\n'
-power_off = '{"c":"power_off"}\r\n'
-
 
 class Error(Exception):
 	"""Base class for other exceptions"""
