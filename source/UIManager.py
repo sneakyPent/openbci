@@ -101,6 +101,7 @@ def uiManager():
 	newDataAvailable = Event()
 	startTrainingEvent = Event()
 	startOnlineEvent = Event()
+	newWindowAvailable = Event()
 
 	# catch keyboardinterupt exception and just set shutdownEvent
 	signal.signal(signal.SIGINT, signal_handler)
@@ -158,7 +159,7 @@ def uiManager():
 		# create Process for the windowing data
 		windowingProcess = Process(target=windowing, name='windowing',
 		                           args=(board, windowingBuffer, windowedDataBuffer, newDataAvailable, shutdownEvent,
-		                                 writeDataEvent))
+		                                 writeDataEvent, newWindowAvailable))
 		processesList.append(windowingProcess)
 
 		# create Process for connecting to unity program socket
