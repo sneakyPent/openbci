@@ -206,8 +206,11 @@ def onlineProcessing(board, windowedDataBuffer, predictBuffer, socketConnection,
 	emptyQueue(predictBuffer)
 
 
-def managePredict(_shutdownEvent, predictBuffer, socketConnection):
-	target3_ = False
+def debugPredict(predictBuffer, socketConnection, _shutdownEvent, target3_=False):
+	"""
+	Same logic as :py:meth:`source.online.wheelSerialPredict`. Used for debug purposes, testing without connection with a wheelchair
+	"""
+	logger = logging.getLogger(cnst.loggerName)
 	while not _shutdownEvent.is_set():
 		socketConnection.wait(1)
 		if socketConnection.is_set():
