@@ -569,20 +569,22 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	# Create the process needed
 	socketProcess = Process(target=socketConnect,
 	                        args=(board, boardApiCallEvents, socketConnection, startOnlineEvent, _shutdownEvent,))
-	applicationProcess = Process(target=startTargetApp, args=(_shutdownEvent, socketConnection,))
+	applicationProcess = Process(target=startTargetApp, args=(socketConnection, _shutdownEvent,))
 	onlineProcessingProcess = Process(target=onlineProcessing,
-	                                  args=(board, _shutdownEvent, windowedDataBuffer,
-	                                        predictBuffer, socketConnection,))
-	managePredictProcess = Process(target=managePredict,
-	                               args=(_shutdownEvent, predictBuffer, socketConnection,))
-	wheelProcess = Process(target=wheel_serial,
-	                       args=(_shutdownEvent, socketConnection, predictBuffer, 'COM4', None, None))
+	                                  args=(board, windowedDataBuffer, predictBuffer,
+	                                        socketConnection, _shutdownEvent,))
+	debugPredictProcess = Process(target=debugPredict,
+	                              args=(predictBuffer, socketConnection, _shutdownEvent,))
+	wheelSerialPredictProcess = Process(target=wheelSerialPredict,
+	                                    args=(_shutdownEvent, socketConnection, predictBuffer, 'COM4', None, None))
 
 	procList.append(socketProcess)
 	procList.append(applicationProcess)
 	procList.append(onlineProcessingProcess)
-	procList.append(managePredictProcess)
-	# procList.append(wheelProcess)
+	if debugMode:
+		procList.append(debugPredictProcess)
+	else:
+		procList.append(wheelSerialPredictProcess)
 
 	for proc in procList:
 		proc.start()
