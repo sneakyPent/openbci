@@ -1,16 +1,19 @@
 """
-Consist of 3 method
-	* connectTraining
-	* startTrainingApp
-	* startTraining
-
-used only for the training and in order to run it needs the unity target executable.
+This module used only for the online session and in order to run it needs the unity target executable.
+	Consist of 6 main methods:
+		* :py:meth:`source.online.socketConnect`
+		* :py:meth:`source.online.startTargetApp`
+		* :py:meth:`source.online.onlineProcessing`
+		* :py:meth:`source.online.debugPredict`
+		* :py:meth:`source.online.wheelSerialPredict`
+		* :py:meth:`source.online.startOnline`
 
 """
 import queue
 import socket
 import subprocess
 import os
+from threading import Event
 import time
 from multiprocessing import Process, Event, Queue
 
@@ -18,7 +21,7 @@ import joblib
 import json
 from time import sleep
 import serial
-from utils.coloringPrint import printError, printInfo, printWarning
+from source import OpenBCICyton
 from utils.constants import Constants as cnst, getSessionFilename
 from utils.filters import *
 from classification.train_processing_cca_3 import calculate_cca_correlations
@@ -51,20 +54,22 @@ class SocketConnectionError(Error):
 
 def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent, _shutdownEvent):
 	"""
+	Its the only method runs immediately via :py:meth:`source.online.startOnline` and waits for :py:attr:`startOnlineEvent`
+
 	* Responsible
 
-		* to create a socket communication with the target executable.
-		* to receive the training class byte from the open connection.
-		* to put the receiving byte into trainingClassBuffer parameter.
-		* to set the socketConnection event, only if socket connection established. When set,  the :py:meth:`source.training.startTrainingApp` process and the :py:meth:`source.boardEventHandler.BoardEventHandler.startStreaming` can be start.
+		* to create a socket communication with the target executable. By the time the connection's been established, it sets the :py:attr:`socketConnection`.
+		* to start streaming through :py:attr:`boardApiCallEvents`, only if it receives the :py:const:`utils.constants.Constants.onlineUnitySentByte` by socket connection.
+		* to stop streaming through :py:attr:`boardApiCallEvents`, only if it receives "E" or ""  by socket connection.
+
 
 	* When the connection could not be established then wait for 10 sec and then retrying.
 
-	:param OpenBCICyton board: Represents the OpenBCICyton class
-	:param [Event] boardApiCallEvents:
-	:param Event socketConnection:
-	:param Event startOnlineEvent:
-	:param Event _shutdownEvent:
+	:param OpenBCICyton board: Represents the OpenBCICyton object created from :py:class:`source.UIManager`.
+	:param list[Event] boardApiCallEvents: Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
+	:param Event socketConnection: Used as flag so the processes :py:meth:`source.online.startTargetApp` :py:meth:`source.online.onlineProcessing` :py:meth:`source.online.debugPredict` :py:meth:`source.online.wheelSerialPredict` can proceed.
+	:param Event startOnlineEvent: Event for which this method will be waiting. This Event is set only by the :py:meth:`source.pyGUI.GUI.onlineButtonClick`
+	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
 	"""
 	while not _shutdownEvent.is_set():
@@ -144,12 +149,15 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 			startOnlineEvent.clear()
 
 
-def startTargetApp(_shutdownEvent, socketConnection):
+def startTargetApp(socketConnection, _shutdownEvent):
 	"""
-	Simple method, that only executes the unity target executable given in :data:`utils.constants.Constants.unityExePath`
+	* Waits until :py:attr:`socketConnection` get set by :py:meth:`source.training.connectTraining`
+	* Executes the unity target executable given in :data:`utils.constants.Constants.onlineUnityExePath`
+
+	:param Event socketConnection: Used as flag so the method can proceed to start the online application.
+	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
 	"""
-	print(os.getpid())
 	while not _shutdownEvent.is_set():
 		socketConnection.wait(1)
 		if socketConnection.is_set():
@@ -157,7 +165,24 @@ def startTargetApp(_shutdownEvent, socketConnection):
 				subprocess.check_call([cnst.onlineUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
 
 
-def onlineProcessing(board, _shutdownEvent, windowedDataBuffer, predictBuffer, socketConnection):
+def onlineProcessing(board, windowedDataBuffer, predictBuffer, socketConnection, _shutdownEvent):
+	"""
+
+		* waits until :py:attr:`socketConnection` get set by :py:meth:`source.training.connectTraining`
+		* loads classifier given in :py:const:`utils.constants.Constants.classifierFilename`
+		* receive a windowed signal from the :py:attr:`windowedDataBuffer`
+		* calculates the cca correlations through :py:meth:`classification.train_processing_cca_3.calculate_cca_correlations`
+		* predicts the likely target class through "joblib"
+		* pass the predicted class to :py:attr:`predictBuffer`
+
+		:param OpenBCICyton board: Represents the OpenBCICyton object created from :py:class:`source.UIManager`.
+		:param Queue windowedDataBuffer: Buffer used for communicating and getting the windowed Data data from :py:meth:`source.windowing.windowing`.
+		:param Queue predictBuffer: Buffer used for communicating and passing the predicted data to :py:meth:`source.online.wheelSerialPredict`.
+		:param Event socketConnection: Used as flag so the method can proceed to start the online application.
+		:param Event _shutdownEvent: Event used to know when to allow every running process terminate
+
+		"""
+	logger = logging.getLogger(cnst.loggerName)
 	while not _shutdownEvent.is_set():
 		socketConnection.wait(1)
 		if socketConnection.is_set():
@@ -502,21 +527,27 @@ def wheel_serial(_shutdownEvent, socketConnection, command_buffer, usb_port_, em
 				myfile.close()
 
 
-def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer):
+def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, debugMode=True):
 	"""
 	* Method runs via onlineProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process and waits for the startOnlineEvent, which is set only by the boardEventHandler.
 	* When the startOnlineEvent is set:
 
-		* Starts the socketConnect process.
-		* Starts the startTargetApp process.
-		* Starts streaming from existing connection.
+		* Starts process for:
 
-	:param OpenBCICyton board: Represents the OpenBCICyton class
-	:param Event startOnlineEvent: Event which this process will be waiting for, before starting the connectTraining, startTrainingApp processes. This Event is set only by the :py:meth:`source.pyGUI.GUI.trainingButtonClick`
+			* :py:meth:`source.online.socketConnect`
+			* :py:meth:`source.online.startTargetApp`
+			* :py:meth:`source.online.onlineProcessing`
+			* :py:meth:`source.online.debugPredict`
+			* :py:meth:`source.online.wheelSerialPredict`
+
+	:param OpenBCICyton board: Represents the OpenBCICyton object created from :py:class:`source.UIManager`.
+	:param Event startOnlineEvent: Event which this process will be waiting for, before starting the above processes. This Event is set only by the :py:meth:`source.pyGUI.GUI.onlineButtonClick`
 	:param [Event] boardApiCallEvents:  Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
 	:param Event _shutdownEvent: Event used to know when to let every running process terminate
 	:param Queue windowedDataBuffer: Buffer will be used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
+	:param bool debugMode: When True, print messages used instead of serial connection with wheel.
+
 	"""
 	procList = []
 	socketConnection = Event()
