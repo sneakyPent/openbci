@@ -170,7 +170,8 @@ def uiManager():
 
 		# create Process for connecting to unity program socket fro online session
 		onlineProcess = Process(target=startOnline, name='online',
-		                        args=(board, startOnlineEvent, boardApiCallEvents, shutdownEvent, windowedDataBuffer))
+		                        args=(board, startOnlineEvent, boardApiCallEvents, shutdownEvent,
+		                              windowedDataBuffer, newWindowAvailable))
 		processesList.append(onlineProcess)
 
 		# start processes in the processList

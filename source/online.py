@@ -154,7 +154,8 @@ def startTargetApp(socketConnection, _shutdownEvent):
 				subprocess.check_call([cnst.onlineUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
 
 
-def onlineProcessing(board, windowedDataBuffer, predictBuffer, socketConnection, _shutdownEvent):
+def onlineProcessing(board, windowedDataBuffer, predictBuffer, socketConnection, newWindowAvailable,
+                     predictionAvailableEvent, _shutdownEvent):
 	"""
 
 		* waits until :py:attr:`socketConnection` get set by :py:meth:`source.training.connectTraining`
@@ -168,6 +169,8 @@ def onlineProcessing(board, windowedDataBuffer, predictBuffer, socketConnection,
 		:param Queue windowedDataBuffer: Buffer used for communicating and getting the windowed Data data from :py:meth:`source.windowing.windowing`.
 		:param Queue predictBuffer: Buffer used for communicating and passing the predicted data to :py:meth:`source.online.wheelSerialPredict`.
 		:param Event socketConnection: Used as flag so the method can proceed to start the online application.
+		:param Event newWindowAvailable: Event used to know when there is new window available data in :py:attr:`windowedDataBuffer` from :py:meth:`source.windowing.windowing`. It is set by :py:meth:`source.windowing.windowing`
+		:param Event predictionAvailableEvent: Event will be used to inform :py:meth:`source.online.wheelSerialPredict` that there is new data in the py:attr:`predictBuffer`.
 		:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
 		"""
@@ -203,11 +206,13 @@ def onlineProcessing(board, windowedDataBuffer, predictBuffer, socketConnection,
 				# print("Processing", command_buffer.qsize())
 				command_predicted = int(tmp_command_predicted[0])
 				logger.critical(command_predicted)
+				#  put prediction into the buffer
 				predictBuffer.put(command_predicted)
+				predictionAvailableEvent.set()
 	emptyQueue(predictBuffer)
 
 
-def debugPredict(predictBuffer, socketConnection, _shutdownEvent, target3_=False):
+def debugPredict(predictBuffer, socketConnection, _shutdownEvent, predictionAvailableEvent, target3_=False):
 	"""
 	Same logic as :py:meth:`source.online.wheelSerialPredict`. Used for debug purposes, testing without connection with a wheelchair
 	"""
@@ -543,7 +548,8 @@ def wheelSerialPredict(_shutdownEvent, socketConnection, command_buffer, usb_por
 				myfile.close()
 
 
-def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, debugMode=True):
+def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, newWindowAvailable,
+                debugMode=True):
 	"""
 	* Method runs via onlineProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process and waits for the startOnlineEvent, which is set only by the boardEventHandler.
@@ -562,6 +568,7 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	:param [Event] boardApiCallEvents:  Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
 	:param Event _shutdownEvent: Event used to know when to let every running process terminate
 	:param Queue windowedDataBuffer: Buffer will be used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
+	:param Event newWindowAvailable: Event used to know when there is new window available from :py:meth:`source.windowing.windowing`. It is set by :py:meth:`source.windowing.windowing`
 	:param bool debugMode: When True, print messages used instead of serial connection with wheel.
 
 	"""
@@ -571,16 +578,18 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	mngr = SyncManager()
 	mngr.start()
 	predictBuffer = mngr.Queue(maxsize=100)
+	predictionAvailableEvent = Event()
+	predictionAvailableEvent.clear()
 
 	# Create the process needed
 	socketProcess = Process(target=socketConnect,
 	                        args=(board, boardApiCallEvents, socketConnection, startOnlineEvent, _shutdownEvent,))
 	applicationProcess = Process(target=startTargetApp, args=(socketConnection, _shutdownEvent,))
 	onlineProcessingProcess = Process(target=onlineProcessing,
-	                                  args=(board, windowedDataBuffer, predictBuffer,
-	                                        socketConnection, _shutdownEvent,))
+	                                  args=(board, windowedDataBuffer, predictBuffer, socketConnection,
+	                                        newWindowAvailable, predictionAvailableEvent, _shutdownEvent,))
 	debugPredictProcess = Process(target=debugPredict,
-	                              args=(predictBuffer, socketConnection, _shutdownEvent,))
+	                              args=(predictBuffer, socketConnection, _shutdownEvent, predictionAvailableEvent,))
 	wheelSerialPredictProcess = Process(target=wheelSerialPredict,
 	                                    args=(_shutdownEvent, socketConnection, predictBuffer, 'COM4', None, None))
 
