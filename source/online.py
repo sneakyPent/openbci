@@ -175,35 +175,41 @@ def onlineProcessing(board, windowedDataBuffer, predictBuffer, socketConnection,
 
 		"""
 	logger = logging.getLogger(cnst.loggerName)
+	clf = joblib.load(cnst.classifierFilename)
 	while not _shutdownEvent.is_set():
 		socketConnection.wait(1)
-		if socketConnection.is_set():
-			filename = cnst.classifierFilename
-			clf = joblib.load(filename)
-			chan_ind = board.getEnabledChannels()
-			frames_ch = cnst.frames_ch
-			lowcut = board.getLowerBoundFrequency()
-			highcut = board.getHigherBoundFrequency()
-			harmonics_num = cnst.harmonics_num
-			fs = board.getSampleRate()
-			while not windowedDataBuffer.empty() and socketConnection.is_set():
+		frames_ch = cnst.frames_ch
+		lowcut = board.getLowerBoundFrequency()
+		highcut = board.getHigherBoundFrequency()
+		fs = board.getSampleRate()
+		chan_ind = board.getEnabledChannels()
+		while socketConnection.is_set():
+			predictionAvailableEvent.clear()
+			newWindowAvailable.wait(1)
+			if newWindowAvailable.is_set() and socketConnection.is_set():
 				segment_full = np.array(windowedDataBuffer.get())
 
-				# I sum the frames along axis 1 (i.e. I sum all the elements of each row)
-				frames_np = np.sum(np.array(frames_ch), 1)
-				# I divide the screen refresh rate by the frames_np for each stimulus frequency
-				stimulus_freqs = np.divide(np.full(frames_np.shape[0], 60.), frames_np)
-
-				stimulus_freqs = 2 * stimulus_freqs  # checkerboard invokes double of the stimuli freqs!!!!!!!!!!!!
-
-				segment = segment_full[:, np.asarray(chan_ind)]
+				# # I sum the frames along axis 1 (i.e. I sum all the elements of each row)
+				# frames_np = np.sum(np.array(frames_ch), 1)
+				# # I divide the screen refresh rate by the frames_np for each stimulus frequency
+				# stimulus_freqs = np.divide(np.full(frames_np.shape[0], 60.), frames_np)
+				# # checkerboard invokes double of the stimuli freqs!!!!!!!!!!!!
+				# stimulus_freqs = 2 * stimulus_freqs
 				# choose channels (last column = label, it doesn't apply in online mode)
-
-				segment_filt = butter_bandpass_filter(segment, lowcut, highcut, fs, order=10)  # filter the data
-				r_segment = calculate_cca_correlations(segment_filt, fs, frames_ch,
-				                                       harmonics_num)  # calculate cca correlations
-				tmp_command_predicted = clf.predict(r_segment)  # predict
-				# print("Processing", command_buffer.qsize())
+				segment = segment_full[:, np.asarray(chan_ind)]
+				# filter the data
+				segmentFiltered = butter_bandpass_filter(data=segment,
+				                                         lowcut=lowcut,
+				                                         highcut=highcut,
+				                                         fs=fs,
+				                                         order=10)
+				# calculate cca correlations
+				r_segment = calculate_cca_correlations(segment=segmentFiltered,
+				                                       fs=fs,
+				                                       frames_ch=frames_ch,
+				                                       harmonics_num=cnst.harmonics_num)
+				# predict
+				tmp_command_predicted = clf.predict(r_segment)
 				command_predicted = int(tmp_command_predicted[0])
 				logger.critical(command_predicted)
 				#  put prediction into the buffer
