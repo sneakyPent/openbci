@@ -291,6 +291,36 @@ def getClassCommand(commandClass, target3_):
 		if not target3_ else cnst.class3Switcher.get(commandClass, cnst.onlineStreamingCommands_STOP)
 
 
+def checkEnvironment(command, sensorSerial):
+	"""
+	Check environment through connected sensors and
+
+	:param str command: The next command for which, we want to check the around environment.
+	:param Serial sensorSerial: The serial for the sensors
+
+	:return: True if the environment is clean and the command can be executed, otherwise False.
+	:rtype: bool
+	"""
+	# read Sensors
+	distance = sensorSerial.readline().decode('utf-8')
+	temp = re.findall(r'\d+', distance)
+	sensorMeasurements = list(map(int, temp))
+	#
+	if command == cnst.onlineStreamingCommands_STOP:
+		return True
+	if ((command == cnst.onlineStreamingCommands_FORWARD) or (
+			command == cnst.onlineStreamingCommands_REDUCE_SPEED_1) or (
+			command == cnst.onlineStreamingCommands_REDUCE_SPEED_2)):
+		return False if ((1 < sensorMeasurements[0] < cnst.sensorLimit_FRONT) or (
+				1 < sensorMeasurements[1] < cnst.sensorLimit_FRONT)) else True
+	elif command == cnst.onlineStreamingCommands_RIGHT:
+		return False if 1 < sensorMeasurements[3] < cnst.sensorLimit_SIDE else True
+	elif command == cnst.onlineStreamingCommands_LEFT:
+		return False if 1 < sensorMeasurements[2] < cnst.sensorLimit_SIDE else True
+	else:
+		return False
+
+
 def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
                        emergencyKeyboard, keyboardBuffer, _shutdownEvent, target3_=False):
 	"""
