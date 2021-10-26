@@ -214,64 +214,132 @@ def onlineProcessing(board, windowedDataBuffer, predictBuffer, socketConnection,
 	emptyQueue(predictBuffer)
 
 
-def debugPredict(predictBuffer, socketConnection, _shutdownEvent, predictionAvailableEvent, target3_=False):
+def debugPredict(socketConnection, predictBuffer, emergencyKeyboard, keyboardBuffer,
+                 _shutdownEvent, target3_=False):
 	"""
 	Same logic as :py:meth:`source.online.wheelSerialPredict`. Used for debug purposes, testing without connection with a wheelchair
 	"""
 	logger = logging.getLogger(cnst.loggerName)
+	debugMode = False
+	commandPrintFileObject = None
 	while not _shutdownEvent.is_set():
 		socketConnection.wait(1)
 		if socketConnection.is_set():
 			command = cnst.onlineStreamingCommands_STOP
 			data = cnst.target4Class_STOP
-			try:
-				myfile = open(getSessionFilename(online=True), 'w')
-				cmd_old = 0
-				while not _shutdownEvent.is_set() and socketConnection.is_set():
-					predictionAvailableEvent.wait(0.5)
-					if predictionAvailableEvent.is_set():
-						data = predictBuffer.get_nowait()  # get the command and translate into move
-						# sut the "stop" between commands
-						if not cmd_old == cnst.target4Class_STOP and data == cnst.target4Class_STOP:
+			# If debug Mode enabled, create file for logging commands
+			if debugMode:
+				commandPrintFileObject = open(getSessionFilename(online=True), 'w')
+			# 	Set stop as init command
+			cmd_old = cnst.target4Class_STOP
+			logger.info("Start Wheelchair")
+			while not _shutdownEvent.is_set() and socketConnection.is_set():  # Running while there is socket connection with the
+				if not predictBuffer.empty():  # New command Available
+					data = predictBuffer.get_nowait()  # get the command and translate into move
+					logger.warning(data)
+					if not emergencyKeyboard.is_set():
+						if not cmd_old == cnst.target4Class_STOP and data == cnst.target4Class_STOP:  # sut the "stop" between commands
 							temp = data
 							data = cmd_old
 							cmd_old = temp
 						else:
 							cmd_old = data
-
+						# Translate and send the command
+						# if command is stop then start reducing speed
 						if data == cnst.target4Class_STOP:
+							# Get the next command when receiving stop class
 							if command == cnst.onlineStreamingCommands_FORWARD:  # if previous_command == forward
-								command = cnst.onlineStreamingCommands_REDUCE_SPEED_1  # reduce the speed
-								print("I reduce once my speed")
-								myfile.write("I reduce once my speed" + '\n')
-
+								tmpCommand = cnst.onlineStreamingCommands_REDUCE_SPEED_1  # reduce the speed
+								# check environment with sensors for the given command
+								# if checkEnvironment(tmpCommand, sensorSerial):
+								# 	command = tmpCommand
+								# else:
+								# 	command = cnst.onlineStreamingCommands_STOP
+								command = tmpCommand
 							elif command == cnst.onlineStreamingCommands_REDUCE_SPEED_1:
-								command = cnst.onlineStreamingCommands_REDUCE_SPEED_2  # reduce the speed
-								print("I reduce twice my speed")
-								myfile.write("I reduce twice my speed" + '\n')
+								tmpCommand = cnst.onlineStreamingCommands_REDUCE_SPEED_2  # reduce the speed
+								# check environment with sensors for the given command
+								# if checkEnvironment(tmpCommand, sensorSerial):
+								# 	command = tmpCommand
+								# else:
+								# 	command = cnst.onlineStreamingCommands_STOP
+								command = tmpCommand
 							else:
 								command = cnst.onlineStreamingCommands_STOP
-								print("Stop: " + command)
-								myfile.write("Stop: " + command)
 
+							msg = cnst.commandsTranslationForDebug.get(command, 'NOT AVAILABLE COMMAND') \
+							      + ': ' + command
+							# 	Apply command
+							if debugMode:
+								commandPrintFileObject.write(msg)
+							logger.debug(msg)
 							sleep(0.08)  # delay before the next command
-						else:
-							command = getClassCommand(data, target3_)
-							print(command)
-							myfile.write(data.__str__() + '. ->' + command.__str__())
+
+						else:  # otherwise (every other command) just check environment and write it
+							tmpCommand = getClassCommand(data, target3_)
+							# check environment with sensors for the given data
+							command = tmpCommand
+							# if checkEnvironment(tmpCommand, sensorSerial):
+							# 	command = tmpCommand
+							# else:
+							# 	command = cnst.onlineStreamingCommands_STOP
+							msg = cnst.commandsTranslationForDebug.get(command, 'NOT AVAILABLE COMMAND') \
+							      + ': ' + command
+							if debugMode:
+								commandPrintFileObject.write(msg)
+							logger.debug(msg)
 							sleep(0.08)  # delay before the next command
 					else:
-						print(command)
-						myfile.write(data.__str__() + '. ->' + command.__str__())
-						sleep(0.08)  # delay before the next command
-				print("Stop: " + cnst.onlineStreamingCommands_STOP)
-				print("End wheel")
-				myfile.write("Stop: " + cnst.onlineStreamingCommands_STOP + "\nEnd wheel")
-				myfile.close()
-				emptyQueue(predictBuffer)
-			except serial.SerialException:
-				logger.warning("Problem connecting to serial device.")
-				emptyQueue(predictBuffer)
+						logger.warning("Keyboard movement")
+						if not keyboardBuffer.empty():
+							data = keyboardBuffer.get()
+
+							tmpCommand = cnst.keyBoardCommands.get(data, cnst.onlineStreamingCommands_STOP)
+							# check environment with sensors for the given data
+							command = tmpCommand
+							# if checkEnvironment(tmpCommand, sensorSerial):
+							# 	command = tmpCommand
+							# else:
+							# 	command = cnst.onlineStreamingCommands_STOP
+							msg = cnst.commandsTranslationForDebug.get(command, 'NOT AVAILABLE COMMAND') \
+							      + ': ' + command
+							if debugMode:
+								commandPrintFileObject.write(msg)
+							logger.debug(msg)
+							sleep(0.08)  # delay before the next command
+
+						else:
+							command = command
+							# if checkEnvironment(command, sensorSerial):
+							# 	command = command
+							# else:
+							# 	command = cnst.onlineStreamingCommands_STOP
+							msg = cnst.commandsTranslationForDebug.get(command, 'NOT AVAILABLE COMMAND') \
+							      + ': ' + command
+							# check environment with sensors for the given command if ok write it else write stop
+							if debugMode:
+								commandPrintFileObject.write(msg)
+							logger.debug(msg)
+							sleep(0.08)
+				else:  # if command_buffer is empty send the previous command to wheelchair
+					# check environment with sensors for the given command
+					command = command
+					# if checkEnvironment(command, sensorSerial):
+					# 	command = command
+					# else:
+					# 	command = cnst.onlineStreamingCommands_STOP
+					msg = cnst.commandsTranslationForDebug.get(command, 'NOT AVAILABLE COMMAND') \
+					      + ': ' + command
+					# check environment with sensors for the given command if ok write it else write stop
+					if debugMode:
+						commandPrintFileObject.write(msg)
+					logger.debug(msg)
+					sleep(0.08)
+			emptyQueue(predictBuffer)
+			# emptyQueue(keyboardBuffer)
+			logger.info("End Wheelchair")
+			if debugMode:
+				commandPrintFileObject.close()
 
 
 def getClassCommand(commandClass, target3_):
