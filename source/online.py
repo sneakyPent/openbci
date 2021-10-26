@@ -281,7 +281,8 @@ def getClassCommand(commandClass, target3_):
 	:param int commandClass: The unity class, to get the wheel command.
 	:param bool target3_: True, only if the 3 target unity application will be used, defaults to False.
 
-	:return str: The command for the wheel depends on the :py:attr:`target3_` and :py:attr:`commandClass`
+	:return: The command for the wheel depends on the :py:attr:`target3_` and :py:attr:`commandClass`
+	:rtype: str
 	"""
 	return cnst.class4Switcher.get(commandClass, cnst.onlineStreamingCommands_STOP) \
 		if not target3_ else cnst.class3Switcher.get(commandClass, cnst.onlineStreamingCommands_STOP)
