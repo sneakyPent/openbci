@@ -286,6 +286,7 @@ class Constants:
 		onlineStreamingCommands_BACK: 'BACK',
 		onlineStreamingCommands_FORWARD: 'FORWARD'
 	}
+	wheelchairUsbPort = 'COM4'
 	# SENSORS
 	sensorUsbPort = 'COM7'
 	sensorLimit_FRONT = 70
