@@ -240,7 +240,7 @@ class Constants:
 	target3Class_STOP = 0
 	target3Class_FORWARD = 2
 	target3Class_LEFT = 3
-	target3Class_RIGHT = 4
+	target3Class_RIGHT = 1
 	# keyBoardCommands
 	keyboardKey_STOP = 'space'
 	keyboardKey_FORWARD = 'w'
@@ -286,6 +286,11 @@ class Constants:
 		onlineStreamingCommands_BACK: 'BACK',
 		onlineStreamingCommands_FORWARD: 'FORWARD'
 	}
+	# SENSORS
+	sensorUsbPort = 'COM7'
+	sensorLimit_FRONT = 70
+	sensorLimit_SIDE = 30
+
 	online_connection_serial = '{"c":"input","d":"usb"}\r\n'
 	online_info_usb = '"input":"usb"'
 	online_info_wifi = '"input":"wifi"'
