@@ -242,11 +242,11 @@ class Constants:
 	target3Class_LEFT = 3
 	target3Class_RIGHT = 1
 	# keyBoardCommands
-	keyboardKey_STOP = 'space'
-	keyboardKey_FORWARD = 'w'
-	keyboardKey_BACK = 's'
-	keyboardKey_RIGHT = 'a'
-	keyboardKey_LEFT = 'd'
+	keyboardKey_STOP = 'S'
+	keyboardKey_FORWARD = 'F'
+	keyboardKey_BACK = 'B'
+	keyboardKey_RIGHT = 'R'
+	keyboardKey_LEFT = 'L'
 	#  Commands
 	onlineStreamingCommands_STOP = '{"c":"xy","x":0,"y":0}\r\n'
 	onlineStreamingCommands_REDUCE_SPEED_1 = '{"c":"xy","x":0,"y":20}\r\n'
