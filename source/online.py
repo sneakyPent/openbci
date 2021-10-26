@@ -14,13 +14,13 @@ import logging
 import socket
 import subprocess
 import os
+import re
 from multiprocessing.managers import SyncManager
 from threading import Event
 import time
 from multiprocessing import Process, Event, Queue
 
 import joblib
-import json
 from time import sleep
 import serial
 from source import OpenBCICyton
@@ -291,212 +291,163 @@ def getClassCommand(commandClass, target3_):
 		if not target3_ else cnst.class3Switcher.get(commandClass, cnst.onlineStreamingCommands_STOP)
 
 
-def wheelSerialPredict(_shutdownEvent, socketConnection, command_buffer, usb_port_, emergency_arduino,
-                       target3_=False):
+def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
+                       emergencyKeyboard, keyboardBuffer, _shutdownEvent, target3_=False):
 	"""
 	Connects with the wheelchair and send the commands through the given serial port = :py:attr:`usb_port_`.
 
 	:param Event socketConnection: Used as flag so the method can proceed to start the online application.
-	:param Queue command_buffer: Buffer used for communicating and getting the predicted data to :py:meth:`source.online.onlineProcessing`.
-	:param str usb_port_: Name of the port, the wheelchair use for connection. (Windows: COMx, linux: /dev/ttyUSBx)
-	:param emergency_arduino:
+	:param Queue predictBuffer: Buffer used for communicating and getting the predicted data to :py:meth:`source.online.onlineProcessing`.
+	:param str usb_port_: Name of the port, the wheelchair use for connection. (Windows: COMx, linux: /dev/ttyUSBx).
+	:param Event emergencyKeyboard: Event will be used for enable keyboard controlling of the wheelchair.
+	:param Queue keyboardBuffer: dokimi
+	:param Event _shutdownEvent: Event used to know when to allow every running process terminate.
 	:param bool target3_: When True, means that it will be used the unity with 3 targets for the session.
-	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
-
 	"""
 	logger = logging.getLogger(cnst.loggerName)
+	debugMode = False
+	commandPrintFileObject = None
 	while not _shutdownEvent.is_set():
 		socketConnection.wait(1)
 		if socketConnection.is_set():
-			debugMode = 0
-			command = '{"c":"xy","x":0,"y":0}\r\n'
-			fileName = getSessionFilename(online=True)
+			command = cnst.onlineStreamingCommands_STOP
+			data = cnst.target4Class_STOP
 			try:
-				ser = serial.Serial(port=usb_port_, baudrate=115200, parity=serial.PARITY_NONE,
-				                    stopbits=serial.STOPBITS_ONE,
-				                    bytesize=serial.EIGHTBITS)
-				command_buffer.cancel_join_thread()
-				ser.write(connection_serial.encode())  # connect to port
-				ser.readline().decode()
+				# Serial connections with the wheelchair and sensors
+				wheelCharSerial = serial.Serial(port=usb_port_, baudrate=115200, parity=serial.PARITY_NONE,
+				                                stopbits=serial.STOPBITS_ONE,
+				                                bytesize=serial.EIGHTBITS)
+				wheelCharSerial.write(cnst.online_connection_serial.encode())  # connect to port
+				wheelCharSerial.readline().decode()
 
-				ser.write(info.encode())
-				info_list = ser.readline().decode().split(",", 6)
-				myfile = open(fileName, 'w')
-				print(info_list)
+				wheelCharSerial.write(cnst.online_info.encode())
+				info_list = wheelCharSerial.readline().decode().split(",", 6)
+				sensorSerial = serial.Serial(port=cnst.sensorUsbPort, baudrate=115200, parity=serial.PARITY_NONE,
+				                             stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)  # serial sensor
+				logger.info(info_list)
+				# If debug Mode enabled, create file for logging commands
+				if debugMode:
+					commandPrintFileObject = open(getSessionFilename(online=True), 'w')
+				# 	Set stop as init command
+				cmd_old = cnst.target4Class_STOP
+				logger.info("Start Wheelchair")
+				while not _shutdownEvent.is_set() and socketConnection.is_set():  # Running while there is socket connection with the
+					if not predictBuffer.empty():  # New command Available
+						data = predictBuffer.get_nowait()  # get the command and translate into move
+						if not emergencyKeyboard.is_set():
+							if not cmd_old == cnst.target4Class_STOP and data == cnst.target4Class_STOP:  # sut the "stop" between commands
+								temp = data
+								data = cmd_old
+								cmd_old = temp
+							else:
+								cmd_old = data
 
-				# define the number of targets to send the right commands
-				if target3_:
-					mode = 5
-				else:
-					mode = 6
-
-				cmd_old = 0
-				logger.info("Start wheel")
-				while not _shutdownEvent.is_set() and socketConnection.is_set():
-					if not command_buffer.empty():
-						data = command_buffer.get_nowait()  # get the command and translate into move
-
-						if ser.isOpen():
-							# if not emergency_arduino.is_set():
-							if True:
-								if not cmd_old == 0 and data == 0:  # sut the "stop" between commands
-									temp = data
-									data = cmd_old
-									cmd_old = temp
+							# Translate and send the command
+							# if command is stop then start reducing speed
+							if data == cnst.target4Class_STOP:
+								# Get the next command when receiving stop class
+								if command == cnst.onlineStreamingCommands_FORWARD:  # if previous_command == forward
+									tmpCommand = cnst.onlineStreamingCommands_REDUCE_SPEED_1  # reduce the speed
+									# check environment with sensors for the given command
+									if checkEnvironment(tmpCommand, sensorSerial):
+										command = tmpCommand
+									else:
+										command = cnst.onlineStreamingCommands_STOP
+								elif command == cnst.onlineStreamingCommands_REDUCE_SPEED_1:
+									tmpCommand = cnst.onlineStreamingCommands_REDUCE_SPEED_2  # reduce the speed
+									# check environment with sensors for the given command
+									if checkEnvironment(tmpCommand, sensorSerial):
+										command = tmpCommand
+									else:
+										command = cnst.onlineStreamingCommands_STOP
 								else:
-									cmd_old = data
+									command = cnst.onlineStreamingCommands_STOP
 
-								if data == 0:
-
-									if command == '{"c":"xy","x":0,"y":45}\r\n':  # if previous_command == forward
-										print("I reduce once my speed")
-										temp_command = '{"c":"xy","x":0,"y":20}\r\n'  # reduce the speed
-										if debugMode == 1:
-											myfile.write("I reduce once my speed" + '\n')
-										elif debugMode == 0:
-											ser.write(temp_command.encode())  # stop
-										command = temp_command
-
-									elif command == '{"c":"xy","x":0,"y":20}\r\n':
-										print("I reduce twice my speed")
-										temp_command = '{"c":"xy","x":0,"y":10}\r\n'  # reduce the speed
-										if debugMode == 1:
-											myfile.write("I reduce twice my speed" + '\n')
-										elif debugMode == 0:
-											ser.write(temp_command.encode())  # stop
-										command = temp_command
-									else:
-										if debugMode == 1:
-											print("Stop: " + stop)
-											myfile.write("Stop: " + stop)
-										elif debugMode == 0:
-											ser.write(stop.encode())  # stop
-										command = stop
-
-									sleep(0.08)  # delay before the next command
-								elif data == 1:
-									# ......if interface is a square.........
-									if debugMode == 1:
-										print("Left: " + left)
-										myfile.write("Left: " + left)
-									elif debugMode == 0:
-										ser.write(left.encode())  # left
-									# print("left")
-									command = left
-								elif data == 2:
-									if mode == 6:
-										# ......if interface is a cross or a square.........
-										if debugMode == 1:
-											print("Right: " + right)
-											myfile.write("Right: " + right)
-										elif debugMode == 0:
-											ser.write(right.encode())  # right
-										# print("right")
-										command = right
-									else:
-										if debugMode == 1:
-											print("Forward: " + forward)
-											myfile.write("Forward: " + forward)
-										elif debugMode == 0:
-											ser.write(forward.encode())  # back
-										# print("back")
-										command = forward
-								elif data == 3:
-									if mode == 6:
-										# ......if interface is a square.........
-										if debugMode == 1:
-											print("Back: " + back)
-											myfile.write("Back: " + back)
-										elif debugMode == 0:
-											ser.write(back.encode())  # back
-										# print("back")
-										command = back
-									else:
-										if debugMode == 1:
-											print("Left: " + left)
-											myfile.write("Left: " + left)
-										elif debugMode == 0:
-											ser.write(left.encode())  # left
-										# print("left")
-										command = left
-								elif data == 4:
-									if mode == 6:
-										#  ...... if interface is a square ......
-										if debugMode == 1:
-											print("Forward: " + forward)
-											myfile.write("Forward: " + forward)
-										elif debugMode == 0:
-											ser.write(forward.encode())  # forward
-										command = forward
-									else:
-										if debugMode == 1:
-											print("Right: " + right)
-											myfile.write("Right: " + right)
-										elif debugMode == 0:
-											ser.write(right.encode())  # right
-										command = right
+								msg = cnst.commandsTranslationForDebug.get(command, 'NOT AVAILABLE COMMAND') \
+								      + ': ' + command
+								# 	Apply command
+								if debugMode:
+									commandPrintFileObject.write(msg)
 								else:
-									if debugMode == 1:
-										print("Stop: " + stop)
-										myfile.write("Stop: " + stop)
-									elif debugMode == 0:
-										ser.write(stop.encode())  # stop
-									command = stop
+									wheelCharSerial.write(command.encode())
+								logger.debug(msg)
+								sleep(0.08)  # delay before the next command
 
-									sleep(0.08)  # delay before the next command
-					# else:
-					#     print("keyboard")
-					#     if not emergency_buffer.empty():
-					#         data = emergency_buffer.get()
-					#         if data == 55:
-					#             ser.write(stop.encode())
-					#             command = '{"c":"xy","x":0,"y":0}\r\n'
+							else:  # otherwise (every other command) just check environment and write it
+								tmpCommand = getClassCommand(data, target3_)
+								# check environment with sensors for the given data
+								if checkEnvironment(tmpCommand, sensorSerial):
+									command = tmpCommand
+								else:
+									command = cnst.onlineStreamingCommands_STOP
+								msg = cnst.commandsTranslationForDebug.get(command, 'NOT AVAILABLE COMMAND') \
+								      + ': ' + command
+								if debugMode:
+									commandPrintFileObject.write(msg)
+								else:
+									wheelCharSerial.write(command.encode())
+								logger.debug(msg)
+								sleep(0.08)  # delay before the next command
+						else:
+							logger.warning("Keyboard movement")
+							if not keyboardBuffer.empty():
+								data = keyboardBuffer.get()
 
-					#         elif data == 1:
-					#             ser.write(forward.encode())
-					#             command = '{"c":"xy","x":0,"y":45}\r\n'
+								tmpCommand = cnst.keyBoardCommands.get(data, cnst.onlineStreamingCommands_STOP)
+								# check environment with sensors for the given data
+								if checkEnvironment(tmpCommand, sensorSerial):
+									command = tmpCommand
+								else:
+									command = cnst.onlineStreamingCommands_STOP
+								msg = cnst.commandsTranslationForDebug.get(command, 'NOT AVAILABLE COMMAND') \
+								      + ': ' + command
+								if debugMode:
+									commandPrintFileObject.write(msg)
+								else:
+									wheelCharSerial.write(command.encode())
+								logger.debug(msg)
+								sleep(0.08)  # delay before the next command
 
-					#         elif data == 2:
-					#             ser.write(right.encode())
-					#             command = '{"c":"xy","x":40,"y":0}\r\n'
-
-					#         elif data == 3:
-					#             ser.write(back.encode())
-					#             command = '{"c":"xy","x":0,"y":-45}\r\n'
-
-					#         elif data == 4:
-					#             ser.write(left.encode())
-					#             command = '{"c":"xy","x":-40,"y":0}\r\n'
-
-					#         sleep(0.08)
-					#     else:
-					#         ser.write(command.encode())
-					#         sleep(0.08)
-					#         ser.write(info.encode())
-					#         info_list = ser.readline().decode().split(",",6)
-
-					else:
-						if debugMode == 1:
-							# myfile.write("command: " + command + '\n')
-							pass
-						elif debugMode == 0:
-							ser.write(command.encode())
+							else:
+								if checkEnvironment(command, sensorSerial):
+									command = command
+								else:
+									command = cnst.onlineStreamingCommands_STOP
+								msg = cnst.commandsTranslationForDebug.get(command, 'NOT AVAILABLE COMMAND') \
+								      + ': ' + command
+								# check environment with sensors for the given command if ok write it else write stop
+								if debugMode:
+									commandPrintFileObject.write(msg)
+								else:
+									wheelCharSerial.write(command.encode())
+								logger.debug(msg)
+								sleep(0.08)
+					else:  # if command_buffer is empty send the previous command to wheelchair
+						# check environment with sensors for the given command
+						if checkEnvironment(command, sensorSerial):
+							command = command
+						else:
+							command = cnst.onlineStreamingCommands_STOP
+						msg = cnst.commandsTranslationForDebug.get(command, 'NOT AVAILABLE COMMAND') \
+						      + ': ' + command
+						# check environment with sensors for the given command if ok write it else write stop
+						if debugMode:
+							commandPrintFileObject.write(msg)
+						else:
+							wheelCharSerial.write(command.encode())
+						logger.debug(msg)
 						sleep(0.08)
-				if debugMode == 1:
-					print("Stop: " + stop)
-					myfile.write("Stop: " + stop)
-				elif debugMode == 0:
-					ser.write(stop.encode())
-				while not command_buffer.empty():
-					command_buffer.get_nowait()
-
-				print("End wheel")
-				myfile.close()
+				emptyQueue(predictBuffer)
+				# emptyQueue(keyboardBuffer)
+				logger.info("End Wheelchair")
+				if debugMode:
+					commandPrintFileObject.close()
 			except serial.SerialException:
 				logger.warning("Problem connecting to serial device.")
-				while not command_buffer.empty():
-					command_buffer.get_nowait()
-				myfile.close()
+				emptyQueue(predictBuffer)
+				emptyQueue(keyboardBuffer)
+				if debugMode:
+					commandPrintFileObject.close()
 
 
 def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, newWindowAvailable,
