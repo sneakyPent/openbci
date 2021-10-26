@@ -37,7 +37,7 @@ class Error(Exception):
 
 
 class SocketConnectionError(Error):
-	"""Raised when there is a problem with the socket connection"""
+	"""Raised when there is a problem with the socket connection to unity application"""
 	pass
 
 
@@ -139,9 +139,9 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 					time.sleep(10)
 					pass
 				except SocketConnectionError:
-					logger.error('SocketConnection problem')
+					logger.error('SocketConnection problem', exc_info=True)
 					c.shutdown(socket.SHUT_RDWR)
-					socketConnection.clear()
+					boardApiCallEvents["stopStreaming"].set()
 					c.close()
 			socketConnection.clear()
 			startOnlineEvent.clear()
