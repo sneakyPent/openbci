@@ -257,8 +257,8 @@ def debugPredict(socketConnection, predictBuffer, emergencyKeyboardEvent, keyboa
 			while not _shutdownEvent.is_set() and socketConnection.is_set():  # Running while there is socket connection with the
 				if not predictBuffer.empty():  # New command Available
 					data = predictBuffer.get_nowait()  # get the command and translate into move
-					logger.warning(data)
 					if not emergencyKeyboardEvent.is_set():
+						logger.warning("SSVEP movement")
 						if not cmd_old == cnst.target4Class_STOP and data == cnst.target4Class_STOP:  # sut the "stop" between commands
 							temp = data
 							data = cmd_old
@@ -313,9 +313,10 @@ def debugPredict(socketConnection, predictBuffer, emergencyKeyboardEvent, keyboa
 					else:
 						logger.warning("Keyboard movement")
 						if not keyboardBuffer.empty():
+							# read string character from keyboardBuffer
 							data = keyboardBuffer.get_nowait()
-
-							tmpCommand = cnst.keyBoardCommands.get(data, cnst.onlineStreamingCommands_STOP)
+							# get command from string character contained in keyboardBuffer
+							tmpCommand = cnst.keyBoardCommandsSwitcher.get(data, cnst.onlineStreamingCommands_STOP)
 							# check environment with sensors for the given data
 							command = tmpCommand
 							# if checkEnvironment(tmpCommand, sensorSerial):
@@ -354,10 +355,10 @@ def debugPredict(socketConnection, predictBuffer, emergencyKeyboardEvent, keyboa
 					# check environment with sensors for the given command if ok write it else write stop
 					if debugMode:
 						commandPrintFileObject.write(msg)
-					logger.debug(msg)
+					# logger.debug(msg)
 					sleep(0.08)
 			emptyQueue(predictBuffer)
-			# emptyQueue(keyboardBuffer)
+			emptyQueue(keyboardBuffer)
 			logger.info("End Wheelchair")
 			if debugMode:
 				commandPrintFileObject.close()
@@ -451,6 +452,7 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 					if not predictBuffer.empty():  # New command Available
 						data = predictBuffer.get_nowait()  # get the command and translate into move
 						if not emergencyKeyboardEvent.is_set():
+							logger.warning("SSVEP movement")
 							if not cmd_old == cnst.target4Class_STOP and data == cnst.target4Class_STOP:  # sut the "stop" between commands
 								temp = data
 								data = cmd_old
@@ -507,9 +509,10 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 						else:
 							logger.warning("Keyboard movement")
 							if not keyboardBuffer.empty():
+								# read string character from keyboardBuffer
 								data = keyboardBuffer.get_nowait()
-
-								tmpCommand = cnst.keyBoardCommands.get(data, cnst.onlineStreamingCommands_STOP)
+								# get command from string character contained in keyboardBuffer
+								tmpCommand = cnst.keyBoardCommandsSwitcher.get(data, cnst.onlineStreamingCommands_STOP)
 								# check environment with sensors for the given data
 								if checkEnvironment(tmpCommand, sensorSerial):
 									command = tmpCommand
@@ -554,7 +557,7 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 						logger.debug(msg)
 						sleep(0.08)
 				emptyQueue(predictBuffer)
-				# emptyQueue(keyboardBuffer)
+				emptyQueue(keyboardBuffer)
 				logger.info("End Wheelchair")
 				if debugMode:
 					commandPrintFileObject.close()
