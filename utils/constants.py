@@ -242,11 +242,15 @@ class Constants:
 	target3Class_LEFT = 3
 	target3Class_RIGHT = 1
 	# keyBoardCommands
+	keyboardKey_QUIT = 'Q'
+	keyboardKey_EXIT = 'E'
 	keyboardKey_STOP = 'S'
 	keyboardKey_FORWARD = 'F'
 	keyboardKey_BACK = 'B'
 	keyboardKey_RIGHT = 'R'
 	keyboardKey_LEFT = 'L'
+	keyboardKeyList = [keyboardKey_QUIT, keyboardKey_EXIT, keyboardKey_STOP, keyboardKey_FORWARD, keyboardKey_BACK,
+	                   keyboardKey_RIGHT, keyboardKey_LEFT]
 	#  Commands
 	onlineStreamingCommands_STOP = '{"c":"xy","x":0,"y":0}\r\n'
 	onlineStreamingCommands_REDUCE_SPEED_1 = '{"c":"xy","x":0,"y":20}\r\n'
@@ -270,7 +274,7 @@ class Constants:
 		target3Class_FORWARD: onlineStreamingCommands_FORWARD
 
 	}
-	keyBoardCommands = {
+	keyBoardCommandsSwitcher = {
 		keyboardKey_STOP: onlineStreamingCommands_STOP,
 		keyboardKey_FORWARD: onlineStreamingCommands_FORWARD,
 		keyboardKey_BACK: onlineStreamingCommands_BACK,
