@@ -52,6 +52,7 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 		* to start streaming through :py:attr:`boardApiCallEvents`, only if it receives the :py:const:`utils.constants.Constants.onlineUnitySentByte` by socket connection.
 		* to stop streaming through :py:attr:`boardApiCallEvents`, only if it receives "E" or ""  by socket connection.
 
+	* For activating keyboard movement, user have to press one of the key commands contained in :py:const:`utils.constants.Constants.keyboardKeyList`. In order to stop the keyboard movement, :py:const:`utils.constants.Constants.keyboardKey_QUIT` should be pressed.
 
 	* When the connection could not be established then wait for 10 sec and then retrying.
 
@@ -59,7 +60,7 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 	:param list[Event] boardApiCallEvents: Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
 	:param Event socketConnection: Used as flag so the processes :py:meth:`source.online.startTargetApp` :py:meth:`source.online.onlineProcessing` :py:meth:`source.online.debugPredict` :py:meth:`source.online.wheelSerialPredict` can proceed.
 	:param Event startOnlineEvent: Event for which this method will be waiting. This Event is set only by the :py:meth:`source.pyGUI.GUI.onlineButtonClick`
-	param Event emergencyKeyboardEvent: Event will be used for enable keyboard controlling of the wheelchair.
+	:param Event emergencyKeyboardEvent: Event will be used for enable keyboard controlling of the wheelchair.
 	:param Queue keyboardBuffer: Buffer for passing pressed key to :py:meth:`source.online.wheelSerialPredict` and used it for wheelchair movement
 	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
@@ -107,22 +108,26 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 					except:
 						raise SocketConnectionError
 
-					if bytes_received != "E" and bytes_received != "":
+					if bytes_received != cnst.keyboardKey_EXIT and bytes_received != "":
 
 						# q_label.put(int(bytes_received))
 						bytes_received_old = bytes_received
 						while True:  # bytes_received != "E": # "E" means end of the action
 							bytes_received = c.recv(1).decode("utf-8")  # received bytes
 							c.sendall('2'.encode())
-							if bytes_received == "E" or bytes_received == "":
+							if bytes_received == cnst.keyboardKey_EXIT or bytes_received == "":
 								boardApiCallEvents["stopStreaming"].set()
 								socketConnection.clear()
 								break
 							else:
 								if bytes_received != bytes_received_old:
 									try:
-										if bytes_received in [*cnst.keyBoardCommands]:
+										if bytes_received in cnst.keyboardKeyList:
 											keyboardBuffer.put_nowait(bytes_received)
+											emergencyKeyboardEvent.set()
+										elif bytes_received == cnst.keyboardKey_QUIT:
+											emergencyKeyboardEvent.clear()
+											emptyQueue(keyboardBuffer)
 									except queue.Full:
 										logging.getLogger(cnst.loggerName).info('keyboardBuffer full')
 										emptyQueue(keyboardBuffer)
@@ -145,6 +150,7 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 					c.close()
 			socketConnection.clear()
 			startOnlineEvent.clear()
+			emptyQueue(keyboardBuffer)
 
 
 def startTargetApp(socketConnection, _shutdownEvent):
@@ -410,7 +416,7 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 	:param Queue predictBuffer: Buffer used for communicating and getting the predicted data to :py:meth:`source.online.onlineProcessing`.
 	:param str usb_port_: Name of the port, the wheelchair use for connection. (Windows: COMx, linux: /dev/ttyUSBx).
 	:param Event emergencyKeyboardEvent: Event will be used for enable keyboard controlling of the wheelchair.
-	:param Queue keyboardBuffer: Buffer for getting pressed key from :py:mod:`source.keyboardMove' and used it for wheelchair movement
+	:param Queue keyboardBuffer: Buffer for getting pressed key from :py:mod:`source.keyboardMove` and used it for wheelchair movement
 	:param Event _shutdownEvent: Event used to know when to allow every running process terminate.
 	:param bool target3_: When True, means that it will be used the unity with 3 targets for the session.
 	"""
@@ -561,7 +567,7 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 
 
 def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, newWindowAvailable,
-                emergencyKeyboardEvent, keyboardBuffer, debugMode=True):
+                debugMode=True):
 	"""
 	* Method runs via onlineProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process and waits for the startOnlineEvent, which is set only by the boardEventHandler.
@@ -582,16 +588,21 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	:param Queue windowedDataBuffer: Buffer will be used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
 	:param Event newWindowAvailable: Event used to know when there is new window available from :py:meth:`source.windowing.windowing`. It is set by :py:meth:`source.windowing.windowing`
 	:param bool debugMode: When True, print messages used instead of serial connection with wheel.
-	:param Event emergencyKeyboardEvent: Event will be used for enable keyboard controlling of the wheelchair.
-	:param Queue keyboardBuffer: Buffer for getting pressed key from :py:mod:`source.keyboardMove' and used it for wheelchair movement
 
+	:var Event emergencyKeyboardEvent: Event will be used for enable keyboard controlling of the wheelchair.
+	:var Queue keyboardBuffer: Buffer for getting pressed key from :py:meth:`source.online.socketConnect` and used it for wheelchair movement
+	:var Event keyboardBuffer: Used as flag so the :py:meth:`source.online.socketConnect` can proceed to start the online application.
+	:var Queue predictBuffer: Buffer used for communicating and passing the predicted data between :py:meth:`source.online.onlineProcessing` and :py:meth:`source.online.wheelSerialPredict`.
 	"""
 	procList = []
 	socketConnection = Event()
 	socketConnection.clear()
+	emergencyKeyboardEvent = Event()
+	emergencyKeyboardEvent.clear()
 	mngr = SyncManager()
 	mngr.start()
 	predictBuffer = mngr.Queue(maxsize=100)
+	keyboardBuffer = mngr.Queue(maxsize=10)
 
 	# Create the process needed
 	socketProcess = Process(target=socketConnect,
@@ -624,3 +635,4 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	for proc in procList:
 		proc.join()
 	emptyQueue(predictBuffer)
+	emptyQueue(keyboardBuffer)
