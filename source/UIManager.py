@@ -102,8 +102,6 @@ def uiManager():
 	startTrainingEvent = Event()
 	startOnlineEvent = Event()
 	newWindowAvailable = Event()
-	emergencyKeyboardEvent = Event()
-	emergencyKeyboardEvent.clear()
 
 	# catch keyboardinterupt exception and just set shutdownEvent
 	signal.signal(signal.SIGINT, signal_handler)
@@ -123,7 +121,6 @@ def uiManager():
 	windowingBuffer = manager.Queue(maxsize=cnst.writeDataMaxQueueSize)
 	windowedDataBuffer = manager.Queue(maxsize=cnst.writeDataMaxQueueSize)
 	trainingClassBuffer = manager.Queue(maxsize=1)
-	keyboardBuffer = manager.Queue(maxsize=10)
 	# Queue for the communication between socket and boardEventHandler
 	# add queues in the list
 	# dataBuffersList = [windowingBuffer, printBuffer, guiBuffer]
@@ -175,7 +172,7 @@ def uiManager():
 		# create Process for connecting to unity program socket fro online session
 		onlineProcess = Process(target=startOnline, name='online',
 		                        args=(board, startOnlineEvent, boardApiCallEvents, shutdownEvent,
-		                              windowedDataBuffer, newWindowAvailable, emergencyKeyboardEvent, keyboardBuffer))
+		                              windowedDataBuffer, newWindowAvailable))
 		processesList.append(onlineProcess)
 
 		# start processes in the processList
