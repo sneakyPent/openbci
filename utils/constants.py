@@ -205,7 +205,7 @@ class Constants:
 	""" GUI """
 	# the order of the channels' color  is the same order as the wires' colors in the equivalent pin
 	GUIChannelColors = [colrs['red'], colrs['orange'], colrs['yellow'], colrs['green'],
-	                    colrs['blue'], colrs['purple'], colrs['white'], colrs['gray']]
+	                    colrs['blue'], colrs['purple'], colrs['turquoise'], colrs['orchid'], colrs['gray']]
 
 	channelsList = ['channel 1', 'channel 2', 'channel 3', 'channel 4',
 	                'channel 5', 'channel 6', 'channel 7', 'channel 8']
