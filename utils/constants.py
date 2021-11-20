@@ -1,5 +1,7 @@
 import os
 import time
+from enum import Enum
+
 from matplotlib import colors as mcolors
 
 colrs = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
@@ -24,6 +26,22 @@ def getDestinationFolderWithDate():
 		# Create a new directory because it does not exist
 		os.makedirs(path)
 	return path
+
+
+class ElectrodeType(Enum):
+	DRY = 0
+	WET = 1
+
+
+class FftType(Enum):
+	brainflowFFT = 0
+	pythonFFT = 1
+
+
+class FilterType(Enum):
+	butter_bandpass_filter = 0
+	lowpass_highpass = 1
+	brainflow_bandpass = 2
 
 
 class Constants:
@@ -181,7 +199,8 @@ class Constants:
 	windowStepSizeList = [0.5, 1, 1.5, 0.99, 0.35]
 	initStepSizeValue = 0.5
 	synchingSignal = [0, 0, 0, 0, 0, 0, 0, 0]
-	initEnabledChannels = [0, 1, 2, 3]
+	initEnabledChannels = [0, 1, 2]
+	initUsingElectrodes = ElectrodeType.DRY
 
 	""" printng massages colors"""
 	FAIL = '\033[91m'
