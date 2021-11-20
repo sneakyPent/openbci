@@ -28,7 +28,7 @@ import sys
 
 from utils import filters
 from utils.coloringPrint import *
-from utils.constants import Constants as cnts
+from utils.constants import Constants as cnts, ElectrodeType
 
 scale_fac_uVolts_per_count = cnts.ADS1299_VREF / float((pow(2, 23) - 1)) / cnts.ADS1299_GAIN_24 * 1000000.
 scale_fac_accel_G_per_count = 0.002 / (pow(2, 4))  # assume set to +/4G, so 2 mG
@@ -74,7 +74,7 @@ class OpenBCICyton(object):
 	def __init__(self, port=None, baudRate=115200, filter_data=True, scaled_output=True,
 	             daisy=False, aux=False, impedance=False, log=True, timeout=None,
 	             lowerBoundFrequency=0, higherBoundFrequency=0, enabledChannels=None, windowSize=0,
-	             windowStepSize=0):
+	             windowStepSize=0, electrodeType: ElectrodeType = None):
 		self.baudRate = baudRate
 		self.timeout = timeout
 		self.logger = logging.getLogger(cnst.loggerName)
@@ -82,6 +82,7 @@ class OpenBCICyton(object):
 		self.streaming = False
 		self.connected = False
 		self.trainingMode = False
+		self.usingElectrodes = electrodeType
 		self.port = port
 		self.filtering_data = filter_data
 		self.scaling_output = scaled_output
@@ -177,6 +178,8 @@ class OpenBCICyton(object):
 			self.setScaledOutput(settings["scaling_output"])
 		if settings["enabledChannels"] != self.getEnabledChannels():
 			self.setEnabledChannels(settings["enabledChannels"])
+		if settings["usingElectrodes"] != self.getUsingElectrodes():
+			self.setUsingElectrodes(settings["usingElectrodes"])
 
 	def setWindowStepSize(self, size):
 		self.windowStepSize = size
@@ -186,6 +189,9 @@ class OpenBCICyton(object):
 
 	def setTrainingMode(self, st):
 		self.trainingMode = st
+
+	def setUsingElectrodes(self, usEl):
+		self.usingElectrodes = usEl
 
 	# GET BOARD VARIABLES FUNCTIONS
 
@@ -234,7 +240,8 @@ class OpenBCICyton(object):
 			"filtering_data": self.filtering_data.__str__(),
 			"scaling_output": self.scaling_output.__str__(),
 			"enabledChannels": self.enabledChannels.__str__(),
-			"windowStepSize": self.windowStepSize.__str__()
+			"windowStepSize": self.windowStepSize.__str__(),
+			"usingElectrodes": self.usingElectrodes.__str__()
 		}
 
 	def getBoardSettingAttributes(self):
@@ -245,7 +252,8 @@ class OpenBCICyton(object):
 			"filtering_data": self.filtering_data,
 			"scaling_output": self.scaling_output,
 			"enabledChannels": self.enabledChannels,
-			"windowStepSize": self.windowStepSize
+			"windowStepSize": self.windowStepSize,
+			"usingElectrodes": self.usingElectrodes
 		}
 
 	def getWindow(self):
@@ -265,6 +273,9 @@ class OpenBCICyton(object):
 
 	def isStreaming(self):
 		return self.streaming
+
+	def getUsingElectrodes(self):
+		return self.usingElectrodes
 
 	# SERIAL PORT FUNCTIONS
 	def ser_write(self, b):
