@@ -11,6 +11,35 @@ import sys
 sys.path.append('..')
 
 
+def createLegends(plotData, freq, idx, channel=None):
+	lgSNR = 'SNR=' + "{:.5f}".format(calculateSNR(plotData[idx]))
+	lgMAX = ', Max=' + "{:.5e}".format(max(plotData))
+	lgFREQ = ' FREQ=' + "{:.4f}".format(
+		abs(
+			freq[idx][plotData[idx].tolist().index(max(plotData[idx].tolist()))]
+		)
+	)
+	legnd = lgSNR + lgMAX + lgFREQ
+	if channel is not None:
+		lgChannel = 'Channel=' + channel.__str__() + ', '
+		legnd = lgChannel + legnd
+	return legnd
+
+
+def calculateFFT(plotData, dtLen, samplingRate, lowBandBound, highBandBound, centerFreq, bandwidth,
+                 fftType: FftType, filtered: bool, filterType: FilterType, noiseCancellation: bool):
+	data, filterDescription = filteringCases(plotData, samplingRate, lowBandBound, highBandBound, centerFreq, bandwidth,
+	                                         filtered, filterType, noiseCancellation)
+	figName = fftType.name.upper() + filterDescription
+	if fftType == FftType.brainflowFFT:
+		retPSD, retFreq, retIdx = brainflowFFT(data, dtLen, samplingRate)
+	elif fftType == FftType.pythonFFT:
+		retPSD, retFreq, retIdx = pythonFFT(data, dtLen, samplingRate)
+	else:
+		return None
+	return retPSD, retFreq, retIdx, figName
+
+
 def brainflowFFT(data, dtLen, samplingRate):
 	fft_data = DataFilter.perform_fft(np.array(data.tolist()), WindowFunctions.HANNING.value)
 	PSD = fft_data * np.conj(fft_data) / dtLen
