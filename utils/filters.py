@@ -24,13 +24,3 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
 	# ************** check the axis!!!
 	y = signal.sosfiltfilt(sos, data, axis=0)
 	return y
-
-
-# Notch Filter
-def notch_filter(val, data, fs=250):
-	notch_freq_Hz = np.array([float(val)])
-	for freq_Hz in np.nditer(notch_freq_Hz):
-		bp_stop_Hz = freq_Hz + 3.0 * np.array([-1, 1])
-		b, a = signal.butter(3, bp_stop_Hz / (fs / 2.0), 'bandstop')
-		fin = data = signal.lfilter(b, a, data)
-	return fin
