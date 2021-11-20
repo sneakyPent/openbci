@@ -2,11 +2,32 @@ import os
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
-from utils.constants import Constants as cnst
-from utils import filters
+from brainflow import DataFilter, NoiseTypes, WindowFunctions, FilterTypes
+from utils.constants import Constants as cnst, FilterType, FftType
+from utils.constants import ElectrodeType
+from utils import filters, filteringCases
 import sys
 
 sys.path.append('..')
+
+
+def brainflowFFT(data, dtLen, samplingRate):
+	fft_data = DataFilter.perform_fft(np.array(data.tolist()), WindowFunctions.HANNING.value)
+	PSD = fft_data * np.conj(fft_data) / dtLen
+	PSD = np.array([value.real for value in PSD])
+	freq = np.fft.fftfreq(data.size, 1 / samplingRate)[:fft_data.size]
+	idx = np.argsort(freq)
+	return PSD, freq, idx
+
+
+def pythonFFT(data, dtLen, samplingRate):
+	# hamming window
+	data_fft = np.abs(np.fft.fft(data)) ** 2
+	time_step = 1 / samplingRate
+	# calculate the frequencies
+	freq = np.fft.fftfreq(dtLen, time_step)
+	idx = np.argsort(freq)
+	return data_fft, freq, idx
 
 
 def calculateSNR(data):
