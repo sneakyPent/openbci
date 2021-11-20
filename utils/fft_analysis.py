@@ -158,7 +158,8 @@ def printUniqueFFT(fileNames, lowCut=5, highCut=50, fs=250, enabledChannel=None,
 	plt.show()
 
 
-def printFFT(fileNames, lowCut=4, highCut=40, fs=250, enabledChannel=None):
+def printFFT(fileNames, lowCut=4, highCut=40, fs=250, enabledChannel=None,
+             usingElectrodes: ElectrodeType = ElectrodeType.DRY):
 	"""
 	Creates a subplot of 4 plots, one for every class in the 'signal' dataset of the current hdf5 file.
 
@@ -191,49 +192,57 @@ def printFFT(fileNames, lowCut=4, highCut=40, fs=250, enabledChannel=None):
 				subCols += 1
 				subRows = 0
 			d1 = np.array(signalDataInClassPackages[tClass])
-			freq_6 = None
+			plotData = None
 			for channel in enabledChannel:
-				if freq_6 is None:
-					freq_6 = d1[:, channel]
+				if plotData is None:
+					plotData = d1[:, channel]
 				else:
-					freq_6 = np.column_stack((freq_6, d1[:, channel]))
-			mm = np.array(freq_6)
-			tt = mm[1:]
+					plotData = np.column_stack((plotData, d1[:, channel]))
+			plotDataArray = np.array(plotData)
 			print('Class: ' + int(
-				signalDataInClassPackages[tClass][0][8]).__str__() + ' --> Shape: ' + tt.shape.__str__())
-			freq_6 = tt
-			data_processed_freq_6 = []
-			i = 0
+				signalDataInClassPackages[tClass][0][8]).__str__() + ' --> Shape: ' + plotDataArray.shape.__str__())
 
-			while i < freq_6.shape[1]:
-				# bandpass filtering            !! ATTENTION: how many channels you want<
-				data_filt = filters.butter_bandpass_filter(freq_6[:, i], lowCut, highCut, fs, order=10)
-				# hamming window
-				data_fft = np.abs(np.fft.fft(data_filt)) ** 2
-				# # fft
-				data_processed_freq_6.append(data_fft)  # = np.array(data_processed)
-				i = i + 1
-
-			time_step = 1 / fs
-
-			colors = ['r', 'b', 'g', 'orange']
-			lb = ['ch1', 'ch2', 'ch3', 'ch4']
-
-			# calculate the frequencies
-			freqs3 = np.fft.fftfreq(freq_6[:, 0].size, time_step)
-			idx3 = np.argsort(freqs3)
-
-			for w in range(len(data_processed_freq_6)):
-				ps = data_processed_freq_6[w]
-				print('Channel ' + w.__str__() + ':' +
-				      ' \t SNR = ' + calculateSNR(ps).__str__() +
-				      ',\t Max = ' + max(ps).__str__() +
-				      ',\t FREQ = ' + abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]).__str__())
-				lgSNR = ', SNR=' + "{:.5f}".format(calculateSNR(ps))
-				lgMAX = ', Max=' + "{:.2e}".format(max(ps))
-				lgFREQ = ' FREQ=' + "{:.4f}".format(abs(freqs3[idx3][ps[idx3].tolist().index(max(ps[idx3].tolist()))]))
-				legnd = lb[w] + lgSNR + lgMAX + lgFREQ
-				axs[subCols, subRows].plot(freqs3[idx3], ps[idx3], colors[w], label=legnd)
+			# check if signal contains only one channel
+			if plotDataArray.ndim > 1:
+				columns = plotDataArray.shape[1]
+			else:
+				columns = plotDataArray.ndim
+			PSD = freq = idx = None
+			plotRange = [1, 55]
+			for column in range(columns):
+				if columns > 1:
+					colData = plotDataArray[:, column]
+				else:
+					colData = plotDataArray
+				if usingElectrodes == ElectrodeType.DRY:
+					# For dry electrodes, using brainflowFFT that needs data length to be power of 2
+					dtLen = DataFilter.get_nearest_power_of_two(colData.shape[0])
+					# chopping Data to have length equal to power of 2
+					signalDataArrayChopped = np.array(colData[:dtLen].tolist())
+					PSD, freq, idx, figName = calculateFFT(signalDataArrayChopped, dtLen, fs, lowCut, highCut, None,
+					                                       None,
+					                                       fftType=FftType.brainflowFFT,
+					                                       filtered=True,
+					                                       filterType=FilterType.butter_bandpass_filter,
+					                                       noiseCancellation=True)
+					print(figName)
+				elif usingElectrodes == ElectrodeType.WET:
+					dtLen = colData.shape[0]
+					PSD, freq, idx, figName = calculateFFT(colData, dtLen, fs, lowCut, highCut, None, None,
+					                                       fftType=FftType.pythonFFT,
+					                                       filtered=True,
+					                                       filterType=FilterType.butter_bandpass_filter,
+					                                       noiseCancellation=False)
+					print(figName)
+				else:
+					# TODO: RAISE UKNOWN ELECTRODE TYPE
+					pass
+				idx = [idx for idx, value in enumerate(freq) if plotRange[0] <= value <= plotRange[1]]
+				print('Channel ' + column.__str__() + ':' +
+				      ' \t SNR = ' + calculateSNR(PSD).__str__() +
+				      ',\t Max = ' + max(PSD).__str__() +
+				      ',\t FREQ = ' + abs(freq[idx][PSD[idx].tolist().index(max(PSD[idx].tolist()))]).__str__())
+				axs[subCols, subRows].plot(freq[idx], PSD[idx], ls='-.', label=createLegends(PSD, freq, idx))
 				axs[subCols, subRows].set_title(
 					'Class ' + cnst.trainingClasses[tClass + 1].__str__()
 					+ ', Frequency: ' + cnst.trainingClassesFrequencies[tClass + 1].__str__()
