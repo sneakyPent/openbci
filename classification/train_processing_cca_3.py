@@ -139,7 +139,10 @@ def calculate_cca_corrs_all_segments(segment_buffer, chan_ind, fs, frames_ch, lo
 		# I store the label of the segment, which is in the last (-1) column of the 1st (0) row
 		ground_truth_full[segment_ind, 0] = segment_full[0, -1]
 
-		segment_filt = butter_bandpass_filter(segment, lowcut, highcut, fs, order=10)
+		segment_filt, _ = filteringCases(segment, fs, lowcut, highcut,
+		                                 filtered=True,
+		                                 filterType=FilterType.butter_bandpass_filter,
+		                                 noiseCancellation=True)
 
 		r_full[segment_ind, :] = calculate_cca_correlations(segment_filt, fs, frames_ch, harmonics_num)
 
