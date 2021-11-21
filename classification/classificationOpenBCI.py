@@ -1,3 +1,7 @@
+import os
+from tkinter import filedialog, Tk
+from tkinter.filedialog import asksaveasfilename
+
 import h5py
 import joblib
 from multiprocessing import Event
@@ -6,8 +10,10 @@ from classification import calculate_cca_corrs_all_segments
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
-from utils.constants import Constants as cnst
+from utils.constants import Constants as cnst, getSessionFilename
 
+root = Tk()
+root.withdraw()
 # parameters
 # ................................................................
 chan_ind = [0, 1, 2, 3]
@@ -29,7 +35,7 @@ _dataInFile.set()
 # functions 
 # classifier's training
 def training(segment_buffer, chan_ind, fs, frames_ch, lowcut, highcut, harmonics_num,
-             _dataInFile):  # segment buffer is proc_buffer, with each get() we have one segment
+             _dataInFile, classifierName):  # segment buffer is proc_buffer, with each get() we have one segment
 
 	r, ground_truth = calculate_cca_corrs_all_segments(segment_buffer, chan_ind, fs, frames_ch, lowcut, highcut,
 	                                                   harmonics_num, _dataInFile)
@@ -40,7 +46,7 @@ def training(segment_buffer, chan_ind, fs, frames_ch, lowcut, highcut, harmonics
 	# training
 	clf_LDA.fit(r, np.ravel(ground_truth))  # np.ravel returns a contiguous flattened array
 
-	joblib.dump(clf_LDA, cnst.classifierFilename)
+	joblib.dump(clf_LDA, classifierName)
 
 
 def calculateAccuracy(segment_buffer, chan_ind, fs, frames_ch, lowcut, highcut, harmonics_num, _dataInFile):
@@ -86,8 +92,22 @@ def classify(fileNames):
 
 						# split the data to train and test
 						X_train, X_test = train_test_split(dset, test_size=0.35, random_state=42)
+						isExist = os.path.exists(cnst.classifiersDirectory)
 
-						training(X_train, chan_ind, fs, frames_ch, lowcut, highcut, harmonics_num, _dataInFile)
+						if not isExist:
+							# Create a new directory because it does not exist
+							os.makedirs(cnst.classifiersDirectory)
+						classifierFileName = asksaveasfilename(title="Choose a name for the classifier",
+						                                       initialfile=getSessionFilename(classification=True),
+						                                       defaultextension=".sav",
+						                                       filetypes=[('SAV', '.sav')],
+						                                       initialdir=cnst.classifiersDirectory,
+						                                       confirmoverwrite=True)
+
+						if not classifierFileName:
+							return
+						training(X_train, chan_ind, fs, frames_ch, lowcut, highcut, harmonics_num, _dataInFile,
+						         classifierFileName)
 						acc_LDA, predicted_labels_LDA, ground_truth = calculateAccuracy(X_test, chan_ind, fs, frames_ch,
 						                                                                lowcut,
 						                                                                highcut, harmonics_num,
