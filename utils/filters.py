@@ -29,25 +29,29 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
 
 
 def filterDryElectrodes(signalData, samplingRate, lowBandBound, highBandBound, order=None):
-	filteredData, _ = filteringCases(signalData, samplingRate, lowBandBound, highBandBound, None, None, filtered=True,
+	filteredData, _ = filteringCases(signalData, samplingRate, lowBandBound, highBandBound, filtered=True,
 	                                 filterType=FilterType.butter_bandpass_filter, noiseCancellation=True, order=order)
 	return filteredData
 
 
 def filterWetElectrodes(signalData, samplingRate, lowBandBound, highBandBound, order=None):
-	filteredData, _ = filteringCases(signalData, samplingRate, lowBandBound, highBandBound, None, None, filtered=True,
+	filteredData, _ = filteringCases(signalData, samplingRate, lowBandBound, highBandBound, filtered=True,
 	                                 filterType=FilterType.butter_bandpass_filter, noiseCancellation=False, order=order)
 	return filteredData
 
 
-def filteringCases(signalData, samplingRate, lowBandBound, highBandBound, centerFreq, bandwidth,
-                   filtered: bool, filterType: FilterType, noiseCancellation: bool, order=None):
+def filteringCases(signalData, samplingRate, lowBandBound, highBandBound, filtered: bool, filterType: FilterType,
+                   noiseCancellation: bool, centerFreq=None, bandwidth=None, order=None):
 	data = np.copy(signalData)
 	filterTypeFigureText = ', without filtering'
 	noiseCancellationFigureText = ', without noise cancellation'
 
 	if noiseCancellation:
-		DataFilter.remove_environmental_noise(data, samplingRate, NoiseTypes.FIFTY.value)
+		if signalData.ndim > 1:
+			for column in range(signalData.shape[1]):
+				DataFilter.remove_environmental_noise(data[:, column], samplingRate, NoiseTypes.FIFTY.value)
+		else:
+			DataFilter.remove_environmental_noise(data, samplingRate, NoiseTypes.FIFTY.value)
 		noiseCancellationFigureText = ', noise Cancellation applied (brainflow remove_environmental_noise)'
 
 	if filtered:
@@ -66,8 +70,17 @@ def filteringCases(signalData, samplingRate, lowBandBound, highBandBound, center
 		elif filterType == FilterType.lowpass_highpass:
 			if order is None:
 				order = 5
-			DataFilter.perform_lowpass(data, samplingRate, highBandBound, order, FilterTypes.BUTTERWORTH.value, 1)
-			DataFilter.perform_highpass(data, samplingRate, lowBandBound, order, FilterTypes.BUTTERWORTH.value, 1)
+			if signalData.ndim > 1:
+				for column in range(data.shape[1]):
+					DataFilter.perform_lowpass(data[:, column], samplingRate, highBandBound, order,
+					                           FilterTypes.BUTTERWORTH.value,
+					                           1)
+					DataFilter.perform_highpass(data[:, column], samplingRate, lowBandBound, order,
+					                            FilterTypes.BUTTERWORTH.value,
+					                            1)
+			else:
+				DataFilter.perform_lowpass(data, samplingRate, highBandBound, order, FilterTypes.BUTTERWORTH.value, 1)
+				DataFilter.perform_highpass(data, samplingRate, lowBandBound, order, FilterTypes.BUTTERWORTH.value, 1)
 			filterTypeFigureText = ', data filtered with highpass ' + lowBandBound.__str__() + ' and lowpass ' \
 			                       + highBandBound.__str__() + ' filters independently and order=' + order.__str__()
 	filterDescription = filterTypeFigureText + noiseCancellationFigureText
