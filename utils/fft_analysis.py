@@ -28,8 +28,8 @@ def createLegends(plotData, freq, idx, channel=None):
 
 def calculateFFT(plotData, dtLen, samplingRate, lowBandBound, highBandBound, centerFreq, bandwidth,
                  fftType: FftType, filtered: bool, filterType: FilterType, noiseCancellation: bool):
-	data, filterDescription = filteringCases(plotData, samplingRate, lowBandBound, highBandBound, centerFreq, bandwidth,
-	                                         filtered, filterType, noiseCancellation)
+	data, filterDescription = filteringCases(plotData, samplingRate, lowBandBound, highBandBound,
+	                                         filtered, filterType, noiseCancellation, centerFreq, bandwidth)
 	figName = fftType.name.upper() + filterDescription
 	if fftType == FftType.brainflowFFT:
 		retPSD, retFreq, retIdx = brainflowFFT(data, dtLen, samplingRate)
