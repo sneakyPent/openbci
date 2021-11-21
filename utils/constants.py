@@ -7,13 +7,15 @@ from matplotlib import colors as mcolors
 colrs = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
 
 
-def getSessionFilename(training=False, openbciGUI=False, online=False):
+def getSessionFilename(training=False, openbciGUI=False, online=False, classification=False):
 	if training:
 		return Constants.destinationFolder + 'Training__' + time.strftime("%d-%m-%Y__%H-%M-%S")
 	elif openbciGUI:
 		return 'openBCI_GUI_Training__' + time.strftime("%d-%m-%Y__%H-%M-%S")
 	elif online:
 		return 'online' + time.strftime("%d-%m-%Y__%H-%M-%S") + '.txt'
+	elif classification:
+		return 'Classifier_' + time.strftime("%d-%m-%Y__%H-%M-%S")
 	else:
 		return Constants.destinationFolder + 'Streaming__' + time.strftime("%d-%m-%Y__%H-%M-%S")
 
@@ -241,6 +243,7 @@ class Constants:
 
 	""" classification """
 	classifierFilename = "../classification/classifier_LDA.sav"
+	classifiersDirectory = '../classifiers/'
 	frames_ch = [[0 for j in range(2)] for i in range(4)]  # The duration (in frames) of the first checkerboard pattern
 	frames_ch[0] = [10, 10]  # for frequency=3 Hz
 	frames_ch[1] = [8, 8]  # for frequency=3.75 Hz
