@@ -72,10 +72,10 @@ def cca(X, Y):
 # ... This function calculates the cca correlations of a segment of data, for all the stimulus freqs
 # ... segment: number_of_samples x number_of_channels
 def calculate_cca_correlations(segment, fs, frames_ch, harmonics_num):
-	frames_np = np.sum(np.array(frames_ch),
-	                   1)  # I sum the frames along axis 1 (i.e. I sum all the elements of each row)
-	stimulus_freqs = np.divide(np.full(frames_np.shape[0], refresh_rate),
-	                           frames_np)  # I divide the screen refresh rate by the frames_np for each stimulus frequency
+	# I sum the frames along axis 1 (i.e. I sum all the elements of each row)
+	frames_np = np.sum(np.array(frames_ch), 1)
+	# I divide the screen refresh rate by the frames_np for each stimulus frequency
+	stimulus_freqs = np.divide(np.full(frames_np.shape[0], refresh_rate), frames_np)
 	# .....checkerboard invokes double of the stimuli freqs!!!!!!!!!!!!
 	# if not refresh_rate == 30:
 	stimulus_freqs = 2 * stimulus_freqs
@@ -84,8 +84,8 @@ def calculate_cca_correlations(segment, fs, frames_ch, harmonics_num):
 
 	for stimulus_ind in range(stimulus_freqs.shape[0]):
 		stimulus_freq = stimulus_freqs[stimulus_ind]
-		y_ref = create_reference_signals(stimulus_freq, harmonics_num, segment.shape[0],
-		                                 fs)  # create_cca_reference_signals
+		# create_cca_reference_signals
+		y_ref = create_reference_signals(stimulus_freq, harmonics_num, segment.shape[0], fs)
 
 		r_pyr = cca(segment.astype(float), y_ref.astype(float))
 		r_segment[0, stimulus_ind] = r_pyr[0]  # r_segment contains one cca correlation for each stimulus frequency
@@ -102,10 +102,10 @@ def calculate_cca_corrs_all_segments(segment_buffer, chan_ind, fs, frames_ch, lo
 	else:  # else, if we proccess the data right after the presentation, the data lie in a buffer
 		segments_num = segment_buffer.qsize()
 
-	frames_np = np.sum(np.array(frames_ch),
-	                   1)  # I sum the frames along axis 1 (i.e. I sum all the elements of each row)
-	stimulus_freqs = np.divide(np.full(frames_np.shape[0], refresh_rate),
-	                           frames_np)  # I divide the screen refresh rate by the frames_np for each stimulus frequency
+	# I sum the frames along axis 1 (i.e. I sum all the elements of each row)
+	frames_np = np.sum(np.array(frames_ch), 1)
+	# I divide the screen refresh rate by the frames_np for each stimulus frequency
+	stimulus_freqs = np.divide(np.full(frames_np.shape[0], refresh_rate), frames_np)
 
 	# .....checkerboard invokes double of the stimuli freqs!!!!!!!!!!!!
 	print("stimulus_freqs:", stimulus_freqs)
@@ -114,8 +114,8 @@ def calculate_cca_corrs_all_segments(segment_buffer, chan_ind, fs, frames_ch, lo
 
 	ground_truth_full = np.zeros((segments_num, 1))  # Initialize ground truth array
 	r_full = np.zeros((segments_num, stimulus_freqs.shape[0]))  # Initialize array of cca coefficients r
-	mask = np.zeros((segments_num, 1),
-	                dtype=bool)  # The mask will contain false for all the segments where the label is not the same for all samples
+	# The mask will contain false for all the segments where the label is not the same for all samples
+	mask = np.zeros((segments_num, 1), dtype=bool)
 	# ms = mask.shape[0]
 	# mv = 0
 	# cc_tr = 0
@@ -136,8 +136,8 @@ def calculate_cca_corrs_all_segments(segment_buffer, chan_ind, fs, frames_ch, lo
 		segment = segment_full[:, np.asarray(chan_ind)]  # choose channels (last column = label, we will use it later)
 
 		mask[segment_ind] = len(set(segment_full[:, -1])) <= 1
-		ground_truth_full[segment_ind, 0] = segment_full[
-			0, -1]  # I store the label of the segment, which is in the last (-1) column of the 1st (0) row
+		# I store the label of the segment, which is in the last (-1) column of the 1st (0) row
+		ground_truth_full[segment_ind, 0] = segment_full[0, -1]
 
 		segment_filt = butter_bandpass_filter(segment, lowcut, highcut, fs, order=10)
 
