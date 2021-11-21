@@ -6,27 +6,10 @@ Created on Wed Jul 10 13:56:22 2019
 """
 
 import numpy as np
-import scipy.signal as signal
+from utils import filteringCases, FilterType
 
 # refresh rate
 refresh_rate = 60
-
-
-def butter_bandpass(lowcut, highcut, fs, order=5):
-	# *************************************************** Resolve the order issue!!! *********************************
-	nyq = 0.5 * fs
-	low = lowcut / nyq
-	high = highcut / nyq
-	sos = signal.butter(order, [low, high], analog=False, btype='band', output='sos')
-	return sos
-
-
-def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
-	sos = butter_bandpass(lowcut, highcut, fs, order=order)
-	# *********** sosfiltfilt, instead of sosfilt, for forward-backward filtering
-	# ************** check the axis!!!
-	y = signal.sosfiltfilt(sos, data, axis=0)
-	return y
 
 
 def create_reference_signals(stimulus_freq, harmonics_num, samples_num, fs):
