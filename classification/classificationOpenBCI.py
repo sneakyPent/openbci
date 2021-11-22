@@ -49,12 +49,13 @@ def training(segment_buffer, chan_ind, fs, frames_ch, lowcut, highcut, harmonics
 	joblib.dump(clf_LDA, classifierName)
 
 
-def calculateAccuracy(segment_buffer, chan_ind, fs, frames_ch, lowcut, highcut, harmonics_num, _dataInFile):
+def calculateAccuracy(segment_buffer, chan_ind, fs, frames_ch, lowcut, highcut, harmonics_num, _dataInFile,
+                      classifierFileName):
 	r, ground_truth = calculate_cca_corrs_all_segments(segment_buffer, chan_ind, fs, frames_ch, lowcut, highcut,
 	                                                   harmonics_num, _dataInFile)
 
 	# load classifier
-	clf_LDA = joblib.load(cnst.classifierFilename)
+	clf_LDA = joblib.load(classifierFileName)
 
 	# predict
 	predicted_labels_LDA = clf_LDA.predict(r)
