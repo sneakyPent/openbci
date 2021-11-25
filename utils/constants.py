@@ -4,7 +4,7 @@ from enum import Enum
 
 from matplotlib import colors as mcolors
 
-colrs = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
+baseColors = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
 
 
 def getSessionFilename(training=False, openbciGUI=False, online=False, classification=False):
@@ -225,8 +225,9 @@ class Constants:
 
 	""" GUI """
 	# the order of the channels' color  is the same order as the wires' colors in the equivalent pin
-	GUIChannelColors = [colrs['red'], colrs['orange'], colrs['yellow'], colrs['green'],
-	                    colrs['blue'], colrs['purple'], colrs['turquoise'], colrs['orchid'], colrs['gray']]
+	GUIChannelColors = [baseColors['red'], baseColors['orange'], baseColors['yellow'], baseColors['green'],
+	                    baseColors['blue'], baseColors['purple'], baseColors['turquoise'], baseColors['orchid'],
+	                    baseColors['gray'], baseColors['saddlebrown'], baseColors['papayawhip']]
 
 	channelsList = ['channel 1', 'channel 2', 'channel 3', 'channel 4',
 	                'channel 5', 'channel 6', 'channel 7', 'channel 8']
