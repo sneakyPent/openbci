@@ -10,7 +10,6 @@ This module used only for the online session and in order to run it needs the un
 
 """
 
-import logging
 import queue
 import socket
 import subprocess
@@ -25,6 +24,7 @@ import joblib
 from time import sleep
 import serial
 from source import OpenBCICyton
+from utils.coloringPrint import printError, printInfo, printWarning
 from utils.constants import Constants as cnst, getSessionFilename
 from utils.filters import *
 from classification.train_processing_cca_3 import calculate_cca_correlations
@@ -64,18 +64,17 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
 	"""
-	logger = logging.getLogger(cnst.loggerName)
 	while not _shutdownEvent.is_set():
 		startOnlineEvent.wait(1)
 		if startOnlineEvent.is_set():
 			if not board.isConnected():
-				logger.warning('Could not start online session without connected Board.')
+				printWarning('Could not start online session without connected Board.')
 				startOnlineEvent.clear()
 				continue
 			# create socket
 			s = socket.socket()
 			socket.setdefaulttimeout(None)
-			logger.info('Socket created')
+			printInfo('Socket created')
 			# IP and PORT connection
 			port = 8080
 			while not socketConnection.is_set():
@@ -83,15 +82,15 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 					# s.bind(('139.91.190.32', port)) #local host
 					s.bind(('127.0.0.1', port))  # local host
 					s.listen(30)  # listening for connection for 30 sec?
-					logger.info('Socket listening ... ')
+					printInfo('Socket listening ... ')
 					# try:
 					socketConnection.set()
 					c, addr = s.accept()  # when port connected
-					logger.info('Got connection from ' + addr.__str__())
+					printInfo('Got connection from ' + addr.__str__())
 
 					# 1st communication with Quest
 					bytes_received = c.recv(1024)  # received bytes
-					logger.info(bytes_received.decode("utf-8"))
+					printInfo(bytes_received.decode("utf-8"))
 
 					# Send "True" string to start the Quest app
 					nn_output = "True"
@@ -124,10 +123,10 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 										if bytes_received in [*cnst.keyBoardCommands]:
 											keyboardBuffer.put_nowait(bytes_received)
 									except queue.Full:
-										logging.getLogger(cnst.loggerName).info('keyboardBuffer full')
+										printInfo('keyboardBuffer full')
 										emptyQueue(keyboardBuffer)
 									except ValueError as error:
-										logger.error(error)
+										printError(error.__str__())
 									except:
 										raise SocketConnectionError
 									bytes_received_old = bytes_received
@@ -135,11 +134,11 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 					c.close()
 					break
 				except socket.error as error:
-					logger.warning(error.__str__() + '. Wait for 10 seconds before trying again')
+					printWarning(error.__str__() + '. Wait for 10 seconds before trying again')
 					time.sleep(10)
 					pass
-				except SocketConnectionError:
-					logger.error('SocketConnection problem', exc_info=True)
+				except SocketConnectionError as sr:
+					printError('SocketConnection problem: ' + sr.__str__())
 					c.shutdown(socket.SHUT_RDWR)
 					boardApiCallEvents["stopStreaming"].set()
 					c.close()
@@ -181,7 +180,7 @@ def onlineProcessing(board, windowedDataBuffer, predictBuffer, socketConnection,
 		:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
 		"""
-	logger = logging.getLogger(cnst.loggerName)
+		
 	clf = joblib.load(cnst.classifierFilename)
 	while not _shutdownEvent.is_set():
 		socketConnection.wait(1)
@@ -218,14 +217,14 @@ def onlineProcessing(board, windowedDataBuffer, predictBuffer, socketConnection,
 					# predict
 					tmp_command_predicted = clf.predict(r_segment)
 					command_predicted = int(tmp_command_predicted[0])
-					logger.critical(command_predicted)
+					printError(command_predicted)
 					#  put prediction into the buffer
 					predictBuffer.put_nowait(command_predicted)
 			except queue.Full:
-				logger.error('predictBuffer is Full.')
+				printError('predictBuffer is Full.')
 				emptyQueue(predictBuffer)
 			except queue.Empty:
-				logger.error('WindowedDataBuffer is empty.')
+				printError('WindowedDataBuffer is empty.')
 	emptyQueue(predictBuffer)
 
 
@@ -234,7 +233,7 @@ def debugPredict(socketConnection, predictBuffer, emergencyKeyboardEvent, keyboa
 	"""
 	Same logic as :py:meth:`source.online.wheelSerialPredict`. Used for debug purposes, testing without connection with a wheelchair
 	"""
-	logger = logging.getLogger(cnst.loggerName)
+
 	debugMode = False
 	commandPrintFileObject = None
 	while not _shutdownEvent.is_set():
@@ -247,11 +246,11 @@ def debugPredict(socketConnection, predictBuffer, emergencyKeyboardEvent, keyboa
 				commandPrintFileObject = open(getSessionFilename(online=True), 'w')
 			# 	Set stop as init command
 			cmd_old = cnst.target4Class_STOP
-			logger.info("Start Wheelchair")
+			printInfo("Start Wheelchair")
 			while not _shutdownEvent.is_set() and socketConnection.is_set():  # Running while there is socket connection with the
 				if not predictBuffer.empty():  # New command Available
 					data = predictBuffer.get_nowait()  # get the command and translate into move
-					logger.warning(data)
+					printWarning(data)
 					if not emergencyKeyboardEvent.is_set():
 						if not cmd_old == cnst.target4Class_STOP and data == cnst.target4Class_STOP:  # sut the "stop" between commands
 							temp = data
@@ -287,7 +286,7 @@ def debugPredict(socketConnection, predictBuffer, emergencyKeyboardEvent, keyboa
 							# 	Apply command
 							if debugMode:
 								commandPrintFileObject.write(msg)
-							logger.debug(msg)
+							printWarning(msg)
 							sleep(0.08)  # delay before the next command
 
 						else:  # otherwise (every other command) just check environment and write it
@@ -302,10 +301,10 @@ def debugPredict(socketConnection, predictBuffer, emergencyKeyboardEvent, keyboa
 							      + ': ' + command
 							if debugMode:
 								commandPrintFileObject.write(msg)
-							logger.debug(msg)
+							printWarning(msg)
 							sleep(0.08)  # delay before the next command
 					else:
-						logger.warning("Keyboard movement")
+						printWarning("Keyboard movement")
 						if not keyboardBuffer.empty():
 							data = keyboardBuffer.get_nowait()
 
@@ -320,7 +319,7 @@ def debugPredict(socketConnection, predictBuffer, emergencyKeyboardEvent, keyboa
 							      + ': ' + command
 							if debugMode:
 								commandPrintFileObject.write(msg)
-							logger.debug(msg)
+							printWarning(msg)
 							sleep(0.08)  # delay before the next command
 
 						else:
@@ -334,7 +333,7 @@ def debugPredict(socketConnection, predictBuffer, emergencyKeyboardEvent, keyboa
 							# check environment with sensors for the given command if ok write it else write stop
 							if debugMode:
 								commandPrintFileObject.write(msg)
-							logger.debug(msg)
+							printWarning(msg)
 							sleep(0.08)
 				else:  # if command_buffer is empty send the previous command to wheelchair
 					# check environment with sensors for the given command
@@ -348,11 +347,11 @@ def debugPredict(socketConnection, predictBuffer, emergencyKeyboardEvent, keyboa
 					# check environment with sensors for the given command if ok write it else write stop
 					if debugMode:
 						commandPrintFileObject.write(msg)
-					logger.debug(msg)
+					printWarning(msg)
 					sleep(0.08)
 			emptyQueue(predictBuffer)
 			# emptyQueue(keyboardBuffer)
-			logger.info("End Wheelchair")
+			printInfo("End Wheelchair")
 			if debugMode:
 				commandPrintFileObject.close()
 
@@ -414,7 +413,7 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 	:param Event _shutdownEvent: Event used to know when to allow every running process terminate.
 	:param bool target3_: When True, means that it will be used the unity with 3 targets for the session.
 	"""
-	logger = logging.getLogger(cnst.loggerName)
+
 	debugMode = False
 	commandPrintFileObject = None
 	while not _shutdownEvent.is_set():
@@ -434,13 +433,13 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 				info_list = wheelCharSerial.readline().decode().split(",", 6)
 				sensorSerial = serial.Serial(port=cnst.sensorUsbPort, baudrate=115200, parity=serial.PARITY_NONE,
 				                             stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)  # serial sensor
-				logger.info(info_list)
+				printInfo(info_list)
 				# If debug Mode enabled, create file for logging commands
 				if debugMode:
 					commandPrintFileObject = open(getSessionFilename(online=True), 'w')
 				# 	Set stop as init command
 				cmd_old = cnst.target4Class_STOP
-				logger.info("Start Wheelchair")
+				printInfo("Start Wheelchair")
 				while not _shutdownEvent.is_set() and socketConnection.is_set():  # Running while there is socket connection with the
 					if not predictBuffer.empty():  # New command Available
 						data = predictBuffer.get_nowait()  # get the command and translate into move
@@ -480,7 +479,7 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 									commandPrintFileObject.write(msg)
 								else:
 									wheelCharSerial.write(command.encode())
-								logger.debug(msg)
+								printWarning(msg)
 								sleep(0.08)  # delay before the next command
 
 							else:  # otherwise (every other command) just check environment and write it
@@ -496,10 +495,10 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 									commandPrintFileObject.write(msg)
 								else:
 									wheelCharSerial.write(command.encode())
-								logger.debug(msg)
+								printWarning(msg)
 								sleep(0.08)  # delay before the next command
 						else:
-							logger.warning("Keyboard movement")
+							printWarning("Keyboard movement")
 							if not keyboardBuffer.empty():
 								data = keyboardBuffer.get_nowait()
 
@@ -515,7 +514,7 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 									commandPrintFileObject.write(msg)
 								else:
 									wheelCharSerial.write(command.encode())
-								logger.debug(msg)
+								printWarning(msg)
 								sleep(0.08)  # delay before the next command
 
 							else:
@@ -530,7 +529,7 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 									commandPrintFileObject.write(msg)
 								else:
 									wheelCharSerial.write(command.encode())
-								logger.debug(msg)
+								printWarning(msg)
 								sleep(0.08)
 					else:  # if command_buffer is empty send the previous command to wheelchair
 						# check environment with sensors for the given command
@@ -545,15 +544,15 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 							commandPrintFileObject.write(msg)
 						else:
 							wheelCharSerial.write(command.encode())
-						logger.debug(msg)
+						printWarning(msg)
 						sleep(0.08)
 				emptyQueue(predictBuffer)
 				# emptyQueue(keyboardBuffer)
-				logger.info("End Wheelchair")
+				printInfo("End Wheelchair")
 				if debugMode:
 					commandPrintFileObject.close()
 			except serial.SerialException:
-				logger.warning("Problem connecting to serial device.")
+				printWarning("Problem connecting to serial device.")
 				emptyQueue(predictBuffer)
 				emptyQueue(keyboardBuffer)
 				if debugMode:

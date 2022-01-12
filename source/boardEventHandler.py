@@ -1,4 +1,3 @@
-import logging
 import queue
 import traceback
 from multiprocessing import Process, Event
@@ -50,7 +49,6 @@ class BoardEventHandler:
 		self.startStreamingEvent = Event()
 		self.stopStreamingEvent = Event()
 		self.newBoardSettingsAvailableEvent = Event()
-		self.logger = logging.getLogger(cnst.loggerName)
 
 	def connect(self):
 		"""
@@ -66,9 +64,9 @@ class BoardEventHandler:
 					try:
 						self.board.connect()
 					except OSError as er:
-						self.logger.warning(msg=er.__str__() + "Make sure board is properly connected and enabled.")
+						printWarning("Make sure board is properly connected and enabled. " + er.__str__())
 				else:
-					self.logger.warning("Already have a connection!")
+					printWarning("Already have a connection!")
 				self.connectEvent.clear()
 
 	def disconnect(self):
@@ -83,17 +81,17 @@ class BoardEventHandler:
 			self.disconnectEvent.wait(1)
 			if self.disconnectEvent.is_set():
 				if self.board.isStreaming():
-					self.logger.warning("Cannot disconnect while streaming")
+					printWarning("Cannot disconnect while streaming")
 					self.disconnectEvent.clear()
 					continue
 				if self.board.isConnected():
-					self.logger.info("Disconnecting...")
+					printInfo("Disconnecting...")
 					try:
 						self.board.disconnect()
 					except:
-						self.logger.error("No connection to disconnect from ")
+						printError("No connection to disconnect from ")
 				else:
-					self.logger.warning("No connection to disconnect from")
+					printWarning("No connection to disconnect from")
 				self.disconnectEvent.clear()
 
 	def startStreaming(self):
@@ -120,7 +118,7 @@ class BoardEventHandler:
 			if self.startStreamingEvent.is_set():
 				if self.board.isConnected():
 					emptyQueue(streamingQueues)
-					self.logger.info("Starting streaming...")
+					printInfo("Starting streaming...")
 					self.trainingClass = cnst.unknownClass
 					numOfSamples = 0
 					printing = True
@@ -147,25 +145,25 @@ class BoardEventHandler:
 								self.newDataAvailable.clear()
 							# check for the synching zeros array sample ( [0, 0, 0, 0 ,0 , 0, 0, 0] )
 							elif sample.channel_data == cnst.synchingSignal:
-								self.logger.info('Synching completed')
+								printInfo('Synching completed')
 								self.board.setSynching(True)
 						except queue.Full:
-							self.logger.error("Queue full, stop streaming...")
+							printError("Queue full, stop streaming...")
 							self.stopStreamingEvent.set()
 							printing = False
 							break
-						except Exception as e:
-							self.logger.error(msg='Stop streaming', exc_info=True)
+						except Exception as er:
+							printError('Stop streaming: ' + er.__str__())
 							self.stopStreamingEvent.set()
 							printing = False
 				else:
 					printing = False
-					self.logger.warning("No connection to start streaming from.")
+					printWarning("No connection to start streaming from.")
 				self.startStreamingEvent.clear()
 			else:
 				self.newDataAvailable.clear()
 				if printing:
-					self.logger.info('Total streamed samples received: ' + numOfSamples.__str__())
+					printInfo('Total streamed samples received: ' + numOfSamples.__str__())
 					printing = False
 		emptyQueue(streamingQueues)
 
@@ -186,7 +184,7 @@ class BoardEventHandler:
 			self.stopStreamingEvent.wait(1)
 			if self.stopStreamingEvent.is_set():
 				if self.board.isConnected() and self.board.isStreaming():
-					self.logger.info("Stopping streaming...")
+					printInfo("Stopping streaming...")
 					try:
 						self.startStreamingEvent.clear()
 						if self.board.isTrainingMode():
@@ -195,12 +193,12 @@ class BoardEventHandler:
 						self.board.stopStreaming()
 						self.board.setSynching(False)
 					except:
-						self.logger.error("There is no stream to stop.")
+						printError("There is no stream to stop.")
 				else:
 					if not self.board.isConnected():
-						self.logger.warning("No connection to stop streaming from.")
+						printWarning("No connection to stop streaming from.")
 					elif not self.board.isStreaming():
-						self.logger.warning("No active streaming to stop.")
+						printWarning("No active streaming to stop.")
 				self.stopStreamingEvent.clear()
 
 	def newBoardSettingsAvailable(self):

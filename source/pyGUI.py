@@ -1,4 +1,3 @@
-import logging
 import sys
 from threading import Thread
 import queue
@@ -9,6 +8,7 @@ from PyQt5.QtWidgets import *
 import pyqtgraph as pg
 from classification import *
 from utils import filters
+from utils.coloringPrint import printError, printInfo
 from utils.constants import Constants as cnst
 from utils import fft_analysis
 
@@ -144,7 +144,6 @@ class GUI(QMainWindow):
 		super().__init__()
 		# pg.setConfigOption('background', 'w')
 		# pg.setConfigOption('foreground', 'k')
-		self.logger = logging.getLogger(cnst.loggerName)
 		self.guiBuffer = guiBuffer
 		self.newDataAvailableEvent = newDataAvailableEvent
 		self.board = board
@@ -407,7 +406,7 @@ class GUI(QMainWindow):
 
 	def quitGUI(self):
 		if self.board.isStreaming():
-			self.logger.info('Exiting GUI')
+			printInfo('Exiting GUI')
 			self.stopStreaming()
 		while self.writeDataEvent.is_set():
 			pass
@@ -469,8 +468,8 @@ class GUI(QMainWindow):
 			self.boardCytonSettings["lowerBand"] = lowerBound
 			self.boardCytonSettings["upperBand"] = upperBound
 			self.boardApiCallEvents["newBoardSettingsAvailable"].set()
-		except Exception:
-			self.logger.error(msg="freqComboClick ERROR!", exc_info=True)
+		except Exception as ex:
+			printError("freqComboClick ERROR! " + ex.__str__())
 
 	def channelComboClick(self):
 		enabledChannels = self.channelsComboChoices.getSelectedItems()
@@ -488,7 +487,7 @@ class GUI(QMainWindow):
 			# Set the init value form the cnst.windowSizeList
 			initValueIndex = cnst.windowSizeList.index(cnst.initWindowSizeValue)
 			self.timeWindowComboChoices.setCurrentIndex(initValueIndex)
-			self.logger.info("Non-Valid value: Window size can only be an integer")
+			printInfo("Non-Valid value: Window size can only be an integer")
 
 	def windowStepComboClick(self):
 		val = float(self.stepWindowSizeComboChoices.currentText()) * cnst.SAMPLE_RATE_250
@@ -498,9 +497,9 @@ class GUI(QMainWindow):
 			self.boardCytonSettings["windowStepSize"] = float(self.stepWindowSizeComboChoices.currentText())
 			self.boardApiCallEvents["newBoardSettingsAvailable"].set()
 		except ValueError:
-			self.logger.error("Non-Valid value: stepSize * samplingRate must be an integer")
-		except Exception:
-			self.logger.error(msg='', exc_info=True)
+			printError("Non-Valid value: stepSize * samplingRate must be an integer")
+		except Exception as ex:
+			printError(ex.__str__())
 			initValueIndex = cnst.windowStepSizeList.index(cnst.initStepSizeValue)
 			self.stepWindowSizeComboChoices.setCurrentIndex(initValueIndex)
 			self.stepWindowSizeComboChoices.removeItem(self.stepWindowSizeComboChoices.currentIndex())
@@ -512,8 +511,8 @@ class GUI(QMainWindow):
 			else:
 				self.boardCytonSettings["filtering_data"] = False
 			self.boardApiCallEvents["newBoardSettingsAvailable"].set()
-		except Exception:
-			self.logger.error(msg="filteringDataFunction ERROR!", exc_info=True)
+		except Exception as ex:
+			printError("filteringDataFunction ERROR! " + ex.__str__())
 
 	def scalingDataFunction(self, state):
 		try:
@@ -522,8 +521,8 @@ class GUI(QMainWindow):
 			else:
 				self.boardCytonSettings["scaling_output"] = False
 			self.boardApiCallEvents["newBoardSettingsAvailable"].set()
-		except Exception:
-			self.logger.error(msg="scalingDataFunction ERROR!", exc_info=True)
+		except Exception as ex:
+			printError("scalingDataFunction ERROR! " + ex.__str__())
 
 	def addTimeSeriesPlot(self):
 		for i in range(1, 9):
