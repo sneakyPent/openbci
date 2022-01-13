@@ -312,3 +312,12 @@ class Constants:
 	logFilename = logsDirectory + 'cytonBoard__' + time.strftime("%d-%m-%Y__%H-%M-%S") + '.log'
 	logFileHandlerFormat = "[%(asctime)s] [%(levelname)-8s] (%(filename)s:%(lineno)s) -- %(message)s"
 	logStreamHandlerFormat = "[%(levelname)-8s]  %(message)s"
+	
+	
+	mediaPath = '../media/'
+	
+	""" ARDUINO """
+	ip_cam = 'http://192.168.2.145:8080/video'
+	# arduino_address = "192.168.1.3"#"139.91.190.207"
+	arduino_address = "192.168.2.146" #"139.91.190.207"
+	arduino_port = 80
