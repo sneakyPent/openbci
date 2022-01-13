@@ -14,8 +14,9 @@ import os
 import time
 from multiprocessing import Process, Event
 from utils.coloringPrint import printError, printInfo, printWarning
-from utils.constants import Constants as cnst
+from utils.constants import Constants as cnst, TargetPlatform
 from utils.general import emptyQueue
+from source.SSVEPexperiment import SSVEP_screen_session
 
 
 def connectTraining(board, boardApiCallEvents, startTrainingEvent, trainingClassBuffer, socketConnection,
@@ -128,7 +129,7 @@ def startTrainingApp(boardApiCallEvents, socketConnection, _shutdownEvent):
 			boardApiCallEvents["stopStreaming"].set()
 
 
-def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent, trainingClassBuffer):
+def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent, trainingClassBuffer, targetPlatform=TargetPlatform.PSYCHOPY):
 	"""
 	* Method runs via trainingProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process.
@@ -142,19 +143,31 @@ def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
 	:param [Event] boardApiCallEvents:  Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
 	:param Event _shutdownEvent: Event used to know when to let every running process terminate
 	:param Queue trainingClassBuffer: Buffer will be used to pass the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
+	:param TargetPlatform targetPlatform: Choose whether the target will executed using unity or psychopy library. 
 	"""
 	procList = []
-	socketConnection = Event()
-	socketConnection.clear()
-
-	socketProcess = Process(target=connectTraining,
-	                        args=(board, boardApiCallEvents, startTrainingEvent,
-	                              trainingClassBuffer, socketConnection, _shutdownEvent,))
-	applicationProcess = Process(target=startTrainingApp, args=(boardApiCallEvents, socketConnection, _shutdownEvent,))
-
-	procList.append(socketProcess)
-	procList.append(applicationProcess)
-
+	
+	if targetPlatform == TargetPlatform.UNITY:
+		socketConnection = Event()
+		socketConnection.clear()
+		
+		socketProcess = Process(target=connectTraining,
+		                        args=(board, boardApiCallEvents, startTrainingEvent,
+		                              trainingClassBuffer, socketConnection, _shutdownEvent,))
+		procList.append(socketProcess)
+		applicationProcess = Process(target=startTrainingApp, args=(boardApiCallEvents, socketConnection, _shutdownEvent,))
+		
+		procList.append(applicationProcess)   
+	elif targetPlatform == TargetPlatform.PSYCHOPY:
+		target_dur = 5
+		frames_ch = [[10,10],[8,8],[9,9],[7,7]]
+		mode = False
+		board.setTrainingMode(True)
+		applicationProcess = Process(target=SSVEP_screen_session,
+									args=(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
+										  trainingClassBuffer, target_dur, frames_ch, mode))
+		procList.append(applicationProcess)	
+	
 	for proc in procList:
 		proc.start()
 
