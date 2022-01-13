@@ -571,8 +571,7 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 					commandPrintFileObject.close()
 
 
-def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, newWindowAvailable,
-                emergencyKeyboardEvent, keyboardBuffer, debugMode=True, targetPlatform=TargetPlatform.PSYCHOPY ):
+def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, newWindowAvailable, debugMode=True, targetPlatform=TargetPlatform.PSYCHOPY ):
 	"""
 	* Method runs via onlineProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process and waits for the startOnlineEvent, which is set only by the boardEventHandler.
@@ -604,6 +603,9 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	if targetPlatform == TargetPlatform.UNITY:
 		socketConnection = Event()
 		socketConnection.clear()
+		emergencyKeyboardEvent = Event()
+		emergencyKeyboardEvent.clear()
+		keyboardBuffer = mngr.Queue(maxsize=10)
 	
 		# Create the process needed
 		socketProcess = Process(target=socketConnect,
