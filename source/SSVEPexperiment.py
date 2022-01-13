@@ -22,8 +22,7 @@ from time import time, sleep
 from playsound import playsound
 from multiprocessing import Event	
 from utils.coloringPrint import printError, printHeader, printInfo, printWarning
-
-import threading
+from utils.constants import Constants as cnst
 
 
 class Error(Exception):
@@ -666,3 +665,436 @@ def SSVEP_screen_session(board, startPresentation, boardApiCallEvents, _shutdown
 				printInfo('Training Window closing...')
 				return
 			
+
+#*********************************************************************************************************************
+#************************************ Online session SSVEP presentation ************************************************
+#*********************************************************************************************************************
+
+# ********* DO NOT FORGET REMOVE return
+def SSVEP_online_SCREEN_session(startPresentation, _isReading, _shutdownEvent, q_label, frames_ch, _streaming,
+								releaseData, emergency_arduino, emergency_buffer,ip_cam_, mode, commandPred):
+
+	# print the id of the process
+	# info("SSVEP_experiment")
+	# mouse = event.Mouse() # CHECK
+	printInfo('Starting online_SSVEP process')
+	# wait until acquisition and reading start
+	while not _shutdownEvent.is_set():
+		startPresentation.wait(1)
+		# -------------------------- START PRESENTATION --------------------------------------------
+		# ------------------------------------------------------------------------------------------
+		if startPresentation.is_set():
+			printInfo('Starting targets')
+			logging.console.setLevel(logging.WARNING)  # this outputs to the screen, not a file
+		
+			endExpNow = False  # flag for 'escape' or other condition => quit the exp
+		
+			vcap = cv2.VideoCapture(ip_cam_)#("http://139.91.190.222:8080/video")#
+			#("http://139.91.190.182:8080/video")
+			#("http://139.91.190.209  :8080/video")  #for Robot wifi
+			if vcap is None or not vcap.isOpened():
+	
+				vcap.release()
+				cv2.destroyAllWindows()
+				# _isReading.clear()
+				startPresentation.clear()
+				while not commandPred.empty():
+					commandPred.get_nowait()
+	
+				return
+			printHeader("Let's create the window")
+			# Setup the Window
+			win = visual.Window(size=(1536,864), fullscr=True, screen=0, allowGUI=False, allowStencil=False,
+								monitor=u'testMonitor', color=[-1, -1, -1], colorSpace='rgb',
+								blendMode='avg', useFBO=True,
+								units='pix')
+	
+	
+			win.setRecordFrameIntervals(True)
+			win._refreshThreshold = 1/60.0+0.004  # i've got 60Hz monitor and want to allow 4ms tolerance
+	
+	
+			# store frame rate of monitor if we can measure it successfully
+			frameRate = win.getActualFrameRate()
+			if frameRate != None:
+				frameDur = 1.0/round(frameRate)
+			else:
+				frameDur = 1.0/60.0  # couldn't get a reliable measure so guess
+	
+	
+			# Initialize all flash components
+			init_experimentClock = core.Clock()
+	
+			ch_p = set_checkerboards_position(win)      # set the checkerboards and arrows positions
+			arrow_p = set_arrows_position(ch_p)
+	
+			# direction arrows
+			img_lf = visual.ImageStim(win=win, image=cnst.mediaPath + "left_a.png",units="pix", opacity=0.75, ori = 360,pos=arrow_p[0],color=[0, 0, 0], colorSpace='rgb255')
+			img_ri = visual.ImageStim(win=win, image=cnst.mediaPath + "right_a.png",units="pix", opacity=0.75, ori = 360,pos=arrow_p[1],color=[0, 0, 0], colorSpace='rgb255')
+			img_up = visual.ImageStim(win=win, image=cnst.mediaPath + "up_a.png",units="pix", opacity=0.75, ori = 180,pos=arrow_p[2],color=[0, 0, 0], colorSpace='rgb255')
+			img_do = visual.ImageStim(win=win, image=cnst.mediaPath + "up_a.png",units="pix", opacity=0.75, ori =     0,pos=arrow_p[3],color=[0, 0, 0], colorSpace='rgb255')
+	
+	
+			flash_init(win, ch_p, checker_s, checker_num, checker_num, mode)  # Initialize the checkerboards in specific positions
+	
+			# Initialize components for Routine "show_grey_monitor"
+			show_grey_monitorClock = core.Clock()
+			instruct_text = visual.TextStim(win=win, ori=0, name='instruct_text',
+											text='Press <Space> to continue',    font='Arial',
+											units='pix', pos=[0, 0], height=50, wrapWidth=1000,
+											color=[255, 255, 128], colorSpace='rgb255', opacity=1,
+											depth=0.0)
+	
+			# Initialize components for Routine "flash_checkerboard"
+			flash_checkerboardClock = core.Clock()
+	
+	
+			# Create some handy timers
+			globalClock = core.Clock()  # to track the time since experiment started
+			routineTimer = core.CountdownTimer()  # to track time remaining of each (non-slip) routine
+	
+	
+			# ------Prepare to start Routine "show_grey_monitor"-------
+			t = 0
+			show_grey_monitorClock.reset()  # clock
+			frameN = -1
+			# update component parameters for each repeat
+			key_start = event.BuilderKeyResponse()  # create an object of type KeyResponse
+			key_start.status = NOT_STARTED
+			# keep track of which components have finished
+			show_grey_monitorComponents = []
+			show_grey_monitorComponents.append(instruct_text)
+			show_grey_monitorComponents.append(key_start)
+			for thisComponent in show_grey_monitorComponents:
+				if hasattr(thisComponent, 'status'):
+					thisComponent.status = NOT_STARTED
+	
+			# -------Start Routine "show_grey_monitor"-------
+			continueRoutine = True
+			while continueRoutine:
+				# get current time
+				t = show_grey_monitorClock.getTime()
+				frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+				# update/draw components on each frame
+	
+				# *instruct_text* updates
+				if t >= 0.0 and instruct_text.status == NOT_STARTED:
+					# keep track of start time/frame for later
+					instruct_text.tStart = t  # underestimates by a little under one frame
+					instruct_text.frameNStart = frameN  # exact frame index
+					instruct_text.setAutoDraw(True)
+	
+				# *key_start* updates
+				if t >= 0.0 and key_start.status == NOT_STARTED:
+					# keep track of start time/frame for later
+					key_start.tStart = t  # underestimates by a little under one frame
+					key_start.frameNStart = frameN  # exact frame index
+					key_start.status = STARTED
+					# keyboard checking is just starting
+					event.clearEvents(eventType='keyboard')
+				if key_start.status == STARTED:
+					theseKeys = event.getKeys(keyList=['space'])
+					# check for quit:
+					if "escape" in theseKeys:
+						endExpNow = True
+					if len(theseKeys) > 0:  # at least one key was pressed
+						# a response ends the routine
+						continueRoutine = False
+	
+				# check if all components have finished
+				if not continueRoutine:  # a component has requested a forced-end of Routine
+					break
+				continueRoutine = False  # will revert to True if at least one component still running
+				for thisComponent in show_grey_monitorComponents:
+					if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+						continueRoutine = True
+						break  # at least one component has not yet finished
+	
+				# check for quit (the Esc key)
+				if endExpNow or event.getKeys(keyList=["escape"]):
+					# _isReading.clear()
+					startPresentation.clear()
+					while not commandPred.empty():
+						commandPred.get_nowait()
+					# pylab.plot(win.frameIntervals)
+					win.close()
+					# pylab.show()
+					return
+	
+				# refresh the screen
+				if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+					win.flip()
+	
+			# -------Ending Routine "show_grey_monitor"-------
+			for thisComponent in show_grey_monitorComponents:
+				if hasattr(thisComponent, "setAutoDraw"):
+					thisComponent.setAutoDraw(False)
+			# the Routine "show_grey_monitor" was not non-slip safe, so reset the non-slip timer
+			routineTimer.reset()
+	
+			# releaseData.set() # store and process data
+	
+			# ------Prepare to start Routine "flash_checkerboard"-------
+			t = 0
+			flash_checkerboardClock.reset()  # clock
+			frameN = -1
+			# update component parameters for each repeat
+			# flash begin routine
+			f_change = [0 for i in range(4)]
+			pattern_state = [1 for j in range(4)]
+	
+	
+			end_fl = event.BuilderKeyResponse()  # create an object of type KeyResponse
+			end_fl.status = NOT_STARTED
+			# keep track of which components have finished
+			flash_checkerboardComponents = []
+			flash_checkerboardComponents.append(end_fl)
+	
+			for thisComponent in flash_checkerboardComponents:
+				if hasattr(thisComponent, 'status'):
+					thisComponent.status = NOT_STARTED
+	
+			# draw a green line under the predicted target
+			commandPredLine(win)
+	
+	
+			# -------Start Routine "flash_checkerboard"-------
+			try:
+	
+				ret, img  = vcap.read()
+				imgRows,imgColumns,imgColors = img.shape
+				# transform the output of camera read, in order to create a visual stimulus from an image
+				pic = Image.frombytes("RGB", (imgColumns,imgRows), img.tostring(), "raw", "BGR", 0, 1)
+				#print pi.size
+				myStim = visual.ImageStim(win, pic, pos=[0,0], size = [imgColumns,imgRows], opacity = 1.0, units = 'pix')
+				myStim.setAutoDraw(True)
+	
+				threadVIDEO=CameraRead(vcap,img)
+				threadVIDEO.start()
+	
+	
+	
+				continueRoutine = True
+				t = flash_checkerboardClock.getTime()
+				while continueRoutine and startPresentation.is_set():
+					# get current time
+					t = flash_checkerboardClock.getTime()
+					frameN = frameN + 1  # number of completed frames (so 0 is the first frame)
+					# update/draw components on each frame
+					# flash each frame
+					# .................................................................................
+					if frameN >= f_change[0]:
+						# flash_change(flash_up)
+						if pattern_state[0] == 1:
+							f_change[0] += frames_ch[0][1]  # f_change +=frames_off
+							pattern_state[0] = 0
+						else:
+							f_change[0] += frames_ch[0][0]  # f_change += frames_on
+							pattern_state[0] = 1
+		
+					# ......................................................................................
+					if frameN >= f_change[1]:
+						# flash_change(flash_right)
+						if pattern_state[1] == 1:
+							f_change[1] += frames_ch[1][1]  # f_change +=frames_off
+							pattern_state[1] = 0
+						else:
+							f_change[1] += frames_ch[1][0]  # f_change += frames_on
+							pattern_state[1] = 1
+		
+					# .........................................................................................
+					if frameN >= f_change[2]:
+						# flash_change(flash_down)
+						if pattern_state[2] == 1:
+							f_change[2] += frames_ch[2][1]  # f_change +=frames_off
+							pattern_state[2] = 0
+						else:
+							f_change[2] += frames_ch[2][0]  # f_change += frames_on
+							pattern_state[2] = 1
+		
+					# ...........................................................................................
+					if frameN >= f_change[3]:
+						# flash_change(flash_left)
+						if pattern_state[3] == 1:
+							f_change[3] += frames_ch[3][1]  # f_change +=frames_off
+							pattern_state[3] = 0
+						else:
+							f_change[3] += frames_ch[3][0]  # f_change += frames_on
+							pattern_state[3] = 1
+		
+					# ............................................................................................
+					if pattern_state[0]==1:
+						flash_left_ON.draw()
+					else:
+						flash_left_OFF.draw()
+					if pattern_state[1]==1:
+						flash_right_ON.draw()
+					else:
+						flash_right_OFF.draw()
+					if pattern_state[2]==1:
+						flash_down_ON.draw()
+					else:
+						flash_down_OFF.draw()
+					if pattern_state[3]==1:
+						flash_up_ON.draw()
+					else:
+						flash_up_OFF.draw()
+		
+					img_lf.draw()
+					img_ri.draw()
+					img_up.draw()
+					img_do.draw()
+		
+					#########################################################################################
+					#########################################################################################
+					# show predicted command
+					if not commandPred.empty():
+						cmd = commandPred.get_nowait()
+						print(cmd)
+						if cmd == 1:
+							lineLEFT.draw()
+						elif cmd == 2:
+							lineRIGHT.draw()
+						elif cmd == 3:
+							lineDOWN.draw()
+						elif cmd == 4:
+							lineUP.draw()
+						# elif cmd == 55:
+						# 	lineSTOP.draw()
+		
+					#########################################################################################
+					#########################################################################################
+		
+						# Show IP camera image
+					imgN=threadVIDEO.ImgT
+					if not np.array_equal(imgN,img):
+						pi = Image.frombytes("RGB", (imgColumns,imgRows), threadVIDEO.ImgT.tostring(), "raw", "BGR", 0, 1)
+						myStim.setImage(pi)
+					img=imgN
+		
+					# *end_fl* updates
+					if t >= 0.0 and end_fl.status == NOT_STARTED:
+		
+						# q_label.put(200)
+		
+						# keep track of start time/frame for later
+						end_fl.tStart = t  # underestimates by a little under one frame
+						end_fl.frameNStart = frameN  # exact frame index
+						end_fl.status = STARTED
+						# keyboard checking is just starting
+						event.clearEvents(eventType='keyboard')
+					if end_fl.status == STARTED:
+						theseKeys = event.getKeys()
+		
+						# check for quit:
+						if "escape" in theseKeys:
+							endExpNow = True
+						elif "up" in theseKeys:
+							emergency_arduino.set()
+							emergency_buffer.put("f")
+							print("EMERGENCY SET FORWARD")
+						elif "right" in theseKeys:
+							emergency_arduino.set()
+							emergency_buffer.put("r")
+							print("EMERGENCY SET RIGHT")
+						elif "left" in theseKeys:
+							emergency_arduino.set()
+							emergency_buffer.put("l")
+							print("EMERGENCY SET LEFT")
+						elif "down" in theseKeys:
+							emergency_arduino.set()
+							emergency_buffer.put("b")
+							print("EMERGENCY SET BACK")
+						elif "space" in theseKeys:
+							emergency_arduino.set()
+							emergency_buffer.put("s")
+							print("EMERGENCY SET STOP")
+						elif "z" in theseKeys:
+							emergency_arduino.clear()
+							emergency_buffer.put("s")
+							print("RETURN EEG")
+		
+		
+					# check if all components have finished
+					if not continueRoutine:  # a component has requested a forced-end of Routine
+						break
+					continueRoutine = False  # will revert to True if at least one component still running
+					for thisComponent in flash_checkerboardComponents:
+						if hasattr(thisComponent, "status") and thisComponent.status != FINISHED:
+							continueRoutine = True
+							break  # at least one component has not yet finished
+		
+					# check for quit (the Esc key)
+					# if endExpNow or event.getKeys(keyList=["escape"]) or not _streaming.is_set():
+					if endExpNow or event.getKeys(keyList=["escape"]):
+						vcap.release()
+						cv2.destroyAllWindows()
+						# _isReading.clear()
+						startPresentation.clear()
+						while not commandPred.empty():
+							commandPred.get_nowait()
+						# pylab.plot(win.frameIntervals)
+						win.close()
+						# pylab.show()
+						# break
+						return
+						#core.quit()
+		
+					# refresh the screen
+					if continueRoutine:  # don't flip if this routine is over or we'll get a blank screen
+						win.flip()
+		
+				# -------Ending Routine "flash_checkerboard"-------
+				for thisComponent in flash_checkerboardComponents:
+					if hasattr(thisComponent, "setAutoDraw"):
+						thisComponent.setAutoDraw(False)
+		
+				# the Routine "flash_checkerboard" was not non-slip safe, so reset the non-slip timer
+				routineTimer.reset()
+		
+				# -------------------------------------------------------------------------------------- #
+				vcap.release()
+				cv2.destroyAllWindows()
+		
+				# stop reading
+				# _isReading.clear()
+				startPresentation.clear()
+		
+				# -------------------------------------------------------------------------------------- #
+				# pylab.plot(win.frameIntervals)
+		
+				win.close()
+		
+				# pylab.show()
+		
+				return
+			except:
+				# the Routine "flash_checkerboard" was not non-slip safe, so reset the non-slip timer
+				routineTimer.reset()
+		
+				# -------------------------------------------------------------------------------------- #
+				vcap.release()
+				cv2.destroyAllWindows()
+				print("EXCEPTION PRESENTATION")
+				# stop reading
+				# _isReading.clear()
+				startPresentation.clear()
+				while not commandPred.empty():
+					commandPred.get_nowait()
+		
+		
+				# -------------------------------------------------------------------------------------- #
+				# pylab.plot(win.frameIntervals)
+		
+				win.close()
+		
+				# pylab.show()
+		
+				return
+
+	print("presentation out")
+
+
+
+ # -------------------------- ONLINE MUSEUM --------------------------------------------
+# ------------------------------------------------------------------------------------------
