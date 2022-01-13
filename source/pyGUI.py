@@ -9,7 +9,7 @@ import pyqtgraph as pg
 from classification import *
 from utils import filters
 from utils.coloringPrint import printError, printInfo
-from utils.constants import Constants as cnst
+from utils.constants import Constants as cnst, ElectrodeType
 from utils import fft_analysis
 
 
@@ -166,10 +166,25 @@ class GUI(QMainWindow):
 
 		# add a menu bar
 		self.menubar = self.menuBar()
-		# add horizontal layout for the settings of the cyton board
 		self.mainLayout = QGridLayout(mainWidget)
+		# add a radio button group for the electrodes
+		self.electrodesRadio = QHBoxLayout()
+		self.electrodesButtonGroup = QButtonGroup(self)
+		self.wetButton = QRadioButton("WET")
+		self.wetButton.toggled.connect(self.electrodesButtonClick)
+		self.dryButton = QRadioButton("DRY")
+		self.dryButton.toggled.connect(self.electrodesButtonClick)
+		self.electrodesButtonGroup.addButton(self.wetButton,id=ElectrodeType.WET.value)
+		self.electrodesButtonGroup.addButton(self.dryButton,id=ElectrodeType.DRY.value)
+		reqComboTitle = QLabel('Using Electrodes')
+		self.electrodesRadio.addWidget(reqComboTitle)
+		self.electrodesRadio.addWidget(self.wetButton)
+		self.electrodesRadio.addWidget(self.dryButton)
+		self.electrodesRadio.addStretch()
+		# add horizontal layout for the settings of the cyton board
 		self.boardSettingLayout = QVBoxLayout()
-		self.mainLayout.addLayout(self.boardSettingLayout, 0, 0)
+		self.mainLayout.addLayout(self.electrodesRadio, 0, 0)
+		self.mainLayout.addLayout(self.boardSettingLayout, 1, 0)
 
 		# add a layout for the graphs
 		self.graphLayout = QVBoxLayout()
@@ -391,6 +406,7 @@ class GUI(QMainWindow):
 		self.windowStepComboClick()
 		self.filteringDataFunction(self.filterDataCheckbox.checkState())
 		self.scalingDataFunction(self.scalingDataCheckbox.checkState())
+		self.electrodesButtonGroup.button(cnst.initUsingElectrodes.value).setChecked(True)
 
 	def startStreaming(self):
 		self.boardApiCallEvents["startStreaming"].set()
@@ -414,6 +430,14 @@ class GUI(QMainWindow):
 		QApplication.instance().quit()
 
 	#  calling functions
+	def electrodesButtonClick(self, state):
+		try:
+			button = self.sender()
+			if button.isChecked():
+				self.boardCytonSettings["usingElectrodes"] = ElectrodeType[button.text()]
+				self.boardApiCallEvents["newBoardSettingsAvailable"].set()
+		except Exception:
+			self.logger.error(msg="electrodesButtonClick ERROR!", exc_info=True)
 
 	def trainingButtonClick(self):
 		self.startTrainingEvent.set()
@@ -442,13 +466,15 @@ class GUI(QMainWindow):
 					                            lowCut=self.board.getLowerBoundFrequency(),
 					                            highCut=self.board.getHigherBoundFrequency(),
 					                            fs=self.board.getSampleRate(),
-					                            enabledChannel=self.board.getEnabledChannels())
+					                            enabledChannel=self.board.getEnabledChannels(),
+					                            usingElectrodes=self.board.getUsingElectrodes())
 				elif btns[btnIndex] == 'four':
 					fft_analysis.printFFT(fileNames,
 					                      lowCut=self.board.getLowerBoundFrequency(),
 					                      highCut=self.board.getHigherBoundFrequency(),
 					                      fs=self.board.getSampleRate(),
-					                      enabledChannel=self.board.getEnabledChannels())
+					                      enabledChannel=self.board.getEnabledChannels(),
+					                      usingElectrodes=self.board.getUsingElectrodes())
 
 	def classificationButtonClick(self):
 		options = QFileDialog.Options()

@@ -1,5 +1,7 @@
 import os
 import time
+from enum import Enum
+
 from matplotlib import colors as mcolors
 import enum
 
@@ -9,13 +11,15 @@ class TargetPlatform(enum.Enum):
     UNITY = 0
     PSYCHOPY = 1
 
-def getSessionFilename(training=False, openbciGUI=False, online=False):
+def getSessionFilename(training=False, openbciGUI=False, online=False, classification=False):
 	if training:
 		return Constants.destinationFolder + 'Training__' + time.strftime("%d-%m-%Y__%H-%M-%S")
 	elif openbciGUI:
 		return 'openBCI_GUI_Training__' + time.strftime("%d-%m-%Y__%H-%M-%S")
 	elif online:
 		return 'online' + time.strftime("%d-%m-%Y__%H-%M-%S") + '.txt'
+	elif classification:
+		return 'Classifier_' + time.strftime("%d-%m-%Y__%H-%M-%S")
 	else:
 		return Constants.destinationFolder + 'Streaming__' + time.strftime("%d-%m-%Y__%H-%M-%S")
 
@@ -28,6 +32,22 @@ def getDestinationFolderWithDate():
 		# Create a new directory because it does not exist
 		os.makedirs(path)
 	return path
+
+
+class ElectrodeType(Enum):
+	DRY = 0
+	WET = 1
+
+
+class FftType(Enum):
+	brainflowFFT = 0
+	pythonFFT = 1
+
+
+class FilterType(Enum):
+	butter_bandpass_filter = 0
+	lowpass_highpass = 1
+	brainflow_bandpass = 2
 
 
 class Constants:
@@ -185,7 +205,8 @@ class Constants:
 	windowStepSizeList = [0.5, 1, 1.5, 0.99, 0.35]
 	initStepSizeValue = 0.5
 	synchingSignal = [0, 0, 0, 0, 0, 0, 0, 0]
-	initEnabledChannels = [0, 1, 2, 3]
+	initEnabledChannels = [0, 1, 2]
+	initUsingElectrodes = ElectrodeType.DRY
 
 	""" printng massages colors"""
 	FAIL = '\033[91m'
@@ -209,7 +230,7 @@ class Constants:
 	""" GUI """
 	# the order of the channels' color  is the same order as the wires' colors in the equivalent pin
 	GUIChannelColors = [colrs['red'], colrs['orange'], colrs['yellow'], colrs['green'],
-	                    colrs['blue'], colrs['purple'], colrs['white'], colrs['gray']]
+	                    colrs['blue'], colrs['purple'], colrs['turquoise'], colrs['orchid'], colrs['gray']]
 
 	channelsList = ['channel 1', 'channel 2', 'channel 3', 'channel 4',
 	                'channel 5', 'channel 6', 'channel 7', 'channel 8']
@@ -226,6 +247,7 @@ class Constants:
 
 	""" classification """
 	classifierFilename = "../classification/classifier_LDA.sav"
+	classifiersDirectory = '../classifiers/'
 	frames_ch = [[0 for j in range(2)] for i in range(4)]  # The duration (in frames) of the first checkerboard pattern
 	frames_ch[0] = [10, 10]  # for frequency=3 Hz
 	frames_ch[1] = [8, 8]  # for frequency=3.75 Hz
@@ -246,11 +268,15 @@ class Constants:
 	target3Class_LEFT = 3
 	target3Class_RIGHT = 1
 	# keyBoardCommands
+	keyboardKey_QUIT = 'Q'
+	keyboardKey_EXIT = 'E'
 	keyboardKey_STOP = 'S'
 	keyboardKey_FORWARD = 'F'
 	keyboardKey_BACK = 'B'
 	keyboardKey_RIGHT = 'R'
 	keyboardKey_LEFT = 'L'
+	keyboardKeyList = [keyboardKey_QUIT, keyboardKey_EXIT, keyboardKey_STOP, keyboardKey_FORWARD, keyboardKey_BACK,
+	                   keyboardKey_RIGHT, keyboardKey_LEFT]
 	#  Commands
 	onlineStreamingCommands_STOP = '{"c":"xy","x":0,"y":0}\r\n'
 	onlineStreamingCommands_REDUCE_SPEED_1 = '{"c":"xy","x":0,"y":20}\r\n'
@@ -274,7 +300,7 @@ class Constants:
 		target3Class_FORWARD: onlineStreamingCommands_FORWARD
 
 	}
-	keyBoardCommands = {
+	keyBoardCommandsSwitcher = {
 		keyboardKey_STOP: onlineStreamingCommands_STOP,
 		keyboardKey_FORWARD: onlineStreamingCommands_FORWARD,
 		keyboardKey_BACK: onlineStreamingCommands_BACK,
