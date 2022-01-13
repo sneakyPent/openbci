@@ -25,11 +25,12 @@ from time import sleep
 import serial
 from source import OpenBCICyton
 from utils.coloringPrint import printError, printInfo, printWarning
-from utils.constants import Constants as cnst, getSessionFilename
+from utils.constants import Constants as cnst, TargetPlatform, getSessionFilename
 from utils.filters import *
 from classification.train_processing_cca_3 import calculate_cca_correlations
 from utils.general import emptyQueue
-
+from source.SSVEPexperiment import SSVEP_online_SCREEN_session
+from arduino_run import arduino
 
 class Error(Exception):
 	"""Base class for other exceptions"""
@@ -560,7 +561,7 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 
 
 def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, newWindowAvailable,
-                emergencyKeyboardEvent, keyboardBuffer, debugMode=True):
+                emergencyKeyboardEvent, keyboardBuffer, debugMode=True, targetPlatform=TargetPlatform.PSYCHOPY ):
 	"""
 	* Method runs via onlineProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process and waits for the startOnlineEvent, which is set only by the boardEventHandler.
@@ -582,39 +583,58 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	:param Event newWindowAvailable: Event used to know when there is new window available from :py:meth:`source.windowing.windowing`. It is set by :py:meth:`source.windowing.windowing`
 	:param bool debugMode: When True, print messages used instead of serial connection with wheel.
 	:param Event emergencyKeyboardEvent: Event will be used for enable keyboard controlling of the wheelchair.
-	:param Queue keyboardBuffer: Buffer for getting pressed key from :py:mod:`source.keyboardMove' and used it for wheelchair movement
+	:param Queue keyboardBuffer: Buffer for getting pressed key from :py:mod:`source.keyboardMove' and used it for wheelchair movementx.union(y)
+	:param TargetPlatform targetPlatform: Choose whether the target will executed using unity or psychopy library. 
 
 	"""
 	procList = []
-	socketConnection = Event()
-	socketConnection.clear()
+	
 	mngr = SyncManager()
 	mngr.start()
 	predictBuffer = mngr.Queue(maxsize=100)
-
-	# Create the process needed
-	socketProcess = Process(target=socketConnect,
-	                        args=(board, boardApiCallEvents, socketConnection, startOnlineEvent,
-	                              emergencyKeyboardEvent, keyboardBuffer, _shutdownEvent,))
-	applicationProcess = Process(target=startTargetApp, args=(socketConnection, _shutdownEvent,))
-	onlineProcessingProcess = Process(target=onlineProcessing,
-	                                  args=(board, windowedDataBuffer, predictBuffer, socketConnection,
-	                                        newWindowAvailable, _shutdownEvent,))
-	debugPredictProcess = Process(target=debugPredict,
-	                              args=(socketConnection, predictBuffer, emergencyKeyboardEvent, keyboardBuffer,
-	                                    _shutdownEvent,))
-	wheelSerialPredictProcess = Process(target=wheelSerialPredict,
-	                                    args=(
-		                                    socketConnection, predictBuffer, cnst.wheelchairUsbPort,
-		                                    emergencyKeyboardEvent, keyboardBuffer, _shutdownEvent,))
-
-	procList.append(socketProcess)
-	procList.append(applicationProcess)
-	procList.append(onlineProcessingProcess)
-	if debugMode:
-		procList.append(debugPredictProcess)
-	else:
-		procList.append(wheelSerialPredictProcess)
+	if targetPlatform == TargetPlatform.UNITY:
+		socketConnection = Event()
+		socketConnection.clear()
+	
+		# Create the process needed
+		socketProcess = Process(target=socketConnect,
+		                        args=(board, boardApiCallEvents, socketConnection, startOnlineEvent,
+		                              emergencyKeyboardEvent, keyboardBuffer, _shutdownEvent,))
+		applicationProcess = Process(target=startTargetApp, args=(socketConnection, _shutdownEvent,))
+		onlineProcessingProcess = Process(target=onlineProcessing,
+		                                  args=(board, windowedDataBuffer, predictBuffer, socketConnection,
+		                                        newWindowAvailable, _shutdownEvent,))
+		debugPredictProcess = Process(target=debugPredict,
+		                              args=(socketConnection, predictBuffer, emergencyKeyboardEvent, keyboardBuffer,
+		                                    _shutdownEvent,))
+		wheelSerialPredictProcess = Process(target=wheelSerialPredict,
+		                                    args=(
+			                                    socketConnection, predictBuffer, cnst.wheelchairUsbPort,
+			                                    emergencyKeyboardEvent, keyboardBuffer, _shutdownEvent,))
+	
+		procList.append(socketProcess)
+		procList.append(applicationProcess)
+		procList.append(onlineProcessingProcess)
+		if debugMode:
+			procList.append(debugPredictProcess)
+		else:
+			procList.append(wheelSerialPredictProcess)
+	elif targetPlatform == TargetPlatform.PSYCHOPY:
+		emergency_arduino = Event()
+		emergency_buffer = Queue(1) # queue to use keyboard for navigation in case of online sessions
+		frames_ch = [[10,10],[8,8],[9,9],[7,7]]
+		mode = False
+		board.setTrainingMode(True)
+		ip_cam_ = cnst.ip_cam
+		applicationProcess = Process(target=SSVEP_online_SCREEN_session,
+									args=(startOnlineEvent, None, _shutdownEvent, None,
+		                                frames_ch, None, None, emergency_arduino,
+		                                emergency_buffer, ip_cam_, mode, predictBuffer))
+		arduinoProcess =  Process(target=arduino, args = (startOnlineEvent,  _shutdownEvent, predictBuffer, None, None, emergency_arduino, emergency_buffer))
+		procList.append(applicationProcess)		
+		procList.append(arduinoProcess)		
+		
+		
 
 	for proc in procList:
 		proc.start()
