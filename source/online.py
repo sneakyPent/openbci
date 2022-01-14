@@ -24,13 +24,13 @@ import joblib
 from time import sleep
 import serial
 from source import OpenBCICyton
-from utils.coloringPrint import printError, printInfo, printWarning
-from utils.constants import Constants as cnst, TargetPlatform, getSessionFilename
+from utils.coloringPrint import printError, printHeader, printInfo, printWarning
+from utils.constants import Constants as cnst, getSessionFilename, TargetPlatform
 from utils.filters import *
 from classification.train_processing_cca_3 import calculate_cca_correlations
 from utils.general import emptyQueue
 from source.SSVEPexperiment import SSVEP_online_SCREEN_session
-from arduino_run import arduino
+from source.arduino_run import arduino
 
 class Error(Exception):
 	"""Base class for other exceptions"""
@@ -169,7 +169,7 @@ def startTargetApp(socketConnection, _shutdownEvent):
 				subprocess.check_call([cnst.onlineUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
 
 
-def onlineProcessing(board, windowedDataBuffer, predictBuffer, socketConnection, newWindowAvailable, _shutdownEvent):
+def onlineProcessing(board, boardApiCallEvents, windowedDataBuffer, predictBuffer, socketConnection, newWindowAvailable, _shutdownEvent, startOnlineEvent, targetPlatform, predictedCommand, robotMode):
 	"""
 
 		* waits until :py:attr:`socketConnection` get set by :py:meth:`source.training.connectTraining`
@@ -188,18 +188,24 @@ def onlineProcessing(board, windowedDataBuffer, predictBuffer, socketConnection,
 
 		"""
 		
-	clf = joblib.load(cnst.classifierFilename)
+	clf = joblib.load(cnst.classifiersDirectory+cnst.initClassifierFilename)
+	if targetPlatform == TargetPlatform.UNITY:
+			waitingEvent = socketConnection
+	elif targetPlatform == TargetPlatform.PSYCHOPY:
+			waitingEvent = startOnlineEvent
 	while not _shutdownEvent.is_set():
-		socketConnection.wait(1)
+		# wait event based on the target platform 
+		waitingEvent.wait(1)
+		
 		frames_ch = cnst.frames_ch
 		lowcut = board.getLowerBoundFrequency()
 		highcut = board.getHigherBoundFrequency()
 		fs = board.getSampleRate()
 		chan_ind = board.getEnabledChannels()
-		while socketConnection.is_set():
+		while waitingEvent.is_set() and boardApiCallEvents["startStreaming"].is_set():
 			newWindowAvailable.wait(1)
 			try:
-				if newWindowAvailable.is_set() and socketConnection.is_set():
+				if newWindowAvailable.is_set() and waitingEvent.is_set():
 					segment_full = np.array(windowedDataBuffer.get())
 
 					# # I sum the frames along axis 1 (i.e. I sum all the elements of each row)
@@ -224,9 +230,11 @@ def onlineProcessing(board, windowedDataBuffer, predictBuffer, socketConnection,
 					# predict
 					tmp_command_predicted = clf.predict(r_segment)
 					command_predicted = int(tmp_command_predicted[0])
-					printError(command_predicted)
+					printError(command_predicted.__str__())
 					#  put prediction into the buffer
 					predictBuffer.put_nowait(command_predicted)
+					if robotMode:
+						predictedCommand.put_nowait(command_predicted)
 			except queue.Full:
 				printError('predictBuffer is Full.')
 				emptyQueue(predictBuffer)
@@ -571,7 +579,7 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 					commandPrintFileObject.close()
 
 
-def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, newWindowAvailable, debugMode=True, targetPlatform=TargetPlatform.PSYCHOPY ):
+def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, newWindowAvailable, targetPlatform=TargetPlatform.PSYCHOPY, debugMode=True,):
 	"""
 	* Method runs via onlineProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process and waits for the startOnlineEvent, which is set only by the boardEventHandler.
@@ -600,48 +608,53 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	mngr = SyncManager()
 	mngr.start()
 	predictBuffer = mngr.Queue(maxsize=100)
+	predictedCommand = mngr.Queue(maxsize=100)
+	
+	emergency_event = Event()
+	emergency_event.clear()
+	emergency_buffer = mngr.Queue(maxsize=1) # queue to use keyboard for navigation in case of online sessions
+	# create socket connection needing for unity communication
+	socketConnection = Event()
+	socketConnection.clear()
+	robotMode = True
+	onlineProcessingProcess = Process(target=onlineProcessing,
+		                                  args=(board, boardApiCallEvents, windowedDataBuffer, predictBuffer, socketConnection,
+		                                        newWindowAvailable, _shutdownEvent, startOnlineEvent, targetPlatform, predictedCommand, robotMode))
+	procList.append(onlineProcessingProcess)
+	
 	if targetPlatform == TargetPlatform.UNITY:
-		socketConnection = Event()
-		socketConnection.clear()
-		emergencyKeyboardEvent = Event()
-		emergencyKeyboardEvent.clear()
-		keyboardBuffer = mngr.Queue(maxsize=10)
 	
 		# Create the process needed
 		socketProcess = Process(target=socketConnect,
 		                        args=(board, boardApiCallEvents, socketConnection, startOnlineEvent,
-		                              emergencyKeyboardEvent, keyboardBuffer, _shutdownEvent,))
+		                              emergency_event, emergency_buffer, _shutdownEvent,))
 		applicationProcess = Process(target=startTargetApp, args=(socketConnection, _shutdownEvent,))
-		onlineProcessingProcess = Process(target=onlineProcessing,
-		                                  args=(board, windowedDataBuffer, predictBuffer, socketConnection,
-		                                        newWindowAvailable, _shutdownEvent,))
+
 		debugPredictProcess = Process(target=debugPredict,
-		                              args=(socketConnection, predictBuffer, emergencyKeyboardEvent, keyboardBuffer,
+		                              args=(socketConnection, predictBuffer, emergency_event, emergency_buffer,
 		                                    _shutdownEvent,))
 		wheelSerialPredictProcess = Process(target=wheelSerialPredict,
 		                                    args=(
 			                                    socketConnection, predictBuffer, cnst.wheelchairUsbPort,
-			                                    emergencyKeyboardEvent, keyboardBuffer, _shutdownEvent,))
+			                                    emergency_event, emergency_buffer, _shutdownEvent,))
 	
 		procList.append(socketProcess)
 		procList.append(applicationProcess)
-		procList.append(onlineProcessingProcess)
+		
 		if debugMode:
 			procList.append(debugPredictProcess)
 		else:
 			procList.append(wheelSerialPredictProcess)
 	elif targetPlatform == TargetPlatform.PSYCHOPY:
-		emergency_arduino = Event()
-		emergency_buffer = Queue(1) # queue to use keyboard for navigation in case of online sessions
-		frames_ch = [[10,10],[8,8],[9,9],[7,7]]
 		mode = False
-		board.setTrainingMode(True)
+		
 		ip_cam_ = cnst.ip_cam
 		applicationProcess = Process(target=SSVEP_online_SCREEN_session,
-									args=(startOnlineEvent, None, _shutdownEvent, None,
-		                                frames_ch, None, None, emergency_arduino,
-		                                emergency_buffer, ip_cam_, mode, predictBuffer))
-		arduinoProcess =  Process(target=arduino, args = (startOnlineEvent,  _shutdownEvent, predictBuffer, None, None, emergency_arduino, emergency_buffer))
+									args=(board, startOnlineEvent, boardApiCallEvents, None, _shutdownEvent, None,
+		                                cnst.frames_ch, None, None, emergency_event,
+		                                emergency_buffer, ip_cam_, mode, predictedCommand))
+		arduinoProcess =  Process(target=arduino, args = (startOnlineEvent, _shutdownEvent, predictBuffer,
+															None, boardApiCallEvents["startStreaming"], emergency_event, emergency_buffer))
 		procList.append(applicationProcess)		
 		procList.append(arduinoProcess)		
 		
@@ -654,4 +667,4 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	for proc in procList:
 		proc.join()
 	emptyQueue(predictBuffer)
-	emptyQueue(keyboardBuffer)
+	emptyQueue(emergency_buffer)
