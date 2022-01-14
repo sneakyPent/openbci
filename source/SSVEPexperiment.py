@@ -671,7 +671,7 @@ def SSVEP_screen_session(board, startPresentation, boardApiCallEvents, _shutdown
 #*********************************************************************************************************************
 
 # ********* DO NOT FORGET REMOVE return
-def SSVEP_online_SCREEN_session(startPresentation, _isReading, _shutdownEvent, q_label, frames_ch, _streaming,
+def SSVEP_online_SCREEN_session(board, startPresentation, boardApiCallEvents, _isReading, _shutdownEvent, q_label, frames_ch, _streaming,
 								releaseData, emergency_arduino, emergency_buffer,ip_cam_, mode, commandPred):
 
 	# print the id of the process
@@ -684,6 +684,10 @@ def SSVEP_online_SCREEN_session(startPresentation, _isReading, _shutdownEvent, q
 		# -------------------------- START PRESENTATION --------------------------------------------
 		# ------------------------------------------------------------------------------------------
 		if startPresentation.is_set():
+			if not board.isConnected():
+				printWarning('Could not start training without connected Board.')
+				startPresentation.clear()
+				continue
 			printInfo('Starting targets')
 			logging.console.setLevel(logging.WARNING)  # this outputs to the screen, not a file
 		
@@ -798,6 +802,7 @@ def SSVEP_online_SCREEN_session(startPresentation, _isReading, _shutdownEvent, q
 					if "escape" in theseKeys:
 						endExpNow = True
 					if len(theseKeys) > 0:  # at least one key was pressed
+						boardApiCallEvents["startStreaming"].set()
 						# a response ends the routine
 						continueRoutine = False
 	
@@ -812,6 +817,7 @@ def SSVEP_online_SCREEN_session(startPresentation, _isReading, _shutdownEvent, q
 	
 				# check for quit (the Esc key)
 				if endExpNow or event.getKeys(keyList=["escape"]):
+					boardApiCallEvents["stopStreaming"].set()
 					# _isReading.clear()
 					startPresentation.clear()
 					while not commandPred.empty():
@@ -950,7 +956,7 @@ def SSVEP_online_SCREEN_session(startPresentation, _isReading, _shutdownEvent, q
 					# show predicted command
 					if not commandPred.empty():
 						cmd = commandPred.get_nowait()
-						print(cmd)
+						# print(cmd)
 						if cmd == 1:
 							lineLEFT.draw()
 						elif cmd == 2:
@@ -985,31 +991,31 @@ def SSVEP_online_SCREEN_session(startPresentation, _isReading, _shutdownEvent, q
 						event.clearEvents(eventType='keyboard')
 					if end_fl.status == STARTED:
 						theseKeys = event.getKeys()
-		
+						# print(theseKeys)
 						# check for quit:
-						if "escape" in theseKeys:
+						if cnst.emergencyKeyboardCommands["keyboardKey_EXIT_PRESENTATION"] in theseKeys:
 							endExpNow = True
-						elif "up" in theseKeys:
+						elif cnst.emergencyKeyboardCommands["keyboardKey_FORWARD"] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("f")
 							print("EMERGENCY SET FORWARD")
-						elif "right" in theseKeys:
+						elif cnst.emergencyKeyboardCommands["keyboardKey_RIGHT"] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("r")
 							print("EMERGENCY SET RIGHT")
-						elif "left" in theseKeys:
+						elif cnst.emergencyKeyboardCommands["keyboardKey_LEFT"] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("l")
 							print("EMERGENCY SET LEFT")
-						elif "down" in theseKeys:
+						elif cnst.emergencyKeyboardCommands["keyboardKey_BACK"] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("b")
 							print("EMERGENCY SET BACK")
-						elif "space" in theseKeys:
+						elif cnst.emergencyKeyboardCommands["keyboardKey_STOP"] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("s")
 							print("EMERGENCY SET STOP")
-						elif "z" in theseKeys:
+						elif cnst.emergencyKeyboardCommands["keyboardKey_RETURN_EEG"] in theseKeys:
 							emergency_arduino.clear()
 							emergency_buffer.put("s")
 							print("RETURN EEG")
@@ -1029,6 +1035,7 @@ def SSVEP_online_SCREEN_session(startPresentation, _isReading, _shutdownEvent, q
 					if endExpNow or event.getKeys(keyList=["escape"]):
 						vcap.release()
 						cv2.destroyAllWindows()
+						boardApiCallEvents["stopStreaming"].set()
 						# _isReading.clear()
 						startPresentation.clear()
 						while not commandPred.empty():
@@ -1057,6 +1064,7 @@ def SSVEP_online_SCREEN_session(startPresentation, _isReading, _shutdownEvent, q
 				cv2.destroyAllWindows()
 		
 				# stop reading
+				boardApiCallEvents["stopStreaming"].set()
 				# _isReading.clear()
 				startPresentation.clear()
 		
@@ -1077,6 +1085,7 @@ def SSVEP_online_SCREEN_session(startPresentation, _isReading, _shutdownEvent, q
 				cv2.destroyAllWindows()
 				print("EXCEPTION PRESENTATION")
 				# stop reading
+				boardApiCallEvents["stopStreaming"].set()
 				# _isReading.clear()
 				startPresentation.clear()
 				while not commandPred.empty():
