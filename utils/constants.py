@@ -383,7 +383,7 @@ class Constants:
 		"keyboardKey_STOP": "space" ,
 		"keyboardKey_FORWARD": "w" ,
 		"keyboardKey_BACK": "s" ,
-		"keyboardKey_RIGHT": "a" ,
-		"keyboardKey_LEFT": "d" ,
+		"keyboardKey_RIGHT": "d" ,
+		"keyboardKey_LEFT": "a" ,
 		"keyboardKey_RETURN_EEG": "z"
 	}
