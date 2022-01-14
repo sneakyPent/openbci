@@ -246,7 +246,7 @@ class Constants:
 	trainingClassesFrequencies = [0, 3, 3.75, 3.33, 4.28]
 
 	""" classification """
-	classifierFilename = "../classification/classifier_LDA.sav"
+	initClassifierFilename = "classifier_LDA.sav"
 	classifiersDirectory = '../classifiers/'
 	frames_ch = [[0 for j in range(2)] for i in range(4)]  # The duration (in frames) of the first checkerboard pattern
 	frames_ch[0] = [10, 10]  # for frequency=3 Hz
@@ -344,6 +344,46 @@ class Constants:
 	
 	""" ARDUINO """
 	ip_cam = 'http://192.168.2.145:8080/video'
-	# arduino_address = "192.168.1.3"#"139.91.190.207"
-	arduino_address = "192.168.2.146" #"139.91.190.207"
+	# address = ("139.91.190.207", 80)# ("192.168.1.3", 80)#    #server's address
+	arduino_address = "192.168.2.146"
 	arduino_port = 80
+	
+	arduino_onlineStreamingCommands_STOP = 's'
+	arduino_onlineStreamingCommands_LEFT = 'l'
+	arduino_onlineStreamingCommands_RIGHT = 'r'
+	arduino_onlineStreamingCommands_BACK = 'b'
+	arduino_onlineStreamingCommands_FORWARD = 'f'
+	
+	arduino_KeyBoardCommandsSwitcher = {
+		keyboardKey_STOP: onlineStreamingCommands_STOP,
+		keyboardKey_FORWARD: onlineStreamingCommands_FORWARD,
+		keyboardKey_BACK: onlineStreamingCommands_BACK,
+		keyboardKey_RIGHT: onlineStreamingCommands_RIGHT,
+		keyboardKey_LEFT: onlineStreamingCommands_LEFT
+	}
+	
+	arduino_CommandsTranslationForDebug = {
+		arduino_onlineStreamingCommands_STOP: 'STOP',
+		arduino_onlineStreamingCommands_LEFT: 'LEFT',
+		arduino_onlineStreamingCommands_RIGHT: 'RIGHT',
+		arduino_onlineStreamingCommands_BACK: 'BACK',
+		arduino_onlineStreamingCommands_FORWARD: 'FORWARD'
+	}
+	
+	arduino_class4Switcher = {
+		target4Class_STOP: arduino_onlineStreamingCommands_STOP,
+		target4Class_LEFT: arduino_onlineStreamingCommands_LEFT,
+		target4Class_RIGHT: arduino_onlineStreamingCommands_RIGHT,
+		target4Class_BACK: arduino_onlineStreamingCommands_BACK,
+		target4Class_FORWARD: arduino_onlineStreamingCommands_FORWARD
+	}
+	
+	emergencyKeyboardCommands = {
+		"keyboardKey_EXIT_PRESENTATION": "escape",
+		"keyboardKey_STOP": "space" ,
+		"keyboardKey_FORWARD": "w" ,
+		"keyboardKey_BACK": "s" ,
+		"keyboardKey_RIGHT": "a" ,
+		"keyboardKey_LEFT": "d" ,
+		"keyboardKey_RETURN_EEG": "z"
+	}
