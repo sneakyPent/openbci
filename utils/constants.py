@@ -248,6 +248,7 @@ class Constants:
 	""" classification """
 	initClassifierFilename = "classifier_LDA.sav"
 	classifiersDirectory = '../classifiers/'
+	targetDuration = 7  # in seconds
 	frames_ch = [[0 for j in range(2)] for i in range(4)]  # The duration (in frames) of the first checkerboard pattern
 	frames_ch[0] = [10, 10]  # for frequency=3 Hz
 	frames_ch[1] = [8, 8]  # for frequency=3.75 Hz
