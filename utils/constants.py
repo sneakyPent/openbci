@@ -378,12 +378,36 @@ class Constants:
 		target4Class_FORWARD: arduino_onlineStreamingCommands_FORWARD
 	}
 	
+	_keyboardKey_STOP = "keyboardKey_STOP"
+	_keyboardKey_FORWARD = "keyboardKey_FORWARD"
+	_keyboardKey_BACK = "keyboardKey_BACK"
+	_keyboardKey_RIGHT = "keyboardKey_RIGHT"
+	_keyboardKey_LEFT = "keyboardKey_LEFT"
+	_keyboardKey_EXIT_PRESENTATION = "keyboardKey_EXIT_PRESENTATION"
+	_keyboardKey_RETURN_EEG = "keyboardKey_RETURN_EEG"
+	
 	emergencyKeyboardCommands = {
-		"keyboardKey_EXIT_PRESENTATION": "escape",
-		"keyboardKey_STOP": "space" ,
-		"keyboardKey_FORWARD": "w" ,
-		"keyboardKey_BACK": "s" ,
-		"keyboardKey_RIGHT": "d" ,
-		"keyboardKey_LEFT": "a" ,
-		"keyboardKey_RETURN_EEG": "z"
+		_keyboardKey_EXIT_PRESENTATION: "escape",
+		_keyboardKey_STOP: "space" ,
+		_keyboardKey_FORWARD: "w" ,
+		_keyboardKey_BACK: "s" ,
+		_keyboardKey_RIGHT: "d" ,
+		_keyboardKey_LEFT: "a" ,
+		_keyboardKey_RETURN_EEG: "z"
+	}
+	
+	groundTruthKeyboardCommands = {
+		_keyboardKey_STOP: "num_0" ,
+		_keyboardKey_FORWARD: "up" ,
+		_keyboardKey_BACK: "down" ,
+		_keyboardKey_RIGHT: "right" ,
+		_keyboardKey_LEFT: "left"
+	}
+	
+	groundTruthKeyboardCommands_class4Switcher = {
+		_keyboardKey_STOP: target4Class_STOP,
+		_keyboardKey_FORWARD: target4Class_FORWARD,
+		_keyboardKey_BACK: target4Class_BACK,
+		_keyboardKey_RIGHT: target4Class_RIGHT,
+		_keyboardKey_LEFT: target4Class_LEFT
 	}
