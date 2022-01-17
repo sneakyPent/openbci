@@ -112,7 +112,7 @@ def classify(fileNames):
 						acc_LDA, predicted_labels_LDA, ground_truth = calculateAccuracy(X_test, chan_ind, fs, frames_ch,
 						                                                                lowcut,
 						                                                                highcut, harmonics_num,
-						                                                                _dataInFile)
+						                                                                _dataInFile, classifierFileName)
 
 						print("")
 						print("************ LDA accuracy is ************** : " + str(acc_LDA))
