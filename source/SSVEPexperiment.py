@@ -1021,19 +1021,19 @@ def SSVEP_online_SCREEN_session(board, startPresentation, boardApiCallEvents, _i
 							print("RETURN EEG")
 						# add the commands for the ground truth
 						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_FORWARD] in theseKeys:
-							targetClassBuffer.put(cnst)
+							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_FORWARD])
 							print("GROUND TRUTH SET FORWARD")
 						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_RIGHT] in theseKeys:
-							targetClassBuffer.put(cnst)
+							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_RIGHT])
 							print("GROUND TRUTH SET RIGHT")
 						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_LEFT] in theseKeys:
-							targetClassBuffer.put(cnst)
+							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_LEFT])
 							print("GROUND TRUTH SET LEFT")
 						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_BACK] in theseKeys:
-							targetClassBuffer.put(cnst)
+							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_BACK])
 							print("GROUND TRUTH SET BACK")
 						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_STOP] in theseKeys:
-							targetClassBuffer.put(cnst)
+							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_STOP])
 							print("GROUND TRUTH SET STOP")
 		
 		
