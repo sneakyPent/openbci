@@ -579,7 +579,7 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 					commandPrintFileObject.close()
 
 
-def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, newWindowAvailable, targetPlatform=TargetPlatform.PSYCHOPY, debugMode=True,):
+def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer ,targetClassBuffer, newWindowAvailable, targetPlatform=TargetPlatform.PSYCHOPY, debugMode=True,):
 	"""
 	* Method runs via onlineProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process and waits for the startOnlineEvent, which is set only by the boardEventHandler.
@@ -649,8 +649,9 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 		mode = False
 		
 		ip_cam_ = cnst.ip_cam
+		board.setTrainingMode(True)
 		applicationProcess = Process(target=SSVEP_online_SCREEN_session,
-									args=(board, startOnlineEvent, boardApiCallEvents, None, _shutdownEvent, None,
+									args=(board, startOnlineEvent, boardApiCallEvents, None, _shutdownEvent, targetClassBuffer,
 		                                cnst.frames_ch, None, None, emergency_event,
 		                                emergency_buffer, ip_cam_, mode, predictedCommand))
 		arduinoProcess =  Process(target=arduino, args = (startOnlineEvent, _shutdownEvent, predictBuffer,

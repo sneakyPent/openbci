@@ -159,13 +159,12 @@ def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
 		
 		procList.append(applicationProcess)   
 	elif targetPlatform == TargetPlatform.PSYCHOPY:
-		target_dur = 5
 		frames_ch = [[10,10],[8,8],[9,9],[7,7]]
 		mode = False
 		board.setTrainingMode(True)
 		applicationProcess = Process(target=SSVEP_screen_session,
 									args=(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
-										  trainingClassBuffer, target_dur, frames_ch, mode))
+										  trainingClassBuffer, cnst.targetDuration, frames_ch, mode))
 		procList.append(applicationProcess)	
 	
 	for proc in procList:

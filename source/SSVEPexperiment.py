@@ -671,7 +671,7 @@ def SSVEP_screen_session(board, startPresentation, boardApiCallEvents, _shutdown
 #*********************************************************************************************************************
 
 # ********* DO NOT FORGET REMOVE return
-def SSVEP_online_SCREEN_session(board, startPresentation, boardApiCallEvents, _isReading, _shutdownEvent, q_label, frames_ch, _streaming,
+def SSVEP_online_SCREEN_session(board, startPresentation, boardApiCallEvents, _isReading, _shutdownEvent, targetClassBuffer, frames_ch, _streaming,
 								releaseData, emergency_arduino, emergency_buffer,ip_cam_, mode, commandPred):
 
 	# print the id of the process
@@ -981,7 +981,7 @@ def SSVEP_online_SCREEN_session(board, startPresentation, boardApiCallEvents, _i
 					# *end_fl* updates
 					if t >= 0.0 and end_fl.status == NOT_STARTED:
 		
-						# q_label.put(200)
+						targetClassBuffer.put(200)
 		
 						# keep track of start time/frame for later
 						end_fl.tStart = t  # underestimates by a little under one frame
@@ -993,32 +993,48 @@ def SSVEP_online_SCREEN_session(board, startPresentation, boardApiCallEvents, _i
 						theseKeys = event.getKeys()
 						# print(theseKeys)
 						# check for quit:
-						if cnst.emergencyKeyboardCommands["keyboardKey_EXIT_PRESENTATION"] in theseKeys:
+						if cnst.emergencyKeyboardCommands[cnst._keyboardKey_EXIT_PRESENTATION] in theseKeys:
 							endExpNow = True
-						elif cnst.emergencyKeyboardCommands["keyboardKey_FORWARD"] in theseKeys:
+						elif cnst.emergencyKeyboardCommands[cnst._keyboardKey_FORWARD] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("f")
 							print("EMERGENCY SET FORWARD")
-						elif cnst.emergencyKeyboardCommands["keyboardKey_RIGHT"] in theseKeys:
+						elif cnst.emergencyKeyboardCommands[cnst._keyboardKey_RIGHT] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("r")
 							print("EMERGENCY SET RIGHT")
-						elif cnst.emergencyKeyboardCommands["keyboardKey_LEFT"] in theseKeys:
+						elif cnst.emergencyKeyboardCommands[cnst._keyboardKey_LEFT] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("l")
 							print("EMERGENCY SET LEFT")
-						elif cnst.emergencyKeyboardCommands["keyboardKey_BACK"] in theseKeys:
+						elif cnst.emergencyKeyboardCommands[cnst._keyboardKey_BACK] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("b")
 							print("EMERGENCY SET BACK")
-						elif cnst.emergencyKeyboardCommands["keyboardKey_STOP"] in theseKeys:
+						elif cnst.emergencyKeyboardCommands[cnst._keyboardKey_STOP] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("s")
 							print("EMERGENCY SET STOP")
-						elif cnst.emergencyKeyboardCommands["keyboardKey_RETURN_EEG"] in theseKeys:
+						elif cnst.emergencyKeyboardCommands[cnst._keyboardKey_RETURN_EEG] in theseKeys:
 							emergency_arduino.clear()
 							emergency_buffer.put("s")
 							print("RETURN EEG")
+						# add the commands for the ground truth
+						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_FORWARD] in theseKeys:
+							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_FORWARD])
+							print("GROUND TRUTH SET FORWARD")
+						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_RIGHT] in theseKeys:
+							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_RIGHT])
+							print("GROUND TRUTH SET RIGHT")
+						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_LEFT] in theseKeys:
+							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_LEFT])
+							print("GROUND TRUTH SET LEFT")
+						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_BACK] in theseKeys:
+							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_BACK])
+							print("GROUND TRUTH SET BACK")
+						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_STOP] in theseKeys:
+							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_STOP])
+							print("GROUND TRUTH SET STOP")
 		
 		
 					# check if all components have finished
