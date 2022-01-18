@@ -21,10 +21,10 @@ class BoardEventHandler:
 	:type dataBuffersList: list(Queue)
 	:param Queue writingBuffer:  Buffer to pass the stream data to :py:meth:`source.writeToFile.writing`.
 	:param Event writeDataEvent:  Event to inform the writeProcess of UImanager.py to start writing the data into an hdf5 file
-	:param Queue trainingClassBuffer:  Buffer lets this process to get sample's class, that the training program showing every frame via :py:mod:`source.training`
+	:param Queue currentClassBuffer:  Buffer lets this process to get sample's class, that either the training program showing every frame via :py:mod:`source.training` or the online session using as the predicted command in :py:mod:`source.online`
 	:param Event _shutdownEvent:  Event used to know when to allow every running process terminate
 
-	:var int trainingClass: The current training class value read by trainingClassBuffer, initialized in :data:`utils.constants.Constants.unknownClass` value
+	:var int currentClass: The current training class value read by currentClassBuffer, initialized in :data:`utils.constants.Constants.unknownClass` value
 	:var Event connectEvent: When this one get set the :py:meth:`source.boardEventHandler.BoardEventHandler.connect` method is allowed to continue to main process
 	:var Event disconnectEvent:  When this one get set the :py:meth:`source.boardEventHandler.BoardEventHandler.disconnect` method is allowed to continue to main process
 	:var Event startStreamingEvent:  When this one get set the :py:meth:`source.boardEventHandler.BoardEventHandler.startStreaming` method is allowed to continue to main process
@@ -33,17 +33,19 @@ class BoardEventHandler:
 	"""
 
 	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writingBuffer, writeDataEvent,
-	             trainingClassBuffer, _shutdownEvent):
+	             currentClassBuffer, groundTruthClassBuffer,  _shutdownEvent):
 		self.board = board
 		self.boardSettings = boardSettings
 		self.newDataAvailable = newDataAvailable
 		self.dataBuffersList = dataBuffersList
 		self.writingBuffer = writingBuffer
 		self.writeDataEvent = writeDataEvent
-		self.trainingClassBuffer = trainingClassBuffer
+		self.currentClassBuffer = currentClassBuffer
+		self.groundTruthClassBuffer = groundTruthClassBuffer
 		self.shutdownEvent = _shutdownEvent
 
-		self.trainingClass = cnst.unknownClass
+		self.currentClass = cnst.unknownClass
+		self.groundTruthClass = cnst.unknownClass
 		self.connectEvent = Event()
 		self.disconnectEvent = Event()
 		self.startStreamingEvent = Event()
@@ -107,7 +109,7 @@ class BoardEventHandler:
 			    4. Inform other processes to get tha sample from the buffer, via the newDataAvailable Event
 
 		"""
-		streamingQueues = [self.writingBuffer, self.trainingClassBuffer]
+		streamingQueues = [self.writingBuffer, self.currentClassBuffer, self.groundTruthClassBuffer]
 		streamingQueues.extend(self.dataBuffersList)
 		numOfSamples = 0
 		"minor counter, helps to count the number of samples read by the cyton board"
@@ -119,7 +121,7 @@ class BoardEventHandler:
 				if self.board.isConnected():
 					emptyQueue(streamingQueues)
 					printInfo("Starting streaming...")
-					self.trainingClass = cnst.unknownClass
+					self.currentClass = cnst.unknownClass
 					numOfSamples = 0
 					printing = True
 					while self.startStreamingEvent.is_set():
@@ -129,11 +131,15 @@ class BoardEventHandler:
 							# append training class in the channel data before put in the buffer
 							if self.board.isSynched():
 								# check if training class has been changed, if so then replace
-								if not self.trainingClassBuffer.empty():
-									self.trainingClass = self.trainingClassBuffer.get()
+								if not self.currentClassBuffer.empty():
+									self.currentClass = self.currentClassBuffer.get_nowait()
+								if not self.groundTruthClassBuffer.empty():
+									self.groundTruthClass = self.groundTruthClassBuffer.get_nowait()
 								# append training class in the channel data before put in the buffer
 								if self.board.isTrainingMode():
-									sample.channel_data.append(self.trainingClass)
+									sample.channel_data.append(self.currentClass)
+									sample.channel_data.append(self.groundTruthClass)
+									
 								# Put the read sample in every buffer contained in the dataBuffersList and then inform other processes via newDataAvailable event
 								for buffer in self.dataBuffersList:
 									buffer.put_nowait(sample.channel_data)
@@ -176,7 +182,7 @@ class BoardEventHandler:
 
 			    1. Stops the streaming
 			    2. Inform the writeProcess of UIManager to start writing the data to hdf5 file via writeDataEvent
-			    3. Reinitialize the trainingClass to :data:`utils.constants.Constants.unknownClass` value
+			    3. Reinitialize the currentClass to :data:`utils.constants.Constants.unknownClass` value
 
 		"""
 

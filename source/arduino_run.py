@@ -7,7 +7,7 @@ from utils.constants import Constants as cnst
 
 
 # function for the arduino platform and the execution of the commands
-def arduino(startPresentation, _shutdownEvent, command_buffer, _isReading, _streaming, emergency_arduino, emergency_buffer):
+def arduino(startPresentation, _shutdownEvent, command_buffer, currentClassBuffer, _streaming, emergency_arduino, emergency_buffer):
 	commandClass = 0
 	# wait until the presentation starts
 	while not _shutdownEvent.is_set():
@@ -36,6 +36,8 @@ def arduino(startPresentation, _shutdownEvent, command_buffer, _isReading, _stre
 							# Create info message 
 							msg = 'COMAND CLASS: ' + commandClass.__str__() + ', MOVE: ' + move + ' -> '\
 									+ cnst.arduino_CommandsTranslationForDebug.get(move, 'NOT AVAILABLE COMMAND') 
+							currentClassBuffer.put_nowait(commandClass)
+							printWarning(commandClass.__str__())
 									
 						else:
 							printWarning("KEYBOARD commands")
@@ -44,15 +46,16 @@ def arduino(startPresentation, _shutdownEvent, command_buffer, _isReading, _stre
 							msg = 'COMAND CLASS: ' + commandClass.__str__() + ', MOVE: ' + move + ' -> ' \
 									+ cnst.arduino_CommandsTranslationForDebug.get(move, 'NOT AVAILABLE COMMAND') 
 					
-						printInfo(msg)    
-						client_socket.sendto(move.encode(),address) #send move to arduino/server
-								
+						printInfo(msg)
+						client_socket.sendto(move.encode(),address) #send move to arduino/server    								
 						sleep(0.05) # delay before the next command
 							
 						
 				move = "s"
 				printInfo("Arduino")
 				client_socket.sendto(move.encode(),address) # send move to arduino/server
+				# currentClassBuffer.put_nowait(commandClass)
+				# printWarning(commandClass.__str__())
 		
 				# check if the queues are full and empty them
 				while not command_buffer.empty():
