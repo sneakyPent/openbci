@@ -1,6 +1,7 @@
-import logging
+
 import h5py
 import numpy as np
+from utils.coloringPrint import printInfo
 from utils.constants import Constants as cnst, getSessionFilename
 
 
@@ -21,35 +22,34 @@ def writing(board, writeBuf, windowedData, writeDataEvent, _shutdownEvent):
 
 	:return: None
 	"""
-	logger = logging.getLogger(cnst.loggerName)
 	while not _shutdownEvent.is_set():
 		writeDataEvent.wait(1)
 		if writeDataEvent.is_set():
-			logger.info('Start writing data into file...')
+			printInfo('Start writing data into file...')
 			signal = []
 			windowedSignal = []
 			filename = getSessionFilename(training=board.isTrainingMode())
 			hf = h5py.File(filename + '.hdf5', 'w')
-			logger.info('signal buffer size: ' + writeBuf.qsize().__str__())
+			printInfo('signal buffer size: ' + writeBuf.qsize().__str__())
 			while not writeBuf.qsize() == 0:
 				dt = writeBuf.get()
 				signal.append(dt)
 			signal = np.array(signal).astype(float)
 			hf.create_dataset("signal", data=signal)
-			logger.info("Finish with signal")
-			logger.info('windowData buffer size: ' + windowedData.qsize().__str__())
+			printInfo("Finish with signal")
+			printInfo('windowData buffer size: ' + windowedData.qsize().__str__())
 			while not windowedData.qsize() == 0:
 				dt = windowedData.get()
 				windowedSignal.append(dt)
 			windowedSignal = np.array(windowedSignal).astype(float)
 			hf.create_dataset("packages", data=windowedSignal)
-			logger.info("Finish with windowed signal")
+			printInfo("Finish with windowed signal")
 			utf8_type = h5py.string_dtype('utf-8', 100)
 			boardSettings = np.array(list(board.getBoardSettings().items()), dtype=utf8_type)
 			hf.create_dataset("StreamSettings", data=boardSettings)
-			logger.info("Finish with settings")
+			printInfo("Finish with settings")
 			hf.close()
 			writeDataEvent.clear()
-			logger.info('Data save in ' + filename)
+			printInfo('Data save in ' + filename)
 		if _shutdownEvent.is_set():
 			break

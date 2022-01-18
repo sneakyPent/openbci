@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import argparse
-import logging
 import os
 import signal
 import sys
@@ -12,7 +11,7 @@ from source.boardEventHandler import BoardEventHandler
 from source.pyGUI import startGUI
 from source.training import startTraining
 from source.windowing import windowing
-from utils.coloringPrint import printWarning
+from utils.coloringPrint import printInfo, printWarning
 from source.writeToFile import writing
 from source.cyton import OpenBCICyton
 from utils.constants import Constants as cnst
@@ -70,19 +69,8 @@ def uiManager():
 	:var SyncManager.Queue writingBuffer: Contains the streamed Data for writeProcess
 	:var SyncManager.Queue windowingBuffer: Contains the streamed Data for windowingProcess
 	:var SyncManager.Queue windowedDataBuffer: Contains the windowed streamed Data, got from windowingProcess for the writeProcess
-	:var SyncManager.Queue trainingClassBuffer: Contains the training class, the training program showing every frame via :py:mod:`source.training`
+	:var SyncManager.Queue currentClassBuffer: Contains the training class, the training program showing every frame via :py:mod:`source.training`
 	"""
-	if not os.path.exists(cnst.logsDirectory):
-		os.makedirs(cnst.logsDirectory)
-
-	logger = logging.getLogger(cnst.loggerName)
-	logger.setLevel(level=logging.DEBUG)
-	fileHandler = logging.FileHandler(cnst.logFilename)
-	fileHandler.setFormatter(logging.Formatter(cnst.logFileHandlerFormat))
-	logger.addHandler(fileHandler)
-	consoleHandler = logging.StreamHandler()
-	consoleHandler.setFormatter(logging.Formatter(cnst.logStreamHandlerFormat))
-	logger.addHandler(consoleHandler)
 
 	# register the OpenBCICyton class; make its functions accessible via proxy
 	SyncManager.register('OpenBCICyton', OpenBCICyton)
@@ -120,7 +108,8 @@ def uiManager():
 	writingBuffer = manager.Queue(maxsize=cnst.writeDataMaxQueueSize)
 	windowingBuffer = manager.Queue(maxsize=cnst.writeDataMaxQueueSize)
 	windowedDataBuffer = manager.Queue(maxsize=cnst.writeDataMaxQueueSize)
-	trainingClassBuffer = manager.Queue(maxsize=1)
+	currentClassBuffer = manager.Queue(maxsize=1)
+	groundTruthClassBuffer = manager.Queue(maxsize=1)
 	# Queue for the communication between socket and boardEventHandler
 	# add queues in the list
 	# dataBuffersList = [windowingBuffer, printBuffer, guiBuffer]
@@ -128,14 +117,14 @@ def uiManager():
 
 	# Create a BoardEventHandler Instance
 	boardEventHandler = BoardEventHandler(board, boardCytonSettings, newDataAvailable, dataBuffersList,
-	                                      writingBuffer, writeDataEvent, trainingClassBuffer, shutdownEvent)
+	                                      writingBuffer, writeDataEvent, currentClassBuffer, groundTruthClassBuffer, shutdownEvent)
 	# events will be used to control board through any gui
 	boardApiCallEvents = boardEventHandler.getBoardHandlerEvents()
 
 	mode = 'pygui'
 	# mode = args.mode[0]
 	if mode == 'pygui':
-		logger.info("Start GUI mode")
+		printInfo("Start GUI mode")
 		# create Process for printing Data
 		printDataProcess = Process(target=printData, name='printData',
 		                           args=(printBuffer, newDataAvailable, shutdownEvent))
@@ -166,13 +155,13 @@ def uiManager():
 		trainingProcess = Process(target=startTraining, name='training',
 		                          args=(
 			                          board, startTrainingEvent, boardApiCallEvents, shutdownEvent,
-			                          trainingClassBuffer))
+			                          currentClassBuffer))
 		processesList.append(trainingProcess)
 
 		# create Process for connecting to unity program socket fro online session
 		onlineProcess = Process(target=startOnline, name='online',
 		                        args=(board, startOnlineEvent, boardApiCallEvents, shutdownEvent,
-		                              windowedDataBuffer, newWindowAvailable))
+		                              windowedDataBuffer, currentClassBuffer, groundTruthClassBuffer, newWindowAvailable))
 		processesList.append(onlineProcess)
 
 		# start processes in the processList

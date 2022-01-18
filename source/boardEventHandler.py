@@ -1,4 +1,3 @@
-import logging
 import queue
 import traceback
 from multiprocessing import Process, Event
@@ -22,10 +21,10 @@ class BoardEventHandler:
 	:type dataBuffersList: list(Queue)
 	:param Queue writingBuffer:  Buffer to pass the stream data to :py:meth:`source.writeToFile.writing`.
 	:param Event writeDataEvent:  Event to inform the writeProcess of UImanager.py to start writing the data into an hdf5 file
-	:param Queue trainingClassBuffer:  Buffer lets this process to get sample's class, that the training program showing every frame via :py:mod:`source.training`
+	:param Queue currentClassBuffer:  Buffer lets this process to get sample's class, that either the training program showing every frame via :py:mod:`source.training` or the online session using as the predicted command in :py:mod:`source.online`
 	:param Event _shutdownEvent:  Event used to know when to allow every running process terminate
 
-	:var int trainingClass: The current training class value read by trainingClassBuffer, initialized in :data:`utils.constants.Constants.unknownClass` value
+	:var int currentClass: The current training class value read by currentClassBuffer, initialized in :data:`utils.constants.Constants.unknownClass` value
 	:var Event connectEvent: When this one get set the :py:meth:`source.boardEventHandler.BoardEventHandler.connect` method is allowed to continue to main process
 	:var Event disconnectEvent:  When this one get set the :py:meth:`source.boardEventHandler.BoardEventHandler.disconnect` method is allowed to continue to main process
 	:var Event startStreamingEvent:  When this one get set the :py:meth:`source.boardEventHandler.BoardEventHandler.startStreaming` method is allowed to continue to main process
@@ -34,23 +33,24 @@ class BoardEventHandler:
 	"""
 
 	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writingBuffer, writeDataEvent,
-	             trainingClassBuffer, _shutdownEvent):
+	             currentClassBuffer, groundTruthClassBuffer,  _shutdownEvent):
 		self.board = board
 		self.boardSettings = boardSettings
 		self.newDataAvailable = newDataAvailable
 		self.dataBuffersList = dataBuffersList
 		self.writingBuffer = writingBuffer
 		self.writeDataEvent = writeDataEvent
-		self.trainingClassBuffer = trainingClassBuffer
+		self.currentClassBuffer = currentClassBuffer
+		self.groundTruthClassBuffer = groundTruthClassBuffer
 		self.shutdownEvent = _shutdownEvent
 
-		self.trainingClass = cnst.unknownClass
+		self.currentClass = cnst.unknownClass
+		self.groundTruthClass = cnst.unknownClass
 		self.connectEvent = Event()
 		self.disconnectEvent = Event()
 		self.startStreamingEvent = Event()
 		self.stopStreamingEvent = Event()
 		self.newBoardSettingsAvailableEvent = Event()
-		self.logger = logging.getLogger(cnst.loggerName)
 
 	def connect(self):
 		"""
@@ -66,9 +66,9 @@ class BoardEventHandler:
 					try:
 						self.board.connect()
 					except OSError as er:
-						self.logger.warning(msg=er.__str__() + "Make sure board is properly connected and enabled.")
+						printWarning("Make sure board is properly connected and enabled. " + er.__str__())
 				else:
-					self.logger.warning("Already have a connection!")
+					printWarning("Already have a connection!")
 				self.connectEvent.clear()
 
 	def disconnect(self):
@@ -83,17 +83,17 @@ class BoardEventHandler:
 			self.disconnectEvent.wait(1)
 			if self.disconnectEvent.is_set():
 				if self.board.isStreaming():
-					self.logger.warning("Cannot disconnect while streaming")
+					printWarning("Cannot disconnect while streaming")
 					self.disconnectEvent.clear()
 					continue
 				if self.board.isConnected():
-					self.logger.info("Disconnecting...")
+					printInfo("Disconnecting...")
 					try:
 						self.board.disconnect()
 					except:
-						self.logger.error("No connection to disconnect from ")
+						printError("No connection to disconnect from ")
 				else:
-					self.logger.warning("No connection to disconnect from")
+					printWarning("No connection to disconnect from")
 				self.disconnectEvent.clear()
 
 	def startStreaming(self):
@@ -109,7 +109,7 @@ class BoardEventHandler:
 			    4. Inform other processes to get tha sample from the buffer, via the newDataAvailable Event
 
 		"""
-		streamingQueues = [self.writingBuffer, self.trainingClassBuffer]
+		streamingQueues = [self.writingBuffer, self.currentClassBuffer, self.groundTruthClassBuffer]
 		streamingQueues.extend(self.dataBuffersList)
 		numOfSamples = 0
 		"minor counter, helps to count the number of samples read by the cyton board"
@@ -120,8 +120,8 @@ class BoardEventHandler:
 			if self.startStreamingEvent.is_set():
 				if self.board.isConnected():
 					emptyQueue(streamingQueues)
-					self.logger.info("Starting streaming...")
-					self.trainingClass = cnst.unknownClass
+					printInfo("Starting streaming...")
+					self.currentClass = cnst.unknownClass
 					numOfSamples = 0
 					printing = True
 					while self.startStreamingEvent.is_set():
@@ -131,11 +131,15 @@ class BoardEventHandler:
 							# append training class in the channel data before put in the buffer
 							if self.board.isSynched():
 								# check if training class has been changed, if so then replace
-								if not self.trainingClassBuffer.empty():
-									self.trainingClass = self.trainingClassBuffer.get()
+								if not self.currentClassBuffer.empty():
+									self.currentClass = self.currentClassBuffer.get_nowait()
+								if not self.groundTruthClassBuffer.empty():
+									self.groundTruthClass = self.groundTruthClassBuffer.get_nowait()
 								# append training class in the channel data before put in the buffer
 								if self.board.isTrainingMode():
-									sample.channel_data.append(self.trainingClass)
+									sample.channel_data.append(self.currentClass)
+									sample.channel_data.append(self.groundTruthClass)
+									
 								# Put the read sample in every buffer contained in the dataBuffersList and then inform other processes via newDataAvailable event
 								for buffer in self.dataBuffersList:
 									buffer.put_nowait(sample.channel_data)
@@ -147,25 +151,25 @@ class BoardEventHandler:
 								self.newDataAvailable.clear()
 							# check for the synching zeros array sample ( [0, 0, 0, 0 ,0 , 0, 0, 0] )
 							elif sample.channel_data == cnst.synchingSignal:
-								self.logger.info('Synching completed')
+								printInfo('Synching completed')
 								self.board.setSynching(True)
 						except queue.Full:
-							self.logger.error("Queue full, stop streaming...")
+							printError("Queue full, stop streaming...")
 							self.stopStreamingEvent.set()
 							printing = False
 							break
-						except Exception as e:
-							self.logger.error(msg='Stop streaming', exc_info=True)
+						except Exception as er:
+							printError('Stop streaming: ' + er.__str__())
 							self.stopStreamingEvent.set()
 							printing = False
 				else:
 					printing = False
-					self.logger.warning("No connection to start streaming from.")
+					printWarning("No connection to start streaming from.")
 				self.startStreamingEvent.clear()
 			else:
 				self.newDataAvailable.clear()
 				if printing:
-					self.logger.info('Total streamed samples received: ' + numOfSamples.__str__())
+					printInfo('Total streamed samples received: ' + numOfSamples.__str__())
 					printing = False
 		emptyQueue(streamingQueues)
 
@@ -178,7 +182,7 @@ class BoardEventHandler:
 
 			    1. Stops the streaming
 			    2. Inform the writeProcess of UIManager to start writing the data to hdf5 file via writeDataEvent
-			    3. Reinitialize the trainingClass to :data:`utils.constants.Constants.unknownClass` value
+			    3. Reinitialize the currentClass to :data:`utils.constants.Constants.unknownClass` value
 
 		"""
 
@@ -186,7 +190,7 @@ class BoardEventHandler:
 			self.stopStreamingEvent.wait(1)
 			if self.stopStreamingEvent.is_set():
 				if self.board.isConnected() and self.board.isStreaming():
-					self.logger.info("Stopping streaming...")
+					printInfo("Stopping streaming...")
 					try:
 						self.startStreamingEvent.clear()
 						if self.board.isTrainingMode():
@@ -195,12 +199,12 @@ class BoardEventHandler:
 						self.board.stopStreaming()
 						self.board.setSynching(False)
 					except:
-						self.logger.error("There is no stream to stop.")
+						printError("There is no stream to stop.")
 				else:
 					if not self.board.isConnected():
-						self.logger.warning("No connection to stop streaming from.")
+						printWarning("No connection to stop streaming from.")
 					elif not self.board.isStreaming():
-						self.logger.warning("No active streaming to stop.")
+						printWarning("No active streaming to stop.")
 				self.stopStreamingEvent.clear()
 
 	def newBoardSettingsAvailable(self):

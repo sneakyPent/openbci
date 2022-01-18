@@ -3,9 +3,13 @@ import time
 from enum import Enum
 
 from matplotlib import colors as mcolors
+import enum
 
 baseColors = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
 
+class TargetPlatform(enum.Enum):
+    UNITY = 0
+    PSYCHOPY = 1
 
 def getSessionFilename(training=False, openbciGUI=False, online=False, classification=False):
 	if training:
@@ -233,18 +237,19 @@ class Constants:
 	                'channel 5', 'channel 6', 'channel 7', 'channel 8']
 
 	""" Unity exe """
-	# trainingUnityExePath = "C:/Users/ZN/Desktop/training/trainingOpenbci.exe"
-	trainingUnityExePath = "/home/zn/Desktop/Diplo/unityScreens/training/trainingOpenbci.exe"
-	# onlineUnityExePath = "C:/Users/ZN/Desktop/online/onlineOpenbci.exe"
-	onlineUnityExePath = "/home/zn/Desktop/Diplo/unityScreens/online/onlineOpenbci.exe"
+	trainingUnityExePath = "C:/Users/Nikolas/Desktop/training/trainingOpenbci.exe"
+	# trainingUnityExePath = "/home/zn/Desktop/Diplo/unityScreens/training/trainingOpenbci.exe"
+	onlineUnityExePath = "C:/Users/Nikolas/Desktop/online/onlineOpenbci.exe"
+	# onlineUnityExePath = "/home/zn/Desktop/Diplo/unityScreens/online/onlineOpenbci.exe"
 	onlineUnitySentByte = 8
 	unknownClass = 200
 	trainingClasses = [0, 1, 2, 3, 4]
 	trainingClassesFrequencies = [0, 3, 3.75, 3.33, 4.28]
 
 	""" classification """
-	classifierFilename = "../classification/classifier_LDA.sav"
+	initClassifierFilename = "classifier_LDA.sav"
 	classifiersDirectory = '../classifiers/'
+	targetDuration = 7  # in seconds
 	frames_ch = [[0 for j in range(2)] for i in range(4)]  # The duration (in frames) of the first checkerboard pattern
 	frames_ch[0] = [10, 10]  # for frequency=3 Hz
 	frames_ch[1] = [8, 8]  # for frequency=3.75 Hz
@@ -335,3 +340,76 @@ class Constants:
 	logFilename = logsDirectory + 'cytonBoard__' + time.strftime("%d-%m-%Y__%H-%M-%S") + '.log'
 	logFileHandlerFormat = "[%(asctime)s] [%(levelname)-8s] (%(filename)s:%(lineno)s) -- %(message)s"
 	logStreamHandlerFormat = "[%(levelname)-8s]  %(message)s"
+	
+	
+	mediaPath = '../media/'
+	
+	""" ARDUINO """
+	ip_cam = 'http://192.168.2.145:8080/video'
+	# address = ("139.91.190.207", 80)# ("192.168.1.3", 80)#    #server's address
+	arduino_address = "192.168.2.146"
+	arduino_port = 80
+	
+	arduino_onlineStreamingCommands_STOP = 's'
+	arduino_onlineStreamingCommands_LEFT = 'l'
+	arduino_onlineStreamingCommands_RIGHT = 'r'
+	arduino_onlineStreamingCommands_BACK = 'b'
+	arduino_onlineStreamingCommands_FORWARD = 'f'
+	
+	arduino_KeyBoardCommandsSwitcher = {
+		keyboardKey_STOP: onlineStreamingCommands_STOP,
+		keyboardKey_FORWARD: onlineStreamingCommands_FORWARD,
+		keyboardKey_BACK: onlineStreamingCommands_BACK,
+		keyboardKey_RIGHT: onlineStreamingCommands_RIGHT,
+		keyboardKey_LEFT: onlineStreamingCommands_LEFT
+	}
+	
+	arduino_CommandsTranslationForDebug = {
+		arduino_onlineStreamingCommands_STOP: 'STOP',
+		arduino_onlineStreamingCommands_LEFT: 'LEFT',
+		arduino_onlineStreamingCommands_RIGHT: 'RIGHT',
+		arduino_onlineStreamingCommands_BACK: 'BACK',
+		arduino_onlineStreamingCommands_FORWARD: 'FORWARD'
+	}
+	
+	arduino_class4Switcher = {
+		target4Class_STOP: arduino_onlineStreamingCommands_STOP,
+		target4Class_LEFT: arduino_onlineStreamingCommands_LEFT,
+		target4Class_RIGHT: arduino_onlineStreamingCommands_RIGHT,
+		target4Class_BACK: arduino_onlineStreamingCommands_BACK,
+		target4Class_FORWARD: arduino_onlineStreamingCommands_FORWARD
+	}
+	
+	_keyboardKey_STOP = "keyboardKey_STOP"
+	_keyboardKey_FORWARD = "keyboardKey_FORWARD"
+	_keyboardKey_BACK = "keyboardKey_BACK"
+	_keyboardKey_RIGHT = "keyboardKey_RIGHT"
+	_keyboardKey_LEFT = "keyboardKey_LEFT"
+	_keyboardKey_EXIT_PRESENTATION = "keyboardKey_EXIT_PRESENTATION"
+	_keyboardKey_RETURN_EEG = "keyboardKey_RETURN_EEG"
+	
+	emergencyKeyboardCommands = {
+		_keyboardKey_EXIT_PRESENTATION: "escape",
+		_keyboardKey_STOP: "space" ,
+		_keyboardKey_FORWARD: "w" ,
+		_keyboardKey_BACK: "s" ,
+		_keyboardKey_RIGHT: "d" ,
+		_keyboardKey_LEFT: "a" ,
+		_keyboardKey_RETURN_EEG: "z"
+	}
+	
+	groundTruthKeyboardCommands = {
+		_keyboardKey_STOP: "num_0" ,
+		_keyboardKey_FORWARD: "up" ,
+		_keyboardKey_BACK: "down" ,
+		_keyboardKey_RIGHT: "right" ,
+		_keyboardKey_LEFT: "left"
+	}
+	
+	groundTruthKeyboardCommands_class4Switcher = {
+		_keyboardKey_STOP: target4Class_STOP,
+		_keyboardKey_FORWARD: target4Class_FORWARD,
+		_keyboardKey_BACK: target4Class_BACK,
+		_keyboardKey_RIGHT: target4Class_RIGHT,
+		_keyboardKey_LEFT: target4Class_LEFT
+	}
