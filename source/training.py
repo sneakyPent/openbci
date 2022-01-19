@@ -19,7 +19,7 @@ from utils.general import emptyQueue
 from source.SSVEPexperiment import SSVEP_screen_session
 
 
-def connectTraining(board, boardApiCallEvents, startTrainingEvent, trainingClassBuffer, socketConnection,
+def connectTraining(board, boardApiCallEvents, startTrainingEvent, currentClassBuffer, socketConnection,
                     _shutdownEvent):
 	"""
 	* Wait for startTrainingEvent to get set.
@@ -27,7 +27,7 @@ def connectTraining(board, boardApiCallEvents, startTrainingEvent, trainingClass
 
 		* to create a socket communication with the target executable.
 		* to receive the training class byte from the open connection.
-		* to put the receiving byte into trainingClassBuffer parameter.
+		* to put the receiving byte into currentClassBuffer parameter.
 		* to set the socketConnection event, only if socket connection established. When set,  the :py:meth:`source.training.startTrainingApp` process and the :py:meth:`source.boardEventHandler.BoardEventHandler.startStreaming` can be start.
 
 	* When the connection could not be established then wait for 10 sec and then retrying.
@@ -35,7 +35,7 @@ def connectTraining(board, boardApiCallEvents, startTrainingEvent, trainingClass
 	:param OpenBCICyton board: Represents the OpenBCICyton object created from :py:class:`source.UIManager`.
 	:param [Event] boardApiCallEvents: Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
 	:param Event startTrainingEvent: Event for which this method will be waiting. This Event is set only by the :py:meth:`source.pyGUI.GUI.trainingButtonClick`
-	:param Queue trainingClassBuffer: Buffer used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`.
+	:param Queue currentClassBuffer: Buffer used to 'give' the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`.
 	:param Event socketConnection: Used as flag so the main process :py:meth:`source.training.startTraining` can proceed to start the streaming and the training application.
 	:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
@@ -47,7 +47,7 @@ def connectTraining(board, boardApiCallEvents, startTrainingEvent, trainingClass
 				printWarning('Could not start training without connected Board.')
 				startTrainingEvent.clear()
 				continue
-			emptyQueue(trainingClassBuffer)
+			emptyQueue(currentClassBuffer)
 			# create socket
 			s = socket.socket()
 			socket.setdefaulttimeout(None)
@@ -81,7 +81,7 @@ def connectTraining(board, boardApiCallEvents, startTrainingEvent, trainingClass
 					# Quest sends the arrow number
 					bytes_received = c.recv(1).decode("utf-8")  # received bytes
 					# print(bytes_received)
-					trainingClassBuffer.put_nowait(bytes_received)
+					currentClassBuffer.put_nowait(bytes_received)
 					if bytes_received != "E" and bytes_received != "":
 						# q_label.put(int(bytes_received))
 						bytes_received_old = bytes_received
@@ -92,7 +92,7 @@ def connectTraining(board, boardApiCallEvents, startTrainingEvent, trainingClass
 								break
 							else:
 								if bytes_received != bytes_received_old:
-									trainingClassBuffer.put_nowait(bytes_received)
+									currentClassBuffer.put_nowait(bytes_received)
 									bytes_received_old = bytes_received
 
 					c.shutdown(socket.SHUT_RDWR)
@@ -129,7 +129,7 @@ def startTrainingApp(boardApiCallEvents, socketConnection, _shutdownEvent):
 			boardApiCallEvents["stopStreaming"].set()
 
 
-def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent, trainingClassBuffer, targetPlatform=TargetPlatform.PSYCHOPY):
+def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent, currentClassBuffer, targetPlatform=TargetPlatform.PSYCHOPY):
 	"""
 	* Method runs via trainingProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process.
@@ -142,7 +142,7 @@ def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
 	:param Event startTrainingEvent: Event for which socketProcess will be waiting, This Event is set only by the :py:meth:`source.pyGUI.GUI.trainingButtonClick`
 	:param [Event] boardApiCallEvents:  Events used in :py:class:`source.boardEventHandler.BoardEventHandler`
 	:param Event _shutdownEvent: Event used to know when to let every running process terminate
-	:param Queue trainingClassBuffer: Buffer will be used to pass the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
+	:param Queue currentClassBuffer: Buffer will be used to pass the training class to :meth:`source.boardEventHandler.BoardEventHandler.startStreaming`, via :meth:`source.training.connectTraining`
 	:param TargetPlatform targetPlatform: Choose whether the target will executed using unity or psychopy library. 
 	"""
 	procList = []
@@ -153,18 +153,17 @@ def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
 		
 		socketProcess = Process(target=connectTraining,
 		                        args=(board, boardApiCallEvents, startTrainingEvent,
-		                              trainingClassBuffer, socketConnection, _shutdownEvent,))
+		                              currentClassBuffer, socketConnection, _shutdownEvent,))
 		procList.append(socketProcess)
 		applicationProcess = Process(target=startTrainingApp, args=(boardApiCallEvents, socketConnection, _shutdownEvent,))
 		
 		procList.append(applicationProcess)   
 	elif targetPlatform == TargetPlatform.PSYCHOPY:
-		frames_ch = [[10,10],[8,8],[9,9],[7,7]]
 		mode = False
 		board.setTrainingMode(True)
 		applicationProcess = Process(target=SSVEP_screen_session,
 									args=(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
-										  trainingClassBuffer, cnst.targetDuration, frames_ch, mode))
+										  currentClassBuffer, cnst.targetDuration, cnst.frames_ch, mode))
 		procList.append(applicationProcess)	
 	
 	for proc in procList:

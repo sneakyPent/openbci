@@ -69,7 +69,7 @@ def uiManager():
 	:var SyncManager.Queue writingBuffer: Contains the streamed Data for writeProcess
 	:var SyncManager.Queue windowingBuffer: Contains the streamed Data for windowingProcess
 	:var SyncManager.Queue windowedDataBuffer: Contains the windowed streamed Data, got from windowingProcess for the writeProcess
-	:var SyncManager.Queue trainingClassBuffer: Contains the training class, the training program showing every frame via :py:mod:`source.training`
+	:var SyncManager.Queue currentClassBuffer: Contains the training class, the training program showing every frame via :py:mod:`source.training`
 	"""
 
 	# register the OpenBCICyton class; make its functions accessible via proxy
@@ -108,7 +108,8 @@ def uiManager():
 	writingBuffer = manager.Queue(maxsize=cnst.writeDataMaxQueueSize)
 	windowingBuffer = manager.Queue(maxsize=cnst.writeDataMaxQueueSize)
 	windowedDataBuffer = manager.Queue(maxsize=cnst.writeDataMaxQueueSize)
-	trainingClassBuffer = manager.Queue(maxsize=1)
+	currentClassBuffer = manager.Queue(maxsize=1)
+	groundTruthClassBuffer = manager.Queue(maxsize=1)
 	# Queue for the communication between socket and boardEventHandler
 	# add queues in the list
 	# dataBuffersList = [windowingBuffer, printBuffer, guiBuffer]
@@ -116,7 +117,7 @@ def uiManager():
 
 	# Create a BoardEventHandler Instance
 	boardEventHandler = BoardEventHandler(board, boardCytonSettings, newDataAvailable, dataBuffersList,
-	                                      writingBuffer, writeDataEvent, trainingClassBuffer, shutdownEvent)
+	                                      writingBuffer, writeDataEvent, currentClassBuffer, groundTruthClassBuffer, shutdownEvent)
 	# events will be used to control board through any gui
 	boardApiCallEvents = boardEventHandler.getBoardHandlerEvents()
 
@@ -154,13 +155,13 @@ def uiManager():
 		trainingProcess = Process(target=startTraining, name='training',
 		                          args=(
 			                          board, startTrainingEvent, boardApiCallEvents, shutdownEvent,
-			                          trainingClassBuffer))
+			                          currentClassBuffer))
 		processesList.append(trainingProcess)
 
 		# create Process for connecting to unity program socket fro online session
 		onlineProcess = Process(target=startOnline, name='online',
 		                        args=(board, startOnlineEvent, boardApiCallEvents, shutdownEvent,
-		                              windowedDataBuffer, trainingClassBuffer, newWindowAvailable))
+		                              windowedDataBuffer, currentClassBuffer, groundTruthClassBuffer, newWindowAvailable))
 		processesList.append(onlineProcess)
 
 		# start processes in the processList

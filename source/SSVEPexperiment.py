@@ -325,7 +325,7 @@ def commandPredLine(win):
 
 				
 				
-def SSVEP_screen_session(board, startPresentation, boardApiCallEvents, _shutdownEvent, trainingClassBuffer, target_dur, frames_ch, mode):
+def SSVEP_screen_session(board, startPresentation, boardApiCallEvents, _shutdownEvent, currentClassBuffer, target_dur, frames_ch, mode):
 	while not _shutdownEvent.is_set():
 		startPresentation.wait(1)
 		# -------------------------- START PRESENTATION --------------------------------------------
@@ -602,7 +602,7 @@ def SSVEP_screen_session(board, startPresentation, boardApiCallEvents, _shutdown
 								label = 0
 							else:
 								label = target_ind
-							trainingClassBuffer.put(label)
+							currentClassBuffer.put(label)
 				
 							# keep track of start time/frame for later
 							thisTarget.tStart = t  # underestimates by a little under one frame
@@ -671,7 +671,7 @@ def SSVEP_screen_session(board, startPresentation, boardApiCallEvents, _shutdown
 #*********************************************************************************************************************
 
 # ********* DO NOT FORGET REMOVE return
-def SSVEP_online_SCREEN_session(board, startPresentation, boardApiCallEvents, _isReading, _shutdownEvent, targetClassBuffer, frames_ch, _streaming,
+def SSVEP_online_SCREEN_session(board, startPresentation, boardApiCallEvents, _isReading, _shutdownEvent, currentClassBuffer, groundTruthBuffer, frames_ch, _streaming,
 								releaseData, emergency_arduino, emergency_buffer,ip_cam_, mode, commandPred):
 
 	# print the id of the process
@@ -981,7 +981,8 @@ def SSVEP_online_SCREEN_session(board, startPresentation, boardApiCallEvents, _i
 					# *end_fl* updates
 					if t >= 0.0 and end_fl.status == NOT_STARTED:
 		
-						targetClassBuffer.put(200)
+						currentClassBuffer.put_nowait(300)
+						groundTruthBuffer.put(cnst.unknownClass)
 		
 						# keep track of start time/frame for later
 						end_fl.tStart = t  # underestimates by a little under one frame
@@ -995,45 +996,58 @@ def SSVEP_online_SCREEN_session(board, startPresentation, boardApiCallEvents, _i
 						# check for quit:
 						if cnst.emergencyKeyboardCommands[cnst._keyboardKey_EXIT_PRESENTATION] in theseKeys:
 							endExpNow = True
+							
+							currentClassBuffer.put_nowait(300)
 						elif cnst.emergencyKeyboardCommands[cnst._keyboardKey_FORWARD] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("f")
+							currentClassBuffer.put_nowait(300)
 							print("EMERGENCY SET FORWARD")
 						elif cnst.emergencyKeyboardCommands[cnst._keyboardKey_RIGHT] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("r")
+							currentClassBuffer.put_nowait(300)
 							print("EMERGENCY SET RIGHT")
 						elif cnst.emergencyKeyboardCommands[cnst._keyboardKey_LEFT] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("l")
+							currentClassBuffer.put_nowait(300)
 							print("EMERGENCY SET LEFT")
 						elif cnst.emergencyKeyboardCommands[cnst._keyboardKey_BACK] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("b")
+							currentClassBuffer.put_nowait(300)
 							print("EMERGENCY SET BACK")
 						elif cnst.emergencyKeyboardCommands[cnst._keyboardKey_STOP] in theseKeys:
 							emergency_arduino.set()
 							emergency_buffer.put("s")
+							currentClassBuffer.put_nowait(300)
 							print("EMERGENCY SET STOP")
 						elif cnst.emergencyKeyboardCommands[cnst._keyboardKey_RETURN_EEG] in theseKeys:
 							emergency_arduino.clear()
 							emergency_buffer.put("s")
+							currentClassBuffer.put_nowait(300)
 							print("RETURN EEG")
 						# add the commands for the ground truth
 						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_FORWARD] in theseKeys:
-							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_FORWARD])
+							groundTruthBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_FORWARD])
+							currentClassBuffer.put_nowait(300)
 							print("GROUND TRUTH SET FORWARD")
 						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_RIGHT] in theseKeys:
-							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_RIGHT])
+							groundTruthBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_RIGHT])
+							currentClassBuffer.put_nowait(300)
 							print("GROUND TRUTH SET RIGHT")
 						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_LEFT] in theseKeys:
-							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_LEFT])
+							groundTruthBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_LEFT])
+							currentClassBuffer.put_nowait(300)
 							print("GROUND TRUTH SET LEFT")
 						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_BACK] in theseKeys:
-							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_BACK])
+							groundTruthBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_BACK])
+							currentClassBuffer.put_nowait(300)
 							print("GROUND TRUTH SET BACK")
 						elif cnst.groundTruthKeyboardCommands[cnst._keyboardKey_STOP] in theseKeys:
-							targetClassBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_STOP])
+							groundTruthBuffer.put(cnst.groundTruthKeyboardCommands_class4Switcher[cnst._keyboardKey_STOP])
+							currentClassBuffer.put_nowait(300)
 							print("GROUND TRUTH SET STOP")
 		
 		
