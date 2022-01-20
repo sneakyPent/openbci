@@ -68,7 +68,7 @@ def calculateAccuracy(segment_buffer, chan_ind, fs, frames_ch, lowcut, highcut, 
 
 # ................................................................
 # ................................................................
-def classify(fileNames):
+def classify(fileNames, enabledChannels):
 	if len(fileNames) != 4:
 		print('Please choose exactly 4 training files!')
 	else:
@@ -107,9 +107,9 @@ def classify(fileNames):
 
 						if not classifierFileName:
 							return
-						training(X_train, chan_ind, fs, frames_ch, lowcut, highcut, harmonics_num, _dataInFile,
+						training(X_train, enabledChannels, fs, frames_ch, lowcut, highcut, harmonics_num, _dataInFile,
 						         classifierFileName)
-						acc_LDA, predicted_labels_LDA, ground_truth = calculateAccuracy(X_test, chan_ind, fs, frames_ch,
+						acc_LDA, predicted_labels_LDA, ground_truth = calculateAccuracy(X_test, enabledChannels, fs, frames_ch,
 						                                                                lowcut,
 						                                                                highcut, harmonics_num,
 						                                                                _dataInFile, classifierFileName)
