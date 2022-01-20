@@ -33,7 +33,7 @@ class BoardEventHandler:
 	"""
 
 	def __init__(self, board, boardSettings, newDataAvailable, dataBuffersList, writingBuffer, writeDataEvent,
-	             currentClassBuffer, groundTruthClassBuffer,  _shutdownEvent):
+	             currentClassBuffer, groundTruthClassBuffer, _shutdownEvent):
 		self.board = board
 		self.boardSettings = boardSettings
 		self.newDataAvailable = newDataAvailable
@@ -139,7 +139,7 @@ class BoardEventHandler:
 								if self.board.isTrainingMode():
 									sample.channel_data.append(self.currentClass)
 									sample.channel_data.append(self.groundTruthClass)
-									
+
 								# Put the read sample in every buffer contained in the dataBuffersList and then inform other processes via newDataAvailable event
 								for buffer in self.dataBuffersList:
 									buffer.put_nowait(sample.channel_data)

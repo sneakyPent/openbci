@@ -32,6 +32,7 @@ from utils.general import emptyQueue
 from source.SSVEPexperiment import SSVEP_online_SCREEN_session
 from source.arduino_run import arduino
 
+
 class Error(Exception):
 	"""Base class for other exceptions"""
 	pass
@@ -169,7 +170,8 @@ def startTargetApp(socketConnection, _shutdownEvent):
 				subprocess.check_call([cnst.onlineUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
 
 
-def onlineProcessing(board, boardApiCallEvents, windowedDataBuffer, predictBuffer, socketConnection, newWindowAvailable, _shutdownEvent, startOnlineEvent, targetPlatform, predictedCommand, robotMode):
+def onlineProcessing(board, boardApiCallEvents, windowedDataBuffer, predictBuffer, socketConnection, newWindowAvailable,
+                     _shutdownEvent, startOnlineEvent, targetPlatform, predictedCommand, robotMode):
 	"""
 
 		* waits until :py:attr:`socketConnection` get set by :py:meth:`source.training.connectTraining`
@@ -187,16 +189,16 @@ def onlineProcessing(board, boardApiCallEvents, windowedDataBuffer, predictBuffe
 		:param Event _shutdownEvent: Event used to know when to allow every running process terminate
 
 		"""
-		
-	clf = joblib.load(cnst.classifiersDirectory+cnst.initClassifierFilename)
+
+	clf = joblib.load(cnst.classifiersDirectory + cnst.initClassifierFilename)
 	if targetPlatform == TargetPlatform.UNITY:
-			waitingEvent = socketConnection
+		waitingEvent = socketConnection
 	elif targetPlatform == TargetPlatform.PSYCHOPY:
-			waitingEvent = startOnlineEvent
+		waitingEvent = startOnlineEvent
 	while not _shutdownEvent.is_set():
 		# wait event based on the target platform 
 		waitingEvent.wait(1)
-		
+
 		frames_ch = cnst.frames_ch
 		lowcut = board.getLowerBoundFrequency()
 		highcut = board.getHigherBoundFrequency()
@@ -579,7 +581,8 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 					commandPrintFileObject.close()
 
 
-def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, currentClassBuffer, groundTruthBuffer, newWindowAvailable, targetPlatform=TargetPlatform.PSYCHOPY, debugMode=True,):
+def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, currentClassBuffer,
+                groundTruthBuffer, newWindowAvailable, targetPlatform=TargetPlatform.PSYCHOPY, debugMode=True, ):
 	"""
 	* Method runs via onlineProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process and waits for the startOnlineEvent, which is set only by the boardEventHandler.
@@ -609,21 +612,23 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	mngr.start()
 	predictBuffer = mngr.Queue(maxsize=100)
 	predictedCommand = mngr.Queue(maxsize=100)
-	
+
 	emergency_event = Event()
 	emergency_event.clear()
-	emergency_buffer = mngr.Queue(maxsize=1) # queue to use keyboard for navigation in case of online sessions
+	emergency_buffer = mngr.Queue(maxsize=1)  # queue to use keyboard for navigation in case of online sessions
 	# create socket connection needing for unity communication
 	socketConnection = Event()
 	socketConnection.clear()
 	robotMode = True
 	onlineProcessingProcess = Process(target=onlineProcessing,
-		                                  args=(board, boardApiCallEvents, windowedDataBuffer, predictBuffer, socketConnection,
-		                                        newWindowAvailable, _shutdownEvent, startOnlineEvent, targetPlatform, predictedCommand, robotMode))
+	                                  args=(
+	                                  board, boardApiCallEvents, windowedDataBuffer, predictBuffer, socketConnection,
+	                                  newWindowAvailable, _shutdownEvent, startOnlineEvent, targetPlatform,
+	                                  predictedCommand, robotMode))
 	procList.append(onlineProcessingProcess)
-	
+
 	if targetPlatform == TargetPlatform.UNITY:
-	
+
 		# Create the process needed
 		socketProcess = Process(target=socketConnect,
 		                        args=(board, boardApiCallEvents, socketConnection, startOnlineEvent,
@@ -637,29 +642,29 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 		                                    args=(
 			                                    socketConnection, predictBuffer, cnst.wheelchairUsbPort,
 			                                    emergency_event, emergency_buffer, _shutdownEvent,))
-	
+
 		procList.append(socketProcess)
 		procList.append(applicationProcess)
-		
+
 		if debugMode:
 			procList.append(debugPredictProcess)
 		else:
 			procList.append(wheelSerialPredictProcess)
 	elif targetPlatform == TargetPlatform.PSYCHOPY:
 		mode = False
-		
+
 		ip_cam_ = cnst.ip_cam
 		board.setTrainingMode(True)
 		applicationProcess = Process(target=SSVEP_online_SCREEN_session,
-									args=(board, startOnlineEvent, boardApiCallEvents, None, _shutdownEvent, currentClassBuffer, groundTruthBuffer,
-		                                cnst.frames_ch, None, None, emergency_event,
-		                                emergency_buffer, ip_cam_, mode, predictedCommand))
-		arduinoProcess =  Process(target=arduino, args = (startOnlineEvent, _shutdownEvent, predictBuffer,
-															currentClassBuffer, boardApiCallEvents["startStreaming"], emergency_event, emergency_buffer))
-		procList.append(applicationProcess)		
-		procList.append(arduinoProcess)		
-		
-		
+		                             args=(board, startOnlineEvent, boardApiCallEvents, None, _shutdownEvent,
+		                                   currentClassBuffer, groundTruthBuffer,
+		                                   cnst.frames_ch, None, None, emergency_event,
+		                                   emergency_buffer, ip_cam_, mode, predictedCommand))
+		arduinoProcess = Process(target=arduino, args=(startOnlineEvent, _shutdownEvent, predictBuffer,
+		                                               currentClassBuffer, boardApiCallEvents["startStreaming"],
+		                                               emergency_event, emergency_buffer))
+		procList.append(applicationProcess)
+		procList.append(arduinoProcess)
 
 	for proc in procList:
 		proc.start()
