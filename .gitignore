@@ -21,5 +21,6 @@ docs/_build
 
 #Classifcation files
 *.sav
+junk/
 subjects/
 .vscode/
