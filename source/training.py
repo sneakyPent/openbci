@@ -129,7 +129,8 @@ def startTrainingApp(boardApiCallEvents, socketConnection, _shutdownEvent):
 			boardApiCallEvents["stopStreaming"].set()
 
 
-def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent, currentClassBuffer, targetPlatform=TargetPlatform.PSYCHOPY):
+def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent, currentClassBuffer,
+                  targetPlatform=TargetPlatform.PSYCHOPY):
 	"""
 	* Method runs via trainingProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process.
@@ -146,26 +147,27 @@ def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
 	:param TargetPlatform targetPlatform: Choose whether the target will executed using unity or psychopy library. 
 	"""
 	procList = []
-	
+
 	if targetPlatform == TargetPlatform.UNITY:
 		socketConnection = Event()
 		socketConnection.clear()
-		
+
 		socketProcess = Process(target=connectTraining,
 		                        args=(board, boardApiCallEvents, startTrainingEvent,
 		                              currentClassBuffer, socketConnection, _shutdownEvent,))
 		procList.append(socketProcess)
-		applicationProcess = Process(target=startTrainingApp, args=(boardApiCallEvents, socketConnection, _shutdownEvent,))
-		
-		procList.append(applicationProcess)   
+		applicationProcess = Process(target=startTrainingApp,
+		                             args=(boardApiCallEvents, socketConnection, _shutdownEvent,))
+
+		procList.append(applicationProcess)
 	elif targetPlatform == TargetPlatform.PSYCHOPY:
 		mode = False
 		board.setTrainingMode(True)
 		applicationProcess = Process(target=SSVEP_screen_session,
-									args=(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
-										  currentClassBuffer, cnst.targetDuration, cnst.frames_ch, mode))
-		procList.append(applicationProcess)	
-	
+		                             args=(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
+		                                   currentClassBuffer, cnst.targetDuration, cnst.frames_ch, mode))
+		procList.append(applicationProcess)
+
 	for proc in procList:
 		proc.start()
 

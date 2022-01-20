@@ -5,11 +5,13 @@ from enum import Enum
 from matplotlib import colors as mcolors
 import enum
 
-colrs = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
+baseColors = dict(mcolors.BASE_COLORS, **mcolors.CSS4_COLORS)
+
 
 class TargetPlatform(enum.Enum):
-    UNITY = 0
-    PSYCHOPY = 1
+	UNITY = 0
+	PSYCHOPY = 1
+
 
 def getSessionFilename(training=False, openbciGUI=False, online=False, classification=False):
 	if training:
@@ -229,8 +231,9 @@ class Constants:
 
 	""" GUI """
 	# the order of the channels' color  is the same order as the wires' colors in the equivalent pin
-	GUIChannelColors = [colrs['red'], colrs['orange'], colrs['yellow'], colrs['green'],
-	                    colrs['blue'], colrs['purple'], colrs['turquoise'], colrs['orchid'], colrs['gray']]
+	GUIChannelColors = [baseColors['red'], baseColors['orange'], baseColors['yellow'], baseColors['green'],
+	                    baseColors['blue'], baseColors['purple'], baseColors['turquoise'], baseColors['orchid'],
+	                    baseColors['gray'], baseColors['saddlebrown'], baseColors['papayawhip']]
 
 	channelsList = ['channel 1', 'channel 2', 'channel 3', 'channel 4',
 	                'channel 5', 'channel 6', 'channel 7', 'channel 8']
@@ -246,7 +249,7 @@ class Constants:
 	trainingClassesFrequencies = [0, 3, 3.75, 3.33, 4.28]
 
 	""" classification """
-	initClassifierFilename = "classifier_LDA.sav"
+	initClassifierFilename = "Nikolas_classifier_LDA.sav"
 	classifiersDirectory = '../classifiers/'
 	targetDuration = 7  # in seconds
 	frames_ch = [[0 for j in range(2)] for i in range(4)]  # The duration (in frames) of the first checkerboard pattern
@@ -339,22 +342,21 @@ class Constants:
 	logFilename = logsDirectory + 'cytonBoard__' + time.strftime("%d-%m-%Y__%H-%M-%S") + '.log'
 	logFileHandlerFormat = "[%(asctime)s] [%(levelname)-8s] (%(filename)s:%(lineno)s) -- %(message)s"
 	logStreamHandlerFormat = "[%(levelname)-8s]  %(message)s"
-	
-	
+
 	mediaPath = '../media/'
-	
+
 	""" ARDUINO """
 	ip_cam = 'http://192.168.2.145:8080/video'
 	# address = ("139.91.190.207", 80)# ("192.168.1.3", 80)#    #server's address
 	arduino_address = "192.168.2.146"
 	arduino_port = 80
-	
+
 	arduino_onlineStreamingCommands_STOP = 's'
 	arduino_onlineStreamingCommands_LEFT = 'l'
 	arduino_onlineStreamingCommands_RIGHT = 'r'
 	arduino_onlineStreamingCommands_BACK = 'b'
 	arduino_onlineStreamingCommands_FORWARD = 'f'
-	
+
 	arduino_KeyBoardCommandsSwitcher = {
 		keyboardKey_STOP: onlineStreamingCommands_STOP,
 		keyboardKey_FORWARD: onlineStreamingCommands_FORWARD,
@@ -362,7 +364,7 @@ class Constants:
 		keyboardKey_RIGHT: onlineStreamingCommands_RIGHT,
 		keyboardKey_LEFT: onlineStreamingCommands_LEFT
 	}
-	
+
 	arduino_CommandsTranslationForDebug = {
 		arduino_onlineStreamingCommands_STOP: 'STOP',
 		arduino_onlineStreamingCommands_LEFT: 'LEFT',
@@ -370,7 +372,7 @@ class Constants:
 		arduino_onlineStreamingCommands_BACK: 'BACK',
 		arduino_onlineStreamingCommands_FORWARD: 'FORWARD'
 	}
-	
+
 	arduino_class4Switcher = {
 		target4Class_STOP: arduino_onlineStreamingCommands_STOP,
 		target4Class_LEFT: arduino_onlineStreamingCommands_LEFT,
@@ -378,7 +380,7 @@ class Constants:
 		target4Class_BACK: arduino_onlineStreamingCommands_BACK,
 		target4Class_FORWARD: arduino_onlineStreamingCommands_FORWARD
 	}
-	
+
 	_keyboardKey_STOP = "keyboardKey_STOP"
 	_keyboardKey_FORWARD = "keyboardKey_FORWARD"
 	_keyboardKey_BACK = "keyboardKey_BACK"
@@ -386,25 +388,25 @@ class Constants:
 	_keyboardKey_LEFT = "keyboardKey_LEFT"
 	_keyboardKey_EXIT_PRESENTATION = "keyboardKey_EXIT_PRESENTATION"
 	_keyboardKey_RETURN_EEG = "keyboardKey_RETURN_EEG"
-	
+
 	emergencyKeyboardCommands = {
 		_keyboardKey_EXIT_PRESENTATION: "escape",
-		_keyboardKey_STOP: "space" ,
-		_keyboardKey_FORWARD: "w" ,
-		_keyboardKey_BACK: "s" ,
-		_keyboardKey_RIGHT: "d" ,
-		_keyboardKey_LEFT: "a" ,
+		_keyboardKey_STOP: "space",
+		_keyboardKey_FORWARD: "w",
+		_keyboardKey_BACK: "s",
+		_keyboardKey_RIGHT: "d",
+		_keyboardKey_LEFT: "a",
 		_keyboardKey_RETURN_EEG: "z"
 	}
-	
+
 	groundTruthKeyboardCommands = {
-		_keyboardKey_STOP: "num_0" ,
-		_keyboardKey_FORWARD: "up" ,
-		_keyboardKey_BACK: "down" ,
-		_keyboardKey_RIGHT: "right" ,
+		_keyboardKey_STOP: "num_0",
+		_keyboardKey_FORWARD: "up",
+		_keyboardKey_BACK: "down",
+		_keyboardKey_RIGHT: "right",
 		_keyboardKey_LEFT: "left"
 	}
-	
+
 	groundTruthKeyboardCommands_class4Switcher = {
 		_keyboardKey_STOP: target4Class_STOP,
 		_keyboardKey_FORWARD: target4Class_FORWARD,

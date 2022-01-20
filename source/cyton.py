@@ -586,7 +586,7 @@ class OpenBCICyton(object):
 			# log how many packets where sent successfully in between warnings
 			if self.log_packet_count:
 				printInfo('Data packets received:' +
-				                 str(self.log_packet_count))
+				          str(self.log_packet_count))
 				self.log_packet_count = 0
 			printWarning(text)
 
