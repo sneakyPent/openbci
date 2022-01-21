@@ -1,3 +1,4 @@
+import math
 import os
 import h5py
 import numpy as np
@@ -72,7 +73,7 @@ def calculateSNR(data):
 	# Get the maximum value of the array
 	signal = data.max()
 	noise = data[data != signal].sum()
-	snr = signal / noise
+	snr = 10*math.log((signal / noise),10)
 	return snr
 
 
