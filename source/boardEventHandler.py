@@ -2,7 +2,7 @@ import queue
 import traceback
 from multiprocessing import Process, Event
 from utils import *
-from utils.general import emptyQueue
+from utils.general import Timer, emptyQueue
 
 
 class BoardEventHandler:
@@ -51,7 +51,8 @@ class BoardEventHandler:
 		self.startStreamingEvent = Event()
 		self.stopStreamingEvent = Event()
 		self.newBoardSettingsAvailableEvent = Event()
-
+		self.myTimer = Timer()
+		
 	def connect(self):
 		"""
 		Method runs via connectProcess:
@@ -120,6 +121,7 @@ class BoardEventHandler:
 			if self.startStreamingEvent.is_set():
 				if self.board.isConnected():
 					emptyQueue(streamingQueues)
+					self.myTimer.start()
 					printInfo("Starting streaming...")
 					self.currentClass = cnst.unknownClass
 					numOfSamples = 0
@@ -139,6 +141,7 @@ class BoardEventHandler:
 								if self.board.isTrainingMode():
 									sample.channel_data.append(self.currentClass)
 									sample.channel_data.append(self.groundTruthClass)
+									sample.channel_data.append(float(self.myTimer.checkpoint()))
 
 								# Put the read sample in every buffer contained in the dataBuffersList and then inform other processes via newDataAvailable event
 								for buffer in self.dataBuffersList:
@@ -167,6 +170,8 @@ class BoardEventHandler:
 					printWarning("No connection to start streaming from.")
 				self.startStreamingEvent.clear()
 			else:
+				if self.myTimer.getTime() is not None:
+					self.myTimer.stop()
 				self.newDataAvailable.clear()
 				if printing:
 					printInfo('Total streamed samples received: ' + numOfSamples.__str__())
