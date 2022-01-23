@@ -484,7 +484,11 @@ class GUI(QMainWindow):
 		                                            directory="../streamData",
 		                                            filter=file_filter, options=options)
 		if fileNames:
-			classificationOpenBCI.classify(fileNames, enabledChannels=self.board.getEnabledChannels())
+			classificationOpenBCI.classify(fileNames,
+											enabledChannels=self.board.getEnabledChannels(),
+											lowcut=self.board.getLowerBoundFrequency(),
+											highcut=self.board.getHigherBoundFrequency(),
+											fs=self.board.getSampleRate())
 
 	def freqComboClick(self, index):
 		try:

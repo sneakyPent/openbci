@@ -18,10 +18,7 @@ root.withdraw()
 # ................................................................
 
 frames_ch = cnst.frames_ch
-lowcut = 4
-highcut = 40
-harmonics_num = 2
-fs = 250
+harmonics_num = cnst.harmonics_num
 
 _dataInFile = Event()  # event that is set if we read data from file, 
 # not set if we procced to the proccessing code directly after presentation
@@ -67,7 +64,7 @@ def calculateAccuracy(segment_buffer, chan_ind, fs, frames_ch, lowcut, highcut, 
 
 # ................................................................
 # ................................................................
-def classify(fileNames, enabledChannels):
+def classify(fileNames, enabledChannels, lowcut, highcut, fs):
 	if len(fileNames) != 4:
 		print('Please choose exactly 4 training files!')
 	else:
