@@ -7,6 +7,7 @@ If you publish work using this script please cite the relevant PsychoPy publicat
 
 # from __future__ import division  # so that 1/3=0.333 instead of 1/3=0
 from asyncio import subprocess
+import traceback
 from psychopy import visual, core, event, logging
 from psychopy.constants import STARTED, NOT_STARTED, FINISHED  # things like STARTED, FINISHED
 import numpy as np
@@ -1118,6 +1119,7 @@ def SSVEP_online_SCREEN_session(board, startPresentation, boardApiCallEvents, _i
 				vcap.release()
 				cv2.destroyAllWindows()
 				print("EXCEPTION PRESENTATION")
+				traceback.print_exc()
 				# stop reading
 				boardApiCallEvents["stopStreaming"].set()
 				# _isReading.clear()
