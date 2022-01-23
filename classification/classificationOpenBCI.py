@@ -16,7 +16,6 @@ root = Tk()
 root.withdraw()
 # parameters
 # ................................................................
-chan_ind = [0, 1, 2, 3]
 
 frames_ch = cnst.frames_ch
 lowcut = 4
