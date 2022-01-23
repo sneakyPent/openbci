@@ -35,6 +35,8 @@ def getDestinationFolderWithDate():
 		os.makedirs(path)
 	return path
 
+def getShuffledTargetsLength():
+	return 	len(Constants.shuffled_targets)
 
 class ElectrodeType(Enum):
 	DRY = 0
@@ -414,3 +416,7 @@ class Constants:
 		_keyboardKey_RIGHT: target4Class_RIGHT,
 		_keyboardKey_LEFT: target4Class_LEFT
 	}
+
+	
+	""" PSYCHOPY """
+	shuffled_targets = [0, 1, 4, 3, 2, 0, 3, 1, 2, 4, 0, 3, 2, 4, 1, 0]  # ,4,0,2,1,3,2,1,4,3,0]

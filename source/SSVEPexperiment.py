@@ -480,7 +480,8 @@ def SSVEP_screen_session(board, startPresentation, boardApiCallEvents, _shutdown
 				routineTimer.reset()
 
 				# create shuffled list of the targets
-				shuffled_targets = [0, 1, 4, 3, 2, 0, 3, 1, 2, 4, 0, 3, 2, 4, 1, 0]  # ,4,0,2,1,3,2,1,4,3,0]
+				
+				shuffled_targets = cnst.shuffled_targets
 
 				# ------Prepare to start Routine "flash_checkerboard"-------
 
