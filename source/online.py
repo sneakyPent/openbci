@@ -232,7 +232,7 @@ def onlineProcessing(board, boardApiCallEvents, windowedDataBuffer, predictBuffe
 					# predict
 					tmp_command_predicted = clf.predict(r_segment)
 					command_predicted = int(tmp_command_predicted[0])
-					printError(command_predicted.__str__())
+					printInfo('command predicted: ' + command_predicted.__str__())
 					#  put prediction into the buffer
 					predictBuffer.put_nowait(command_predicted)
 					if robotMode:
