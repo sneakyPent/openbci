@@ -1,11 +1,7 @@
 import socket
 from time import time, sleep
-from datetime import datetime
-from utils.coloringPrint import printError, printHeader, printInfo, printWarning
+from utils.coloringPrint import printError, printInfo, printWarning
 from utils.constants import Constants as cnst
-
-
-# from psychopy import event
 
 
 # function for the arduino platform and the execution of the commands
@@ -38,16 +34,19 @@ def arduino(startPresentation, _shutdownEvent, command_buffer, currentClassBuffe
 							# Create info message 
 							msg = 'COMAND CLASS: ' + commandClass.__str__() + ', MOVE: ' + move + ' -> ' \
 							      + cnst.arduino_CommandsTranslationForDebug.get(move, 'NOT AVAILABLE COMMAND')
-							currentClassBuffer.put_nowait(commandClass)
-							printWarning(commandClass.__str__())
+							# update the data will be put in commandForcurrentClassBuffer
+							commandForcurrentClassBuffer = commandClass
 
 						else:
 							printWarning("KEYBOARD commands")
 							move = emergency_buffer.get()  # get the command and translate into move
+							emergencyCommand = list(cnst.arduino_class4Switcher.keys())[list(cnst.arduino_class4Switcher.values()).index(move)]
 							# Create info message 
-							msg = 'COMAND CLASS: ' + commandClass.__str__() + ', MOVE: ' + move + ' -> ' \
+							msg = 'COMAND CLASS: ' + emergencyCommand.__str__() + ', MOVE: ' + move + ' -> ' \
 							      + cnst.arduino_CommandsTranslationForDebug.get(move, 'NOT AVAILABLE COMMAND')
-
+							# update the data will be put in commandForcurrentClassBuffer
+							commandForcurrentClassBuffer = cnst.dontCareClass
+						currentClassBuffer.put_nowait(commandForcurrentClassBuffer)
 						printInfo(msg)
 						client_socket.sendto(move.encode(), address)  # send move to arduino/server
 						sleep(0.05)  # delay before the next command
@@ -55,8 +54,6 @@ def arduino(startPresentation, _shutdownEvent, command_buffer, currentClassBuffe
 				move = "s"
 				printInfo("Arduino")
 				client_socket.sendto(move.encode(), address)  # send move to arduino/server
-				# currentClassBuffer.put_nowait(commandClass)
-				# printWarning(commandClass.__str__())
 
 				# check if the queues are full and empty them
 				while not command_buffer.empty():
