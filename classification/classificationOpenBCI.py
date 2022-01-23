@@ -79,10 +79,10 @@ def classify(fileNames, enabledChannels, lowcut, highcut, fs):
 				with h5py.File(file3, 'r') as f3:
 					with h5py.File(file4, 'r') as f4:
 
-						dsignal_1 = f1['packages']
-						dsignal_2 = f2['packages']
-						dsignal_3 = f3['packages']
-						dsignal_4 = f4['packages']
+						dsignal_1 = f1['packages'][:,:,0:9]
+						dsignal_2 = f2['packages'][:,:,0:9]
+						dsignal_3 = f3['packages'][:,:,0:9]
+						dsignal_4 = f4['packages'][:,:,0:9]
 
 						# merge the different session data
 						dset = np.concatenate((dsignal_1, dsignal_2, dsignal_3, dsignal_4))
