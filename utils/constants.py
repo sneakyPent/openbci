@@ -247,6 +247,7 @@ class Constants:
 	# onlineUnityExePath = "/home/zn/Desktop/Diplo/unityScreens/online/onlineOpenbci.exe"
 	onlineUnitySentByte = 8
 	unknownClass = 200
+	dontCareClass = 300
 	trainingClasses = [0, 1, 2, 3, 4]
 	trainingClassesFrequencies = [0, 3, 3.75, 3.33, 4.28]
 
