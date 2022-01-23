@@ -209,7 +209,9 @@ def onlineProcessing(board, boardApiCallEvents, windowedDataBuffer, predictBuffe
 		fs = board.getSampleRate()
 		chan_ind = board.getEnabledChannels()
 		while not filenameBuf.empty():
-			clf = joblib.load(filenameBuf.get())
+			classifierFilename = filenameBuf.get()
+			print(classifierFilename)
+			clf = joblib.load(classifierFilename)
 		while waitingEvent.is_set() and boardApiCallEvents["startStreaming"].is_set():
 			newWindowAvailable.wait(1)
 			try:
@@ -587,26 +589,8 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 					commandPrintFileObject.close()
 
 
-def chooseClassifier(_shutdownEvent, startOnlineEvent, continueOnlineEvent, filenameBuf):
-	while not _shutdownEvent.is_set():
-		startOnlineEvent.wait(1)
-		if startOnlineEvent.is_set():
-			
-			classifierFileName = askopenfilename(title="Choose a classifier",
-													defaultextension=".sav",
-													filetypes=[('SAV', '.sav')],
-													initialdir=cnst.classifiersDirectory
-                                       )
-			if not classifierFileName:
-				startOnlineEvent.clear()
-			else: 
-				filenameBuf.put(classifierFileName)
-				startOnlineEvent.clear()
-				continueOnlineEvent.set()
-
-
 def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, currentClassBuffer,
-                groundTruthBuffer, newWindowAvailable, targetPlatform=TargetPlatform.PSYCHOPY, debugMode=True, ):
+                groundTruthBuffer, newWindowAvailable, filenameBuf, targetPlatform=TargetPlatform.PSYCHOPY, debugMode=True, ):
 	"""
 	* Method runs via onlineProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process and waits for the startOnlineEvent, which is set only by the boardEventHandler.
@@ -636,7 +620,6 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	mngr.start()
 	predictBuffer = mngr.Queue(maxsize=100)
 	predictedCommand = mngr.Queue(maxsize=100)
-	filenameBuf = mngr.Queue(maxsize=100)
 
 	emergency_event = Event()
 	emergency_event.clear()
@@ -644,17 +627,12 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	# create socket connection needing for unity communication
 	socketConnection = Event()
 	socketConnection.clear()
-	continueOnlineEvent = Event()
-	continueOnlineEvent.clear()
 	
-	robotMode = True
-	chooseClassifierProcess = Process(target=chooseClassifier,
-										args=(_shutdownEvent, startOnlineEvent, continueOnlineEvent, filenameBuf))
-	procList.append(chooseClassifierProcess)								
+	robotMode = True		
 	onlineProcessingProcess = Process(target=onlineProcessing,
 	                                  args=(
 	                                  board, boardApiCallEvents, windowedDataBuffer, predictBuffer, socketConnection,
-	                                  newWindowAvailable, _shutdownEvent, continueOnlineEvent, targetPlatform,
+	                                  newWindowAvailable, _shutdownEvent, startOnlineEvent, targetPlatform,
 	                                  predictedCommand, robotMode, filenameBuf))
 	procList.append(onlineProcessingProcess)
 
@@ -662,7 +640,7 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 
 		# Create the process needed
 		socketProcess = Process(target=socketConnect,
-		                        args=(board, boardApiCallEvents, socketConnection, continueOnlineEvent,
+		                        args=(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 		                              emergency_event, emergency_buffer, _shutdownEvent,))
 		applicationProcess = Process(target=startTargetApp, args=(socketConnection, _shutdownEvent,))
 
@@ -687,11 +665,11 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 		ip_cam_ = cnst.ip_cam
 		board.setTrainingMode(True)
 		applicationProcess = Process(target=SSVEP_online_SCREEN_session,
-		                             args=(board, continueOnlineEvent, boardApiCallEvents, None, _shutdownEvent,
+		                             args=(board, startOnlineEvent, boardApiCallEvents, None, _shutdownEvent,
 		                                   currentClassBuffer, groundTruthBuffer,
 		                                   cnst.frames_ch, None, None, emergency_event,
 		                                   emergency_buffer, ip_cam_, mode, predictedCommand))
-		arduinoProcess = Process(target=arduino, args=(continueOnlineEvent, _shutdownEvent, predictBuffer,
+		arduinoProcess = Process(target=arduino, args=(startOnlineEvent, _shutdownEvent, predictBuffer,
 		                                               currentClassBuffer, boardApiCallEvents["startStreaming"],
 		                                               emergency_event, emergency_buffer))
 		procList.append(applicationProcess)

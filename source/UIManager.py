@@ -110,6 +110,7 @@ def uiManager():
 	windowedDataBuffer = manager.Queue(maxsize=cnst.writeDataMaxQueueSize)
 	currentClassBuffer = manager.Queue(maxsize=1)
 	groundTruthClassBuffer = manager.Queue(maxsize=1)
+	filenameBuf = manager.Queue(maxsize=100)
 	# Queue for the communication between socket and boardEventHandler
 	# add queues in the list
 	# dataBuffersList = [windowingBuffer, printBuffer, guiBuffer]
@@ -138,7 +139,8 @@ def uiManager():
 		# create Process for the gui
 		guiProcess = Process(target=startGUI, name='startGUI',
 		                     args=(guiBuffer, newDataAvailable, board, boardApiCallEvents, boardCytonSettings,
-		                           shutdownEvent, writeDataEvent, startTrainingEvent, startOnlineEvent))
+		                           shutdownEvent, writeDataEvent, startTrainingEvent, startOnlineEvent,
+		                           filenameBuf))
 		processesList.append(guiProcess)
 
 		# create Process to write data from board to file
@@ -163,7 +165,7 @@ def uiManager():
 		onlineProcess = Process(target=startOnline, name='online',
 		                        args=(board, startOnlineEvent, boardApiCallEvents, shutdownEvent,
 		                              windowedDataBuffer, currentClassBuffer, groundTruthClassBuffer,
-		                              newWindowAvailable))
+		                              newWindowAvailable, filenameBuf))
 		processesList.append(onlineProcess)
 
 		# start processes in the processList

@@ -140,7 +140,7 @@ class CustomDialog(QDialog):
 
 class GUI(QMainWindow):
 	def __init__(self, guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
-	             writeDataEvent, startTrainingEvent, startOnlineEvent):
+	             writeDataEvent, startTrainingEvent, startOnlineEvent, filenameBuf):
 		super().__init__()
 		# pg.setConfigOption('background', 'w')
 		# pg.setConfigOption('foreground', 'k')
@@ -152,6 +152,7 @@ class GUI(QMainWindow):
 		self.writeDataEvent = writeDataEvent
 		self.startTrainingEvent = startTrainingEvent
 		self.startOnlineEvent = startOnlineEvent
+		self.filenameBuf = filenameBuf
 		self.boardCytonSettings = boardCytonSettings
 		self.graphData = []
 		self.channelDataGraphWidgets = []
@@ -443,7 +444,15 @@ class GUI(QMainWindow):
 		self.startTrainingEvent.set()
 
 	def onlineButtonClick(self):
-		self.startOnlineEvent.set()
+		options = QFileDialog.Options()
+		options |= QFileDialog.DontUseNativeDialog
+		file_filter = 'SAV File (*.sav )'
+		fileName, _ = QFileDialog.getOpenFileName(self, "Choose a classifier ",
+		                                            directory=cnst.classifiersDirectory,
+		                                            filter=file_filter, options=options)
+		if fileName:
+			self.filenameBuf.put(fileName)
+			self.startOnlineEvent.set()
 
 	def plotFftButtonClick(self):
 		options = QFileDialog.Options()
@@ -644,10 +653,10 @@ class GUI(QMainWindow):
 
 
 def startGUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
-             writeDataEvent, startTrainingEvent, startOnlineEvent):
+             writeDataEvent, startTrainingEvent, startOnlineEvent, filenameBuf):
 	app = QApplication(sys.argv)
 	gui = GUI(guiBuffer, newDataAvailableEvent, board, boardApiCallEvents, boardCytonSettings, _shutdownEvent,
-	          writeDataEvent, startTrainingEvent, startOnlineEvent)
+	          writeDataEvent, startTrainingEvent, startOnlineEvent, filenameBuf)
 	gui.show()
 	sys.exit(app.exec_())
 
