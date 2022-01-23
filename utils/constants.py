@@ -252,7 +252,6 @@ class Constants:
 	trainingClassesFrequencies = [0, 3, 3.75, 3.33, 4.28]
 
 	""" classification """
-	initClassifierFilename = "Nikolas_classifier_LDA.sav"
 	classifiersDirectory = '../classifiers/'
 	targetDuration = 7  # in seconds
 	frames_ch = [[0 for j in range(2)] for i in range(4)]  # The duration (in frames) of the first checkerboard pattern
