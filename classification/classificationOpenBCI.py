@@ -11,6 +11,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 from utils.constants import Constants as cnst, getSessionFilename
+from utils.coloringPrint import printError
 
 root = Tk()
 root.withdraw()
@@ -64,7 +65,7 @@ def calculateAccuracy(segment_buffer, chan_ind, fs, frames_ch, lowcut, highcut, 
 
 # ................................................................
 # ................................................................
-def classify(fileNames, enabledChannels, lowcut, highcut, fs):
+def classify(fileNames, enabledChannels, lowcut, highcut, fs, saveClassifier,subject=None):
 	if len(fileNames) != 4:
 		print('Please choose exactly 4 training files!')
 	else:
@@ -72,7 +73,6 @@ def classify(fileNames, enabledChannels, lowcut, highcut, fs):
 		file2 = fileNames[1]
 		file3 = fileNames[2]
 		file4 = fileNames[3]
-
 		# open the files
 		with h5py.File(file1, 'r') as f1:
 			with h5py.File(file2, 'r') as f2:
@@ -83,7 +83,16 @@ def classify(fileNames, enabledChannels, lowcut, highcut, fs):
 						dsignal_2 = f2['packages'][:,:,0:9]
 						dsignal_3 = f3['packages'][:,:,0:9]
 						dsignal_4 = f4['packages'][:,:,0:9]
-
+						
+						d1Electrodes = f1['StreamSettings'][7,1].decode('UTF-8').split('.')[1]
+						d2Electrodes = f2['StreamSettings'][7,1].decode('UTF-8').split('.')[1]
+						d3Electrodes = f3['StreamSettings'][7,1].decode('UTF-8').split('.')[1]
+						d4Electrodes = f4['StreamSettings'][7,1].decode('UTF-8').split('.')[1]
+						if d1Electrodes == d2Electrodes == d3Electrodes == d4Electrodes:
+							print (d1Electrodes)
+						else:
+							printError('Not the same electrodes in every session!')
+						
 						# merge the different session data
 						dset = np.concatenate((dsignal_1, dsignal_2, dsignal_3, dsignal_4))
 
@@ -94,12 +103,15 @@ def classify(fileNames, enabledChannels, lowcut, highcut, fs):
 						if not isExist:
 							# Create a new directory because it does not exist
 							os.makedirs(cnst.classifiersDirectory)
-						classifierFileName = asksaveasfilename(title="Choose a name for the classifier",
-						                                       initialfile=getSessionFilename(classification=True),
-						                                       defaultextension=".sav",
-						                                       filetypes=[('SAV', '.sav')],
-						                                       initialdir=cnst.classifiersDirectory,
-						                                       confirmoverwrite=True)
+						if saveClassifier:
+							classifierFileName = asksaveasfilename(title="Choose a name for the classifier",
+							                                       initialfile=getSessionFilename(classification=True),
+							                                       defaultextension=".sav",
+							                                       filetypes=[('SAV', '.sav')],
+							                                       initialdir=cnst.classifiersDirectory,
+							                                       confirmoverwrite=True)
+						else:
+							classifierFileName = 'rndName'
 
 						if not classifierFileName:
 							return
@@ -169,3 +181,23 @@ def classify(fileNames, enabledChannels, lowcut, highcut, fs):
 						print("")
 						print("[Stop, Left, Right, Back, Forward]")
 						print(confusion_matrix(ground_truth, predicted_labels_LDA, labels=[0, 1, 2, 3, 4]))
+						if not saveClassifier:
+							os.remove(classifierFileName)
+				
+						classificationResults = {
+							'Subject': subject,
+							'Electrodes': d1Electrodes,
+							'LDA Accuracy': str(acc_LDA),
+							'Total samples': str(stop + forward + right + back + left),
+							'Stop samples': str(hitStop) + "/" + str(stop),
+							'Stop accuracy': str(100 * hitStop / stop),
+							'Forward samples': str(hitForward) + "/" + str(forward),
+							'Forward accuracy': str(100 * hitForward / forward),
+							'Right samples': str(hitRight) + "/" + str(right),
+							'Right accuracy': str(100 * hitRight / right),
+							'Back samples': str(hitBack) + "/" + str(back),
+							'Back accuracy': str(100 * hitBack / back),
+							'Left samples': str(hitLeft) + "/" + str(left),
+							'Left accuracy': str(100 * hitLeft / left)
+						}	
+						return classificationResults
