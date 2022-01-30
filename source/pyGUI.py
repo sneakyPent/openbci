@@ -497,7 +497,8 @@ class GUI(QMainWindow):
 											enabledChannels=self.board.getEnabledChannels(),
 											lowcut=self.board.getLowerBoundFrequency(),
 											highcut=self.board.getHigherBoundFrequency(),
-											fs=self.board.getSampleRate())
+											fs=self.board.getSampleRate(),
+											saveClassifier=True)
 
 	def freqComboClick(self, index):
 		try:
