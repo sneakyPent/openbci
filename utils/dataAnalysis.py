@@ -1,4 +1,6 @@
+import itertools
 from operator import index
+import os
 import numpy
 import sys
 
@@ -66,21 +68,37 @@ def getListOfFiles(dirName):
 					if 'streaming' in trainingFile.lower():
 						trainingFiles.append(trainingFilePath)
 					if len(trainingFiles) == 4:
-						channels = [0, 1, 2]
-						print('Classifying...')
-						subject = os.path.abspath(os.path.join(fullPath, os.pardir)).split('/')[-1]
-						results = classify(fileNames=trainingFiles,
-											enabledChannels=channels,
-											lowcut=lowcut,
-											highcut=highcut,
-											fs=samplingRate,
-											saveClassifier=False,
-											subject=subject)
-						writeClassificationInFile('dokimiRes', results)
+						for channelCombination in channelsCombinations(range(4)):
+							print('Classifying...')
+							subject = os.path.abspath(os.path.join(fullPath, os.pardir)).split('/')[-1]
+							results = classify(fileNames=trainingFiles,
+												enabledChannels=channelCombination,
+												lowcut=lowcut,
+												highcut=highcut,
+												fs=samplingRate,
+												saveClassifier=False,
+												subject=subject)
+							writeClassificationInFile('wetResults', results)
 			# check if the directory is dry results
 			elif entry.lower() == 'dry':
-				# print(entry)
-				pass
+				trainingFiles = []
+				# get the first 4 files contain 'streaming' in their name, for the classification
+				for trainingFile in os.listdir(fullPath):
+					trainingFilePath = os.path.join(fullPath, trainingFile)
+					if 'streaming' in trainingFile.lower():
+						trainingFiles.append(trainingFilePath)
+					if len(trainingFiles) == 4:
+						for channelCombination in channelsCombinations(range(3)):
+							print('Classifying...')
+							subject = os.path.abspath(os.path.join(fullPath, os.pardir)).split('/')[-1]
+							results = classify(fileNames=trainingFiles,
+												enabledChannels=channelCombination,
+												lowcut=lowcut,
+												highcut=highcut,
+												fs=samplingRate,
+												saveClassifier=False,
+												subject=subject)
+							writeClassificationInFile('dryResuts', results)
 			else:
 				pass
 		else:
@@ -120,6 +138,11 @@ def writeClassificationInFile(filename=None, fieldsDict=None):
 			writer.writerow(fieldsDict)
 			#Close the file object
 			f_object.close()
+
+
+def channelsCombinations(data):
+	allCombinations =  itertools.chain.from_iterable(itertools.combinations(data, r) for r in range(1, len(data)+1))
+	return list(map(list, list(allCombinations)))
 
 
 if __name__ == "__main__":
