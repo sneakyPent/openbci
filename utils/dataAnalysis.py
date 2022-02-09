@@ -31,13 +31,16 @@ timer_index = 10
 lowcut = 4
 highcut =40
 samplingRate = cnst.SAMPLE_RATE_250
+# The number of targets for testing session
+ITR_numberOfTargets = 5
+# The total number of classifications during the testing session.
+ITR_Cn = 218
+# The testing session duration in seconds
+ITR_T = getShuffledTargetsLength() * cnst.targetDuration
 
-def calcalate_ITR(N,P):
-	# T = getShuffledTargetsLength()*cnst.targetDuration
-	T = 120
+def calcalate_ITR(N,P,Cn,T):
 	B = log(N,2) + P*log(P,2) + ((1-P)*log(((1-P)/(N-1)),2))
-	ITR = (60/T) * B
-	print(B)
+	ITR = (60/T) * Cn * B
 	return ITR
 	
 	
@@ -78,6 +81,11 @@ def getListOfFiles(dirName):
 												fs=samplingRate,
 												saveClassifier=False,
 												subject=subject)
+							ITR = calcalate_ITR(ITR_numberOfTargets,
+												float(results['LDA Accuracy']),
+												ITR_Cn,
+												ITR_T)
+							results['ITR'] = ITR
 							writeClassificationInFile('wetResults', results)
 			# check if the directory is dry results
 			elif entry.lower() == 'dry':
@@ -98,6 +106,11 @@ def getListOfFiles(dirName):
 												fs=samplingRate,
 												saveClassifier=False,
 												subject=subject)
+							ITR = calcalate_ITR(ITR_numberOfTargets,
+												float(results['LDA Accuracy']),
+												ITR_Cn,
+												ITR_T)
+							results['ITR'] = ITR					
 							writeClassificationInFile('dryResuts', results)
 			else:
 				pass
@@ -146,6 +159,4 @@ def channelsCombinations(data):
 
 
 if __name__ == "__main__":
-	ITR = calcalate_ITR(5,0.906)
-	print(ITR)
-	
+	files = getListOfFiles("/home/zn/Desktop/Subjects")
