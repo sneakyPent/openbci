@@ -268,6 +268,14 @@ class Constants:
 	target4Class_RIGHT = 2
 	target4Class_BACK = 3
 	target4Class_FORWARD = 4
+	
+	targetClassCommands = {
+		'stop': target4Class_STOP,
+		'left': target4Class_LEFT,
+		'right': target4Class_RIGHT,
+		'back': target4Class_BACK,
+		'forward': target4Class_FORWARD
+	}
 	# 3 target classes
 	target3Class_STOP = 0
 	target3Class_FORWARD = 2
