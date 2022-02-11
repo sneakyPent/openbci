@@ -161,5 +161,24 @@ def channelsCombinations(data):
 	return list(map(list, list(allCombinations)))
 
 
+def calculateDrivingTime(fileName):
+	with h5py.File(fileName, 'r') as fl:
+		signalPredicted = fl['signal'][:,8]
+		signalTotalTime = fl['signal'][:,10]
+		curPrediction = -1
+		prevPrediction = -2
+		for index in range(len(signalPredicted)):
+			curPrediction = signalPredicted[index]
+			if curPrediction != prevPrediction:
+				prevPrediction = curPrediction
+				terminationTimeIndex = index
+		if curPrediction != 300:
+			printError('Fix time duration!!')
+			print(curPrediction ,terminationTimeIndex)	
+			
+		timeInMinutes = datetime.timedelta(seconds=signalTotalTime[terminationTimeIndex]).__str__().split(':',1)[1]
+	return timeInMinutes
+				
+			
 if __name__ == "__main__":
 	files = getListOfFiles("/home/zn/Desktop/Subjects")
