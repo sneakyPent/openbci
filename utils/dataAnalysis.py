@@ -90,6 +90,18 @@ def getListOfFiles(dirName):
 												ITR_T)
 							results['ITR'] = ITR
 							writeDictInFile('wetResults', results)
+					if trainingFile.lower() == 'driving.hdf5':
+						print(trainingFilePath)
+						totalTime = calculateDrivingTime(trainingFilePath)
+						with h5py.File(trainingFilePath, 'r') as fl:
+							dtElectroType = fl['StreamSettings'][7,1].decode('UTF-8').split('.')[1]
+						subject = os.path.abspath(os.path.join(fullPath, os.pardir)).split('/')[-1]
+						durationResults = {
+							'Subject': subject,
+							'Electrodes': dtElectroType,
+							'Total time': totalTime
+						}
+						writeDictInFile('onlineDuration', durationResults)
 			# check if the directory is dry results
 			elif entry.lower() == 'dry':
 				trainingFiles = []
@@ -115,6 +127,18 @@ def getListOfFiles(dirName):
 												ITR_T)
 							results['ITR'] = ITR					
 							writeDictInFile('dryResuts', results)
+					if trainingFile.lower() == 'driving.hdf5':
+						print(trainingFilePath)
+						totalTime = calculateDrivingTime(trainingFilePath)
+						with h5py.File(trainingFilePath, 'r') as fl:
+							dtElectroType = fl['StreamSettings'][7,1].decode('UTF-8').split('.')[1]
+						subject = os.path.abspath(os.path.join(fullPath, os.pardir)).split('/')[-1]
+						durationResults = {
+							'Subject': subject,
+							'Electrodes': dtElectroType,
+							'Total time': totalTime
+						}
+						writeDictInFile('onlineDuration', durationResults)
 		else:
 			allFiles.append(fullPath)
 				
