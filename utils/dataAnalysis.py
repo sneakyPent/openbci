@@ -64,14 +64,27 @@ def getListOfFiles(dirName):
 			# check if the directory is numeric, in other words subject data
 			if entry.isnumeric():
 				# print(entry)
-				allFiles = allFiles + getListOfFiles(fullPath)
+				getListOfFiles(fullPath)
 			# check if the directory is wet results
 			elif entry.lower() == 'wet':
+				usedChannels = None 
 				trainingFiles = []
 				# get the first 4 files contain 'streaming' in their name, for the classification
 				for trainingFile in os.listdir(fullPath):
 					trainingFilePath = os.path.join(fullPath, trainingFile)
 					if 'streaming' in trainingFile.lower():
+						with h5py.File(trainingFilePath, 'r') as fl:
+							# dtElectroType = fl['StreamSettings'][7,1].decode('UTF-8').split('.')[1]
+							fileUsedChannels = fl['StreamSettings'][5,1].decode('UTF-8')
+						# Converting string to list
+						fileUsedChannels = fileUsedChannels.strip('][').split(', ')
+						# printing final result and its type
+						fileUsedChannels = list(map(int, fileUsedChannels)) 
+						if usedChannels is None:
+							usedChannels = fileUsedChannels
+						elif usedChannels != fileUsedChannels:
+							printError('Not the same number of electrodes in every session. No classifier created!')
+							return
 						trainingFiles.append(trainingFilePath)
 					if len(trainingFiles) == 4:
 						for channelCombination in channelsCombinations(range(4)):
@@ -105,14 +118,27 @@ def getListOfFiles(dirName):
 						writeDictInFile('onlineDuration', durationResults)
 			# check if the directory is dry results
 			elif entry.lower() == 'dry':
+				usedChannels = None    
 				trainingFiles = []
 				# get the first 4 files contain 'streaming' in their name, for the classification
 				for trainingFile in os.listdir(fullPath):
 					trainingFilePath = os.path.join(fullPath, trainingFile)
 					if 'streaming' in trainingFile.lower():
+						with h5py.File(trainingFilePath, 'r') as fl:
+							# dtElectroType = fl['StreamSettings'][7,1].decode('UTF-8').split('.')[1]
+							fileUsedChannels = fl['StreamSettings'][5,1].decode('UTF-8')
+						# Converting string to list
+						fileUsedChannels = fileUsedChannels.strip('][').split(', ')
+						# printing final result and its type
+						fileUsedChannels = list(map(int, fileUsedChannels)) 
+						if usedChannels is None:
+							usedChannels = fileUsedChannels
+						elif usedChannels != fileUsedChannels:
+							printError('Not the same electrodes in every session. No classifier created!')
+							return
 						trainingFiles.append(trainingFilePath)
 					if len(trainingFiles) == 4:
-						for channelCombination in channelsCombinations(range(3)):
+						for channelCombination in channelsCombinations(usedChannels):
 							print('Classifying...')
 							subject = os.path.abspath(os.path.join(fullPath, os.pardir)).split('/')[-1]
 							results = classify(fileNames=trainingFiles,
