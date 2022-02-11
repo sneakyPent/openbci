@@ -90,6 +90,7 @@ def getListOfFiles(dirName):
 												ITR_T)
 							results['ITR'] = ITR
 							writeDictInFile('wetResults', results)
+						break
 					if trainingFile.lower() == 'driving.hdf5':
 						print(trainingFilePath)
 						totalTime = calculateDrivingTime(trainingFilePath)
@@ -127,6 +128,7 @@ def getListOfFiles(dirName):
 												ITR_T)
 							results['ITR'] = ITR					
 							writeDictInFile('dryResuts', results)
+						break
 					if trainingFile.lower() == 'driving.hdf5':
 						print(trainingFilePath)
 						totalTime = calculateDrivingTime(trainingFilePath)
