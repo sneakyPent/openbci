@@ -39,7 +39,10 @@ ITR_Cn = 218
 ITR_T = getShuffledTargetsLength() * cnst.targetDuration
 
 def calcalate_ITR(N,P,Cn,T):
-	B = log(N,2) + P*log(P,2) + ((1-P)*log(((1-P)/(N-1)),2))
+	if 1-P == 0:
+		B = log(N,2) + P*log(P,2)
+	else:
+		B = log(N,2) + P*log(P,2) + ((1-P)*log(((1-P)/(N-1)),2))
 	ITR = (60/T) * Cn * B
 	return ITR
 	
