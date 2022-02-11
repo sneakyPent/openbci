@@ -1,3 +1,5 @@
+import ast
+import datetime
 import itertools
 from operator import index
 import os
@@ -13,7 +15,7 @@ from statistics import mean
 from utils.constants import Constants as cnst, getShuffledTargetsLength
 from classification.classificationOpenBCI import classify
 from csv import DictWriter
-from utils.coloringPrint import printWarning
+from utils.coloringPrint import printError, printWarning
 
 channel_1_Index = 0
 channel_2_Index = 1
