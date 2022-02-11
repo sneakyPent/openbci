@@ -89,7 +89,7 @@ def getListOfFiles(dirName):
 												ITR_Cn,
 												ITR_T)
 							results['ITR'] = ITR
-							writeClassificationInFile('wetResults', results)
+							writeDictInFile('wetResults', results)
 			# check if the directory is dry results
 			elif entry.lower() == 'dry':
 				trainingFiles = []
@@ -114,16 +114,14 @@ def getListOfFiles(dirName):
 												ITR_Cn,
 												ITR_T)
 							results['ITR'] = ITR					
-							writeClassificationInFile('dryResuts', results)
-			else:
-				pass
+							writeDictInFile('dryResuts', results)
 		else:
 			allFiles.append(fullPath)
 				
 	return allFiles
 
 
-def writeClassificationInFile(filename=None, fieldsDict=None):
+def writeDictInFile(filename=None, fieldsDict=None):
 	filename = filename + '.csv'
 	if filename is None:
 		filename = 'unknown.csv'
