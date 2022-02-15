@@ -230,7 +230,17 @@ def calculateDrivingTime(fileName):
 			
 		timeInMinutes = datetime.timedelta(seconds=signalTotalTime[terminationTimeIndex]).__str__().split(':',1)[1]
 	return timeInMinutes
-				
+					
+					
+def checkWindowedDataLength(fileName):
+	with h5py.File(fileName, 'r') as fl:
+		totalWindowedData = fl['packages'][:,:,0:9].shape[0]
+		if totalWindowedData != 219:
+			printError('windowedDataLength is not 219!')
+			print(fileName ,totalWindowedData)	
+			
+	return totalWindowedData
+	
 
 def getCorrelationFiles(dirName):
 	# create a list of file and sub directories 
