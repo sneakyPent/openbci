@@ -231,6 +231,56 @@ def calculateDrivingTime(fileName):
 		timeInMinutes = datetime.timedelta(seconds=signalTotalTime[terminationTimeIndex]).__str__().split(':',1)[1]
 	return timeInMinutes
 				
-			
+
+def getCorrelationFiles(dirName):
+	# create a list of file and sub directories 
+	# names in the given directory 
+	dryFileName = None
+	wetFileName = None
+	listOfFile = os.listdir(dirName)
+	for entry in listOfFile:
+		# Create full path
+		# print(entry)
+		fullPath = os.path.join(dirName, entry)
+		# If entry is a directory then get the list of files in this directory 
+		if os.path.isdir(fullPath):
+			# check if the directory is numeric, in other words subject data
+			if entry.isnumeric():
+				# print(entry)
+				getCorrelationFiles(fullPath)
+			elif entry.lower() == 'wet':
+				for trainingFile in os.listdir(fullPath):
+					trainingFilePath = os.path.join(fullPath, trainingFile)
+					if 'streaming' in trainingFile.lower():
+						wetFileName = trainingFilePath
+						break
+			elif entry.lower() == 'dry':
+				for trainingFile in os.listdir(fullPath):
+					trainingFilePath = os.path.join(fullPath, trainingFile)
+					if 'streaming' in trainingFile.lower():
+						dryFileName = trainingFilePath
+						break		
+				
+	return dryFileName, wetFileName		
+	
+
+def calcCorrelation(directory, subj):
+	
+	fileNameDry,fileNameWet = getCorrelationFiles(directory + "{:02d}".format(subj))
+	with h5py.File(fileNameDry, 'r') as fl:    
+		signalDry = fl['signal'][:,:]
+		
+	with h5py.File(fileNameWet, 'r') as fl:    
+		signalWet = fl['signal'][:,:]
+
+	a12 = np.cov(signalDry, signalWet)[0][1]
+	a11 = np.cov(signalDry, signalWet)[0][0]
+	a22 = np.cov(signalDry, signalWet)[1][1]
+	cor = (a12/sqrt(a11*a22))
+	print('Subject = ' + "{:02d}".format(subj) + ', ' + 'correlation = ' + cor.__str__())
+
+	
+
 if __name__ == "__main__":
-	files = getListOfFiles("/home/zn/Desktop/Subjects")
+	for subj in range(10):
+		calcCorrelation("/home/zn/Desktop/Subjects/", subj+1)
