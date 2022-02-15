@@ -167,7 +167,8 @@ def classify(fileNames, enabledChannels, lowcut, highcut, fs, saveClassifier,sub
 		'Back samples': str(backHit) + " // " + str(back),
 		'Back accuracy': str(backAccuracy),
 		'Left samples': str(leftHit) + " // " + str(left),
-		'Left accuracy': str(leftAccuracy)
+		'Left accuracy': str(leftAccuracy),
+		'trainings': fileNames
 	}	
 	return classificationResults
 		
