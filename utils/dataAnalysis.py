@@ -36,7 +36,7 @@ samplingRate = cnst.SAMPLE_RATE_250
 # The number of targets for testing session
 ITR_numberOfTargets = 5
 # The total number of classifications during the testing session.
-ITR_Cn = 218
+ITR_Cn = 219
 # The testing session duration in seconds
 ITR_T = getShuffledTargetsLength() * cnst.targetDuration
 
@@ -51,7 +51,7 @@ def calcalate_ITR(N,P,Cn,T):
 	
 	
 
-def getListOfFiles(dirName):
+def getListOfFiles(dirName,drivenTime=False, classification=False, calcEveryClassCombination=False):
 	# create a list of file and sub directories 
 	# names in the given directory 
 	listOfFile = os.listdir(dirName)
@@ -66,7 +66,7 @@ def getListOfFiles(dirName):
 			# check if the directory is numeric, in other words subject data
 			if entry.isnumeric():
 				# print(entry)
-				getListOfFiles(fullPath)
+				getListOfFiles(fullPath,drivenTime, classification, calcEveryClassCombination)
 			# check if the directory is wet results
 			elif entry.lower() == 'wet':
 				usedChannels = None 
@@ -74,39 +74,61 @@ def getListOfFiles(dirName):
 				# get the first 4 files contain 'streaming' in their name, for the classification
 				for trainingFile in os.listdir(fullPath):
 					trainingFilePath = os.path.join(fullPath, trainingFile)
-					if 'streaming' in trainingFile.lower():
-						with h5py.File(trainingFilePath, 'r') as fl:
-							# dtElectroType = fl['StreamSettings'][7,1].decode('UTF-8').split('.')[1]
-							fileUsedChannels = fl['StreamSettings'][5,1].decode('UTF-8')
-						# Converting string to list
-						fileUsedChannels = fileUsedChannels.strip('][').split(', ')
-						# printing final result and its type
-						fileUsedChannels = list(map(int, fileUsedChannels)) 
-						if usedChannels is None:
-							usedChannels = fileUsedChannels
-						elif usedChannels != fileUsedChannels:
-							printError('Not the same number of electrodes in every session. No classifier created!')
-							return
-						trainingFiles.append(trainingFilePath)
-					if len(trainingFiles) == 4:
-						for channelCombination in channelsCombinations(range(4)):
-							print('Classifying...')
-							subject = os.path.abspath(os.path.join(fullPath, os.pardir)).split('/')[-1]
-							results = classify(fileNames=trainingFiles,
-												enabledChannels=channelCombination,
-												lowcut=lowcut,
-												highcut=highcut,
-												fs=samplingRate,
-												saveClassifier=False,
-												subject=subject)
-							ITR = calcalate_ITR(ITR_numberOfTargets,
-												float(results['LDA Accuracy']),
-												ITR_Cn,
-												ITR_T)
-							results['ITR'] = ITR
-							writeDictInFile('wetResults', results)
-						break
-					if trainingFile.lower() == 'driving.hdf5':
+					if classification:
+						if 'streaming' in trainingFile.lower():
+							# check if the used channels in this trials are the same as the previous ones
+							with h5py.File(trainingFilePath, 'r') as fl:
+								fileUsedChannels = fl['StreamSettings'][5,1].decode('UTF-8')
+							# Converting string to list
+							fileUsedChannels = fileUsedChannels.strip('][').split(', ')
+							fileUsedChannels = list(map(int, fileUsedChannels)) 
+							if usedChannels is None:
+								usedChannels = fileUsedChannels
+							elif usedChannels != fileUsedChannels:
+								printError('Not the same number of electrodes in every session. No classifier created!')
+								return
+							trainingFiles.append(trainingFilePath)
+						if len(trainingFiles) == 4:
+							if calcEveryClassCombination:
+								classificationCombinations = dataInListCombinations(trainingFiles)
+								for classificationCombination in classificationCombinations:
+									for cntr, channelCombination in enumerate(dataInListCombinations(usedChannels)):
+										print('Classifying...' + cntr.__str__())
+										subject = os.path.abspath(os.path.join(fullPath, os.pardir)).split('/')[-1]
+										results = classify(fileNames=classificationCombination,
+															enabledChannels=channelCombination,
+															lowcut=lowcut,
+															highcut=highcut,
+															fs=samplingRate,
+															saveClassifier=False,
+															subject=subject)
+										ITR = calcalate_ITR(ITR_numberOfTargets,
+															float(results['LDA Accuracy']),
+															ITR_Cn,
+															ITR_T)
+										results['ITR'] = ITR
+										writeDictInFile('wetResults2', results)
+							else:
+								for cntr, channelCombination in enumerate(dataInListCombinations(usedChannels)):
+									print('Classifying...' + cntr.__str__())
+									subject = os.path.abspath(os.path.join(fullPath, os.pardir)).split('/')[-1]
+									results = classify(fileNames=trainingFiles,
+														enabledChannels=channelCombination,
+														lowcut=lowcut,
+														highcut=highcut,
+														fs=samplingRate,
+														saveClassifier=False,
+														subject=subject)
+									ITR = calcalate_ITR(ITR_numberOfTargets,
+														float(results['LDA Accuracy']),
+														ITR_Cn,
+														ITR_T)
+									results['ITR'] = ITR
+									writeDictInFile('wetResults2', results)
+								
+							break
+					
+					if trainingFile.lower() == 'driving.hdf5' and drivenTime:
 						print(trainingFilePath)
 						totalTime = calculateDrivingTime(trainingFilePath)
 						with h5py.File(trainingFilePath, 'r') as fl:
@@ -125,39 +147,59 @@ def getListOfFiles(dirName):
 				# get the first 4 files contain 'streaming' in their name, for the classification
 				for trainingFile in os.listdir(fullPath):
 					trainingFilePath = os.path.join(fullPath, trainingFile)
-					if 'streaming' in trainingFile.lower():
-						with h5py.File(trainingFilePath, 'r') as fl:
-							# dtElectroType = fl['StreamSettings'][7,1].decode('UTF-8').split('.')[1]
-							fileUsedChannels = fl['StreamSettings'][5,1].decode('UTF-8')
-						# Converting string to list
-						fileUsedChannels = fileUsedChannels.strip('][').split(', ')
-						# printing final result and its type
-						fileUsedChannels = list(map(int, fileUsedChannels)) 
-						if usedChannels is None:
-							usedChannels = fileUsedChannels
-						elif usedChannels != fileUsedChannels:
-							printError('Not the same electrodes in every session. No classifier created!')
-							return
-						trainingFiles.append(trainingFilePath)
-					if len(trainingFiles) == 4:
-						for channelCombination in channelsCombinations(usedChannels):
-							print('Classifying...')
-							subject = os.path.abspath(os.path.join(fullPath, os.pardir)).split('/')[-1]
-							results = classify(fileNames=trainingFiles,
-												enabledChannels=channelCombination,
-												lowcut=lowcut,
-												highcut=highcut,
-												fs=samplingRate,
-												saveClassifier=False,
-												subject=subject)
-							ITR = calcalate_ITR(ITR_numberOfTargets,
-												float(results['LDA Accuracy']),
-												ITR_Cn,
-												ITR_T)
-							results['ITR'] = ITR					
-							writeDictInFile('dryResuts', results)
-						break
-					if trainingFile.lower() == 'driving.hdf5':
+					if classification:
+						if 'streaming' in trainingFile.lower():
+							# check if the used channels in this trials are the same as the previous ones
+							with h5py.File(trainingFilePath, 'r') as fl:
+								fileUsedChannels = fl['StreamSettings'][5,1].decode('UTF-8')
+							# Converting string to list
+							fileUsedChannels = fileUsedChannels.strip('][').split(', ')
+							fileUsedChannels = list(map(int, fileUsedChannels)) 
+							if usedChannels is None:
+								usedChannels = fileUsedChannels
+							elif usedChannels != fileUsedChannels:
+								printError('Not the same electrodes in every session. No classifier created!')
+								return
+							trainingFiles.append(trainingFilePath)
+						if len(trainingFiles) == 4:
+							if calcEveryClassCombination:
+								classificationCombinations = dataInListCombinations(trainingFiles)
+								for classificationCombination in classificationCombinations:
+									for cntr, channelCombination in enumerate(dataInListCombinations(usedChannels)):
+										print('Classifying...' + cntr.__str__())
+										subject = os.path.abspath(os.path.join(fullPath, os.pardir)).split('/')[-1]
+										results = classify(fileNames=classificationCombination,
+															enabledChannels=channelCombination,
+															lowcut=lowcut,
+															highcut=highcut,
+															fs=samplingRate,
+															saveClassifier=False,
+															subject=subject)
+										ITR = calcalate_ITR(ITR_numberOfTargets,
+															float(results['LDA Accuracy']),
+															ITR_Cn,
+															ITR_T)
+										results['ITR'] = ITR					
+										writeDictInFile('dryResuts2', results)
+							else: 
+								for channelCombination in dataInListCombinations(usedChannels):
+									print('Classifying...')
+									subject = os.path.abspath(os.path.join(fullPath, os.pardir)).split('/')[-1]
+									results = classify(fileNames=trainingFiles,
+														enabledChannels=channelCombination,
+														lowcut=lowcut,
+														highcut=highcut,
+														fs=samplingRate,
+														saveClassifier=False,
+														subject=subject)
+									ITR = calcalate_ITR(ITR_numberOfTargets,
+														float(results['LDA Accuracy']),
+														ITR_Cn,
+														ITR_T)
+									results['ITR'] = ITR					
+									writeDictInFile('dryResuts2', results)
+							break
+					if trainingFile.lower() == 'driving.hdf5' and drivenTime:
 						print(trainingFilePath)
 						totalTime = calculateDrivingTime(trainingFilePath)
 						with h5py.File(trainingFilePath, 'r') as fl:
@@ -168,11 +210,7 @@ def getListOfFiles(dirName):
 							'Electrodes': dtElectroType,
 							'Total time': totalTime
 						}
-						writeDictInFile('onlineDuration', durationResults)
-		else:
-			allFiles.append(fullPath)
-				
-	return allFiles
+						writeDictInFile('onlineDuration', durationResults)			
 
 
 def writeDictInFile(filename=None, fieldsDict=None):
@@ -208,7 +246,7 @@ def writeDictInFile(filename=None, fieldsDict=None):
 			f_object.close()
 
 
-def channelsCombinations(data):
+def dataInListCombinations(data):
 	allCombinations =  itertools.chain.from_iterable(itertools.combinations(data, r) for r in range(1, len(data)+1))
 	return list(map(list, list(allCombinations)))
 
