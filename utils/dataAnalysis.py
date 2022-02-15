@@ -330,5 +330,9 @@ def calcCorrelation(directory, subj):
 	
 
 if __name__ == "__main__":
-	for subj in range(10):
-		calcCorrelation("/home/zn/Desktop/Subjects/", subj+1)
+	files = getListOfFiles("/home/zn/Desktop/Subjects/", drivenTime=False, classification=True, calcEveryClassCombination=False)
+	# for subj in range(10):
+	# 	calcCorrelation("/home/zn/Desktop/Subjects/", subj+1)
+	# timeInMinutes = datetime.timedelta(seconds=150.53757)
+	# print('Manually driven total time: ', timeInMinutes)
+	
