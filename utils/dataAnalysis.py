@@ -180,7 +180,7 @@ def getListOfFiles(dirName,drivenTime=False, classification=False, calcEveryClas
 															ITR_Cn,
 															ITR_T)
 										results['ITR'] = ITR					
-										writeDictInFile('dryResuts2', results)
+										writeDictInFile('dryResuts', results)
 							else: 
 								for channelCombination in dataInListCombinations(usedChannels):
 									print('Classifying...')
@@ -197,7 +197,7 @@ def getListOfFiles(dirName,drivenTime=False, classification=False, calcEveryClas
 														ITR_Cn,
 														ITR_T)
 									results['ITR'] = ITR					
-									writeDictInFile('dryResuts2', results)
+									writeDictInFile('dryResuts', results)
 							break
 					if trainingFile.lower() == 'driving.hdf5' and drivenTime:
 						print(trainingFilePath)
@@ -329,8 +329,82 @@ def calcCorrelation(directory, subj):
 
 	
 
+def variousClassifications(dirName):
+	# create a list of file and sub directories 
+	# names in the given directory 
+	listOfFile = os.listdir(dirName)
+	allFiles = list()
+	# Iterate over all the entries
+	for entry in listOfFile:
+		# Create full path
+		# print(entry)
+		fullPath = os.path.join(dirName, entry)
+		# If entry is a directory then get the list of files in this directory 
+		if os.path.isdir(fullPath):
+			# check if the directory is numeric, in other words subject data
+			if entry.isnumeric():
+				# print(entry)
+				variousClassifications(fullPath)
+			# check if the directory is wet results
+			elif entry.lower() == 'wet':
+				trainingFiles = []
+				# get the first 4 files contain 'streaming' in their name, for the classification
+				for trainingFile in os.listdir(fullPath):
+					trainingFilePath = os.path.join(fullPath, trainingFile)
+					if len(trainingFiles) == 4:
+						break
+					if 'streaming' in trainingFile.lower():
+						trainingFiles.append(trainingFilePath)
+						print('Classifying...' + len(trainingFiles).__str__())
+						subject = os.path.abspath(os.path.join(fullPath, os.pardir)).split('/')[-1]
+						results = classify(fileNames=trainingFiles,
+											enabledChannels=[0,1,2],
+											lowcut=lowcut,
+											highcut=highcut,
+											fs=samplingRate,
+											saveClassifier=False,
+											subject=subject)
+						ITR = calcalate_ITR(ITR_numberOfTargets,
+											float(results['LDA Accuracy']),
+											ITR_Cn,
+											ITR_T)
+						results['ITR'] = ITR
+						writeDictInFile('wetResults2', results)
+					
+				
+			# check if the directory is dry results
+			elif entry.lower() == 'dry':
+				usedChannels = None    
+				trainingFiles = []
+				# get the first 4 files contain 'streaming' in their name, for the classification
+				for trainingFile in os.listdir(fullPath):
+					trainingFilePath = os.path.join(fullPath, trainingFile)
+					if len(trainingFiles) == 4:
+						break
+					if 'streaming' in trainingFile.lower():
+						trainingFiles.append(trainingFilePath)
+						print('Classifying...' + len(trainingFiles).__str__())
+						subject = os.path.abspath(os.path.join(fullPath, os.pardir)).split('/')[-1]
+						results = classify(fileNames=trainingFiles,
+											enabledChannels=[0,1,2],
+											lowcut=lowcut,
+											highcut=highcut,
+											fs=samplingRate,
+											saveClassifier=False,
+											subject=subject)
+						ITR = calcalate_ITR(ITR_numberOfTargets,
+											float(results['LDA Accuracy']),
+											ITR_Cn,
+											ITR_T)
+						results['ITR'] = ITR					
+						writeDictInFile('dryResuts2', results)
+						
+
+
+
 if __name__ == "__main__":
-	files = getListOfFiles("/home/zn/Desktop/Subjects/", drivenTime=False, classification=True, calcEveryClassCombination=False)
+	# files = getListOfFiles("/home/zn/Desktop/Subjects/", drivenTime=True, classification=True, calcEveryClassCombination=False)
+	files = variousClassifications("/home/zn/Desktop/Subjects/")
 	# for subj in range(10):
 	# 	calcCorrelation("/home/zn/Desktop/Subjects/", subj+1)
 	# timeInMinutes = datetime.timedelta(seconds=150.53757)
