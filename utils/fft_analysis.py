@@ -133,7 +133,10 @@ def printUniqueFFT(fileNames, lowCut=5, highCut=50, fs=250, enabledChannel=None,
 				print(figName)
 			elif usingElectrodes == ElectrodeType.WET:
 				dtLen = colData.shape[0]
-				PSD, freq, idx, figName = calculateFFT(colData, dtLen, fs, lowCut, highCut, None, None,
+				dtLen = DataFilter.get_nearest_power_of_two(colData.shape[0])
+				# chopping Data to have length equal to power of 2
+				signalDataArrayChopped = np.array(colData[:dtLen].tolist())
+				PSD, freq, idx, figName = calculateFFT(signalDataArrayChopped, dtLen, fs, lowCut, highCut, None, None,
 				                                       fftType=FftType.pythonFFT,
 				                                       filtered=True,
 				                                       filterType=FilterType.butter_bandpass_filter,
@@ -229,8 +232,12 @@ def printFFT(fileNames, lowCut=4, highCut=40, fs=250, enabledChannel=None,
 					print(figName)
 				elif usingElectrodes == ElectrodeType.WET:
 					dtLen = colData.shape[0]
-					PSD, freq, idx, figName = calculateFFT(colData, dtLen, fs, lowCut, highCut, None, None,
-					                                       fftType=FftType.pythonFFT,
+					# For dry electrodes, using brainflowFFT that needs data length to be power of 2
+					dtLen = DataFilter.get_nearest_power_of_two(colData.shape[0])
+					# chopping Data to have length equal to power of 2
+					signalDataArrayChopped = np.array(colData[:dtLen].tolist())
+					PSD, freq, idx, figName = calculateFFT(signalDataArrayChopped, dtLen, fs, lowCut, highCut, None, None,
+					                                       fftType=FftType.brainflowFFT,
 					                                       filtered=True,
 					                                       filterType=FilterType.butter_bandpass_filter,
 					                                       noiseCancellation=False)
