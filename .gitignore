@@ -24,3 +24,8 @@ docs/_build
 junk/
 subjects/
 .vscode/
+myrtw/
+unit_tests/
+statistics/
+*.csv
+*.bak
