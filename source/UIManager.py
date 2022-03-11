@@ -14,7 +14,7 @@ from source.windowing import windowing
 from utils.coloringPrint import printInfo, printWarning
 from source.writeToFile import writing
 from source.cyton import OpenBCICyton
-from utils.constants import Constants as cnst
+from utils.constants import Constants as cnst, TargetPlatform
 from source.online import startOnline
 
 
@@ -75,11 +75,15 @@ def uiManager():
 	# register the OpenBCICyton class; make its functions accessible via proxy
 	SyncManager.register('OpenBCICyton', OpenBCICyton)
 
-	# parser = argparse.ArgumentParser(prog='UIManager',
-	#                                  description='Python scripts that determines which UI will be used for the cyton board ')
-	# parser.add_argument('-m', '--mode', nargs=1, choices=('pygui', 'online'), help='Choose the preferred mode',
-	#                     required=True)
-	# args = parser.parse_args()
+	parser = argparse.ArgumentParser(prog='UIManager',
+	                                #  description='Python scripts that determines which UI will be used for the cyton board '
+	                                 )
+	parser.add_argument('-m', '--mode', choices=('gui', 'terminal'), default='gui', help='Choose the preferred mode.',
+	                    required=False)
+	parser.add_argument('-vi', '--VisualInterface', choices=('psychopy', 'unity'), default='psychopy', help='Choose the preferred interface for training and online session.',
+	                    required=False)
+	args = parser.parse_args()
+
 
 	# process list in queue
 	processesList = []
@@ -122,10 +126,15 @@ def uiManager():
 	                                      shutdownEvent)
 	# events will be used to control board through any gui
 	boardApiCallEvents = boardEventHandler.getBoardHandlerEvents()
-
-	mode = 'pygui'
-	# mode = args.mode[0]
-	if mode == 'pygui':
+	
+	# choose mode depending on argument parser
+	mode = args.mode
+	# choose visual interface software depending on argument parser
+	if args.VisualInterface == 'psychopy':
+		targetPlatformSoftware = TargetPlatform.PSYCHOPY
+	elif args.VisualInterface == 'unity':
+		targetPlatformSoftware = TargetPlatform.UNITY
+	if mode == 'gui':
 		printInfo("Start GUI mode")
 		# create Process for printing Data
 		printDataProcess = Process(target=printData, name='printData',
@@ -158,14 +167,14 @@ def uiManager():
 		trainingProcess = Process(target=startTraining, name='training',
 		                          args=(
 			                          board, startTrainingEvent, boardApiCallEvents, shutdownEvent,
-			                          currentClassBuffer))
+			                          currentClassBuffer, targetPlatformSoftware))
 		processesList.append(trainingProcess)
 
-		# create Process for connecting to unity program socket fro online session
+		# create Process for connecting to unity program socket for online session
 		onlineProcess = Process(target=startOnline, name='online',
 		                        args=(board, startOnlineEvent, boardApiCallEvents, shutdownEvent,
 		                              windowedDataBuffer, currentClassBuffer, groundTruthClassBuffer,
-		                              newWindowAvailable, filenameBuf))
+		                              newWindowAvailable, filenameBuf, targetPlatformSoftware))
 		processesList.append(onlineProcess)
 
 		# start processes in the processList
@@ -176,8 +185,8 @@ def uiManager():
 		for proc in processesList:
 			proc.join()
 
-	elif mode == 'online':
-		print("online")
+	elif mode == 'terminal':
+		print("Terminal")
 		# start processes
 		for proc in processesList:
 			proc.start()
