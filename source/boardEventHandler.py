@@ -56,9 +56,9 @@ class BoardEventHandler:
 	def connect(self):
 		"""
 		Method runs via connectProcess:
-			* A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
+			* A loop runs while the shutdownEvent, declared in UIManager.py, is not set
 			* When the connectEvent has been set it is trying to accomplish a connection with the openbci board, only if there is not an existed connection
-			* Whether it successes or not, it clears the connectEvent
+			* Regardless succeeding or not, it clears the connectEvent
 		"""
 		while not self.shutdownEvent.is_set():
 			self.connectEvent.wait(1)
@@ -77,7 +77,7 @@ class BoardEventHandler:
 		Method runs via disconnectProcess:
 			* A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
 			* When the disconnectEvent has been set it is trying to clear the existing connection with the openbci board, only if board is NOT streaming, which means that board is not transmitting data
-			* Whether it successes or not, it clears the disconnectEvent
+			* Regardless succeeding or not, it clears the disconnectEvent
 		"""
 
 		while not self.shutdownEvent.is_set():
@@ -101,7 +101,7 @@ class BoardEventHandler:
 		"""
 		Method runs via startStreamingProcess:
 			*   A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
-			*   Whether it successes or not, it clears the startStreamingEvent
+			*   Regardless succeeding or not, it clears the startStreamingEvent
 			*   When the startStreamingProcess has been set, if there is a valid connection and an active streaming:
 
 			    1. Starts the streaming
@@ -182,7 +182,7 @@ class BoardEventHandler:
 		"""
 		Method runs via stopStreamingProcess:
 			*   A loop runs while not the shutdownEvent, declared in UIManager.py, is not set
-			*   Whether it successes or not, it clears the stopStreamingEvent
+			*   Regardless succeeding or not, it clears the stopStreamingEvent
 			*   When the stopStreamingEvent has been set, if there is a valid connection and an active streaming:
 
 			    1. Stops the streaming
