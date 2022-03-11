@@ -6,22 +6,16 @@ If you publish work using this script please cite the relevant PsychoPy publicat
 """
 
 # from __future__ import division  # so that 1/3=0.333 instead of 1/3=0
-from asyncio import subprocess
 import traceback
 from psychopy import visual, core, event, logging
 from psychopy.constants import STARTED, NOT_STARTED, FINISHED  # things like STARTED, FINISHED
 import numpy as np
-import os  # handy system and path functions
-import pylab
-from time import process_time
 from multiprocessing import Process, Queue
 from PIL import Image
 import cv2
 import threading
-from time import time, sleep
-from playsound import playsound
 from multiprocessing import Event
-from utils.coloringPrint import printError, printHeader, printInfo, printWarning
+from utils.coloringPrint import  printHeader, printInfo, printWarning
 from utils.constants import Constants as cnst
 
 
