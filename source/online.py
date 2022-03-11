@@ -49,7 +49,7 @@ class SocketConnectionError(Error):
 
 
 def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
-                  emergencyKeyboardEvent, keyboardBuffer, _shutdownEvent):
+                  emergencyKeyboardEvent, keyboardBuffer, fileNotFound, _shutdownEvent):
 	"""
 	Its the only method runs immediately via :py:meth:`source.online.startOnline` and waits for :py:attr:`startOnlineEvent`
 
@@ -93,6 +93,9 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 					printInfo('Socket listening ... ')
 					# try:
 					socketConnection.set()
+					time.sleep(0.5)
+					if fileNotFound.is_set():
+						break
 					c, addr = s.accept()  # when port connected
 					printInfo('Got connection from ' + addr.__str__())
 
@@ -159,7 +162,7 @@ def socketConnect(board, boardApiCallEvents, socketConnection, startOnlineEvent,
 			emptyQueue(keyboardBuffer)
 
 
-def startTargetApp(socketConnection, _shutdownEvent):
+def startTargetApp(socketConnection, fileNotFound, _shutdownEvent):
 	"""
 	* Waits until :py:attr:`socketConnection` get set by :py:meth:`source.training.connectTraining`
 	* Executes the unity target executable given in :data:`utils.constants.Constants.onlineUnityExePath`
@@ -171,8 +174,14 @@ def startTargetApp(socketConnection, _shutdownEvent):
 	while not _shutdownEvent.is_set():
 		socketConnection.wait(1)
 		if socketConnection.is_set():
-			with open(os.devnull, 'wb') as devnull:
-				subprocess.check_call([cnst.onlineUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
+			try:
+				with open(os.devnull, 'wb') as devnull:
+					subprocess.check_call([cnst.onlineUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
+			except FileNotFoundError:
+				printError('online unity executable file not found! Check onlineUnityExePath in .../utils/constants.py.')
+				socketConnection.clear()
+				fileNotFound.set()
+			
 
 
 def onlineProcessing(board, boardApiCallEvents, windowedDataBuffer, predictBuffer, socketConnection, newWindowAvailable,
@@ -210,7 +219,6 @@ def onlineProcessing(board, boardApiCallEvents, windowedDataBuffer, predictBuffe
 		chan_ind = board.getEnabledChannels()
 		while not filenameBuf.empty():
 			classifierFilename = filenameBuf.get()
-			print(classifierFilename)
 			clf = joblib.load(classifierFilename)
 		while waitingEvent.is_set() and boardApiCallEvents["startStreaming"].is_set():
 			newWindowAvailable.wait(1)
@@ -590,7 +598,7 @@ def wheelSerialPredict(socketConnection, predictBuffer, usb_port_,
 
 
 def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, windowedDataBuffer, currentClassBuffer,
-                groundTruthBuffer, newWindowAvailable, filenameBuf, targetPlatform=TargetPlatform.PSYCHOPY, debugMode=True, ):
+                groundTruthBuffer, newWindowAvailable, filenameBuf, targetPlatform=TargetPlatform.PSYCHOPY, debugMode=True ):
 	"""
 	* Method runs via onlineProcess in :py:mod:`source.UIManager`
 	* Runs simultaneously with the boardEventHandler process and waits for the startOnlineEvent, which is set only by the boardEventHandler.
@@ -626,7 +634,9 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 	emergency_buffer = mngr.Queue(maxsize=1)  # queue to use keyboard for navigation in case of online sessions
 	# create socket connection needing for unity communication
 	socketConnection = Event()
+	fileNotFound = Event()
 	socketConnection.clear()
+	fileNotFound.clear()
 	
 	robotMode = True		
 	onlineProcessingProcess = Process(target=onlineProcessing,
@@ -641,8 +651,8 @@ def startOnline(board, startOnlineEvent, boardApiCallEvents, _shutdownEvent, win
 		# Create the process needed
 		socketProcess = Process(target=socketConnect,
 		                        args=(board, boardApiCallEvents, socketConnection, startOnlineEvent,
-		                              emergency_event, emergency_buffer, _shutdownEvent,))
-		applicationProcess = Process(target=startTargetApp, args=(socketConnection, _shutdownEvent,))
+		                              emergency_event, emergency_buffer, fileNotFound, _shutdownEvent,))
+		applicationProcess = Process(target=startTargetApp, args=(socketConnection, fileNotFound, _shutdownEvent,))
 
 		debugPredictProcess = Process(target=debugPredict,
 		                              args=(socketConnection, predictBuffer, emergency_event, emergency_buffer,

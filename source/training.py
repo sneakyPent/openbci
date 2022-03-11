@@ -20,7 +20,7 @@ from source.SSVEPexperiment import SSVEP_screen_session
 
 
 def connectTraining(board, boardApiCallEvents, startTrainingEvent, currentClassBuffer, socketConnection,
-                    _shutdownEvent):
+                    fileNotFound, _shutdownEvent):
 	"""
 	* Wait for startTrainingEvent to get set.
 	* Responsible
@@ -63,6 +63,10 @@ def connectTraining(board, boardApiCallEvents, startTrainingEvent, currentClassB
 					printInfo('socket listening ... ')
 					socketConnection.set()
 					# try:
+					# wait for executable file of startTrainingApp process to start
+					time.sleep(0.5)
+					if fileNotFound.is_set():
+						break
 					c, addr = s.accept()  # when port connected
 					printInfo("Got connection from " + addr.__str__())
 
@@ -110,7 +114,7 @@ def connectTraining(board, boardApiCallEvents, startTrainingEvent, currentClassB
 			startTrainingEvent.clear()
 
 
-def startTrainingApp(boardApiCallEvents, socketConnection, _shutdownEvent):
+def startTrainingApp(boardApiCallEvents, socketConnection, fileNotFound, _shutdownEvent):
 	"""
 	* waits until socketConnection get set by :py:meth:`source.training.connectTraining`
 	* Executes the unity target executable given in :data:`utils.constants.Constants.trainingUnityExePath`
@@ -124,9 +128,14 @@ def startTrainingApp(boardApiCallEvents, socketConnection, _shutdownEvent):
 	while not _shutdownEvent.is_set():
 		socketConnection.wait(1)
 		if socketConnection.is_set():
-			with open(os.devnull, 'wb') as devnull:
-				subprocess.check_call([cnst.trainingUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
-			boardApiCallEvents["stopStreaming"].set()
+			try:
+				with open(os.devnull, 'wb') as devnull:
+					subprocess.check_call([cnst.trainingUnityExePath], stdout=devnull, stderr=subprocess.STDOUT)
+				boardApiCallEvents["stopStreaming"].set()
+			except FileNotFoundError:
+				printError('Training unity executable file not found! Check trainingUnityExePath in .../utils/constants.py.')
+				socketConnection.clear()
+				fileNotFound.set()
 
 
 def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent, currentClassBuffer,
@@ -150,14 +159,18 @@ def startTraining(board, startTrainingEvent, boardApiCallEvents, _shutdownEvent,
 
 	if targetPlatform == TargetPlatform.UNITY:
 		socketConnection = Event()
+		fileNotFound = Event()
 		socketConnection.clear()
+		fileNotFound.clear()
 
 		socketProcess = Process(target=connectTraining,
 		                        args=(board, boardApiCallEvents, startTrainingEvent,
-		                              currentClassBuffer, socketConnection, _shutdownEvent,))
+		                              currentClassBuffer, socketConnection, fileNotFound,
+		                              _shutdownEvent,))
 		procList.append(socketProcess)
 		applicationProcess = Process(target=startTrainingApp,
-		                             args=(boardApiCallEvents, socketConnection, _shutdownEvent,))
+		                             args=(boardApiCallEvents, socketConnection, fileNotFound,
+		                             _shutdownEvent,))
 
 		procList.append(applicationProcess)
 	elif targetPlatform == TargetPlatform.PSYCHOPY:
