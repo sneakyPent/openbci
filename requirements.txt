@@ -1,3 +1,5 @@
+# Python version 3.9 
+
 pyqtgraph~=0.12.1
 matplotlib~=3.4.2
 PyQt5~=5.15.1
@@ -13,3 +15,43 @@ sphinx-autobuild
 sphinx_rtd_theme
 sklearn
 brainflow
+opencv-python
+
+# Install psychopy and dependencies according to psychopy manual
+pypiwin32
+pandas 
+pyopengl 
+pyglet 
+pillow 
+moviepy 
+lxml 
+openpyxl
+xlrd 
+configobj 
+pyyaml
+gevent
+greenlet
+msgpack-python
+psutil
+tables
+requests[security]
+pyosf
+cffi
+pysoundcard 
+pysoundfile
+seaborn
+psychopy_ext 
+python-bidi
+playsound
+pyparallel
+egi
+iolabs
+pytest
+coverage 
+
+wxpython
+# Install psychopy
+psychopy
+
+# Install an audio library
+pygame
