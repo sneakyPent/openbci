@@ -255,10 +255,10 @@ class Constants:
 	classifiersDirectory = '../classifiers/'
 	targetDuration = 7  # in seconds
 	frames_ch = [[0 for j in range(2)] for i in range(4)]  # The duration (in frames) of the first checkerboard pattern
-	frames_ch[0] = [10, 10]  # for frequency=3 Hz
-	frames_ch[1] = [8, 8]  # for frequency=3.75 Hz
-	frames_ch[2] = [9, 9]  # for frequency=3.33 Hz
-	frames_ch[3] = [7, 7]  # for frequency=4.28 Hz
+	frames_ch[0] = [10, 10]  # for frequency=3 Hz   upper left
+	frames_ch[1] = [8, 8]  # for frequency=3.75 Hz  upper right
+	frames_ch[2] = [9, 9]  # for frequency=3.33 Hz  lower left
+	frames_ch[3] = [7, 7]  # for frequency=4.28 Hz  lower right
 	harmonics_num = 2
 
 	""" online Streaming Commands """
